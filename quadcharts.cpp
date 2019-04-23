@@ -1,6 +1,8 @@
 ﻿#include "quadcharts.h"
 #include <map>
 
+#define CORNERMINANGLE M_PI/8
+
 namespace QuadBoolean {
 
 
@@ -9,21 +11,27 @@ void findChartFaces(
         const std::vector<int>& faceLabel,
         ChartData& chartData);
 
+double dotProjectedOntoPlane(
+        const PolyMesh::CoordType& edge1,
+        const PolyMesh::CoordType& edge2,
+        const PolyMesh::CoordType& normal);
+
 //It works just on triangle meshes
 ChartData getCharts(PolyMesh& mesh, const std::vector<int>& faceLabel)
 {
-    typedef std::map<std::pair<PolyMesh::CoordType, PolyMesh::CoordType>, std::pair<int, int>> EdgeLabelMap;
-    typedef std::map<std::pair<PolyMesh::CoordType, PolyMesh::CoordType>, int> EdgeSideMap;
-    vcg::tri::UpdateTopology<PolyMesh>::FaceFace(mesh);
+    typedef std::map<std::pair<size_t, size_t>, std::pair<int, int>> EdgeLabelMap;
+    typedef std::map<std::pair<size_t, size_t>, int> EdgeSubSideMap;
 
     ChartData chartData;
 
     //Region growing algorithm for getting charts
     findChartFaces(mesh, faceLabel, chartData);
 
+    const double cornerCosLimit = cos(CORNERMINANGLE);
+
 
     //TODO SPLIT IN FUNCTIONS
-    EdgeSideMap edgeSideMap;
+    EdgeSubSideMap edgeSubSideMap;
     for (const int& pId : chartData.labels) {
         Chart& chart = chartData.charts[pId];
 
@@ -33,9 +41,9 @@ ChartData getCharts(PolyMesh& mesh, const std::vector<int>& faceLabel)
             continue;
 
         EdgeLabelMap edgeLabelMap;
-        std::map<PolyMesh::VertexType*, PolyMesh::VertexType*> vertexNextMap;
+        std::map<size_t, size_t> vertexNextMap;
 
-        std::set<PolyMesh::VertexType*> remainingVertices;
+        std::set<size_t> remainingVertices;
 
         //Fill edge map and next vertex map
         for (const size_t& fId : chart.borderFaces) {
@@ -69,16 +77,19 @@ ChartData getCharts(PolyMesh& mesh, const std::vector<int>& faceLabel)
                     PolyMesh::VertexType* vEnd = pos.V();
                     pos.FlipV();
 
-                    std::pair<PolyMesh::CoordType, PolyMesh::CoordType> edge(vStart->P(), vEnd->P());
+                    size_t vStartId = vcg::tri::Index(mesh, vStart);
+                    size_t vEndId = vcg::tri::Index(mesh, vEnd);
+
+                    std::pair<size_t, size_t> edge(vStartId, vEndId);
                     if (edge.first > edge.second) {
                         std::swap(edge.first, edge.second);
                     }
 
                     edgeLabelMap.insert(std::make_pair(edge, std::make_pair(chart.label, adjChartLabel)));
-                    vertexNextMap.insert(std::make_pair(vStart, vEnd));
+                    vertexNextMap.insert(std::make_pair(vStartId, vEndId));
 
-                    remainingVertices.insert(vStart);
-                    remainingVertices.insert(vEnd);
+                    remainingVertices.insert(vStartId);
+                    remainingVertices.insert(vEndId);
                 }
 
                 pos.FlipV();
@@ -88,14 +99,19 @@ ChartData getCharts(PolyMesh& mesh, const std::vector<int>& faceLabel)
 
         do {
             //Find first label
-            PolyMesh::VertexType* vStart;
-            PolyMesh::VertexType* vCurrent;
-            PolyMesh::VertexType* vNext;
+            size_t vStartId;
+            size_t vCurrentId;
+            size_t vNextId;
 
-            vCurrent = *remainingVertices.begin();
-            vNext = vertexNextMap.at(vCurrent);
+            //Corner detection variables
+            bool firstIteration = true;
+            PolyMesh::CoordType lastEdgeVec;
+            bool isCorner = false;
 
-            std::pair<PolyMesh::CoordType, PolyMesh::CoordType> startEdge(vCurrent->P(), vNext->P());
+            vCurrentId = *remainingVertices.begin();
+            vNextId = vertexNextMap.at(vCurrentId);
+
+            std::pair<size_t, size_t> startEdge(vCurrentId, vNextId);
             if (startEdge.first > startEdge.second) {
                 std::swap(startEdge.first, startEdge.second);
             }
@@ -109,129 +125,202 @@ ChartData getCharts(PolyMesh& mesh, const std::vector<int>& faceLabel)
             adjChartLabel = startEdgeLabels.first == chart.label ? startEdgeLabels.second : startEdgeLabels.first;
 
             //Iterate in the borders to get the first corner
-            vStart = vCurrent;
+            vStartId = vCurrentId;
             do {
                 //Next border edge
-                vCurrent = vertexNextMap.at(vCurrent);
-                vNext = vertexNextMap.at(vCurrent);
+                vCurrentId = vertexNextMap.at(vCurrentId);
+                vNextId = vertexNextMap.at(vCurrentId);
 
-                std::pair<PolyMesh::CoordType, PolyMesh::CoordType> edge(vCurrent->P(), vNext->P());
+                PolyMesh::CoordType currentEdgeVec = mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P();
+                currentEdgeVec.Normalize();
+
+                std::pair<size_t, size_t> edge(vCurrentId, vNextId);
                 if (edge.first > edge.second) {
                     std::swap(edge.first, edge.second);
+                }
+
+                //Check if it is a corner
+                if (!firstIteration) {
+                    double currentDot = dotProjectedOntoPlane(currentEdgeVec, lastEdgeVec, mesh.vert[vCurrentId].N());
+                    if (std::fabs(currentDot) < cornerCosLimit) {
+                        isCorner = true;
+                    }
                 }
 
                 //Get current label on the other side
                 const std::pair<int,int>& currentEdgeLabels = edgeLabelMap.at(edge);
                 assert(currentEdgeLabels.first == chart.label || currentEdgeLabels.second == chart.label);
                 currentLabel = currentEdgeLabels.first == chart.label ? currentEdgeLabels.second : currentEdgeLabels.first;
-            } while (currentLabel == adjChartLabel && vCurrent != vStart);
 
-            if (vCurrent == vStart) {
-                std::cout << "Warning 1: input mesh is not well-defined: single border chart!" << std::endl;
+                lastEdgeVec = currentEdgeVec;
+                firstIteration = false;
+            } while (!isCorner && vCurrentId != vStartId);
+
+#ifndef NDEBUG
+            if (vCurrentId == vStartId) {
+                std::cout << "Warning 1: input mesh is not well-defined: no corners!" << std::endl;
             }
+#endif
 
-            //Get all the sides
-            vStart = vCurrent;
-            vNext = vertexNextMap.at(vCurrent);
+            //Get all the sub sides
+            vStartId = vCurrentId;
+            vNextId = vertexNextMap.at(vCurrentId);
+
+            ChartSide currentSide;
+            currentSide.length = 0;
+            currentSide.size = 0;
             do {
-                int sideId = chartData.sides.size();
-                ChartSide currentSide;
+                int subSideId = chartData.subSides.size();
+                ChartSubSide currentSubSide;
 
                 adjChartLabel = currentLabel;
                 double length = 0;
 
-                bool newSide = false;
-                bool firstEdge = true;
+                bool newSubSide = false;
 
-                PolyMesh::VertexType* vSideStart = vCurrent;
+                firstIteration = true;
+                isCorner = false;
+                size_t vSubSideStartId = vCurrentId;
                 do {
-                    std::pair<PolyMesh::CoordType, PolyMesh::CoordType> edge(vCurrent->P(), vNext->P());
+                    PolyMesh::CoordType currentEdgeVec = mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P();
+                    currentEdgeVec.Normalize();
+
+                    std::pair<size_t, size_t> edge(vCurrentId, vNextId);
                     if (edge.first > edge.second) {
                         std::swap(edge.first, edge.second);
                     }
 
-                    //Get current label on the other side
+                    //Check if it is a corner
+                    if (!firstIteration) {
+                        double currentDot = dotProjectedOntoPlane(currentEdgeVec, lastEdgeVec, mesh.vert[vCurrentId].N());
+                        if (std::fabs(currentDot) < cornerCosLimit) {
+                            isCorner = true;
+                        }
+                    }
+
+                    //Get current label on the other subside
                     const std::pair<int,int>& currentEdgeLabels = edgeLabelMap.at(edge);
                     assert(currentEdgeLabels.first == chart.label || currentEdgeLabels.second == chart.label);
                     currentLabel = currentEdgeLabels.first == chart.label ? currentEdgeLabels.second : currentEdgeLabels.first;
 
-                    if (currentLabel == adjChartLabel) {
-                        EdgeSideMap::iterator findIt = edgeSideMap.find(edge);
+                    if (!isCorner && currentLabel == adjChartLabel) {
+                        EdgeSubSideMap::iterator findIt = edgeSubSideMap.find(edge);
 
-                        //If the side has already been processed
-                        if (findIt == edgeSideMap.end()) {
-                            currentSide.vertices.push_back(vCurrent);
+                        //If the subside has already been processed
+                        if (findIt == edgeSubSideMap.end()) {
+                            currentSubSide.vertices.push_back(vCurrentId);
 
-                            length += (vNext->P() - vCurrent->P()).Norm();
+                            length += (mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P()).Norm();
 
-                            edgeSideMap.insert(std::make_pair(edge, sideId));
+                            edgeSubSideMap.insert(std::make_pair(edge, subSideId));
 
-                            newSide = true;
+                            newSubSide = true;
                         }
-                        else if (firstEdge) {
-                            sideId = findIt->second;
+                        else if (firstIteration) {
+                            subSideId = findIt->second;
                         }
-
-                        firstEdge = false;
+                        firstIteration = false;
 
                         //Next border edge
-                        vCurrent = vertexNextMap.at(vCurrent);
-                        vNext = vertexNextMap.at(vCurrent);
+                        vCurrentId = vertexNextMap.at(vCurrentId);
+                        vNextId = vertexNextMap.at(vCurrentId);
 
-                        remainingVertices.erase(vCurrent);
+                        remainingVertices.erase(vCurrentId);
+
+                        lastEdgeVec = currentEdgeVec;
                     }
-                } while (currentLabel == adjChartLabel && vCurrent != vSideStart);
+                } while (!isCorner && currentLabel == adjChartLabel && vCurrentId != vSubSideStartId);
 
-                //Add last vertex
-                currentSide.vertices.push_back(vCurrent);
-
-                if (vCurrent == vSideStart) {
-                    std::cout << "Warning 2: input mesh is not well-defined: single border chart!" << std::endl;
+#ifndef NDEBUG
+                if (vCurrentId == vSubSideStartId) {
+                    std::cout << "Warning 2: input mesh is not well-defined: single border chart with no corners!" << std::endl;
                 }
+#endif
 
-                if (newSide) {
+                if (newSubSide) {
+                    //Add last vertex
+                    currentSubSide.vertices.push_back(vCurrentId);
+
                     //Create new side
-                    int chartSideId = chart.chartSides.size();
-                    chart.chartSides.push_back(sideId);
+                    int chartSubSideId = chart.chartSubSides.size();
+                    chart.chartSubSides.push_back(subSideId);
 
-                    currentSide.incidentCharts[0] = chart.label;
-                    currentSide.incidentCharts[1] = adjChartLabel;
+                    currentSubSide.incidentCharts[0] = chart.label;
+                    currentSubSide.incidentCharts[1] = adjChartLabel;
 
-                    currentSide.length = length;
+                    currentSubSide.length = length;
 
-                    currentSide.incidentChartSideId[0] = chartSideId;
+                    currentSubSide.incidentChartSideId[0] = chartSubSideId;
 
                     if (adjChartLabel >= 0) {
-                        currentSide.isOnBorder = false;
-                    }
-                    else {
-                        currentSide.isOnBorder = true;
-                        currentSide.incidentChartSideId[1] = -1;
-                    }
-
-                    assert(currentSide.vertices.size() >= 2);
-                    currentSide.size = currentSide.vertices.size() - 1;
-
-                    chartData.sides.push_back(currentSide);
-
-                    chart.adjacentCharts.push_back(adjChartLabel);
-                }
-                else {
-                    //Add the side to other chart
-                    if (adjChartLabel >= 0) {
-                        int chartSideId = chart.chartSides.size();
-                        chart.chartSides.push_back(sideId);
-
-                        assert(chartData.sides[sideId].incidentCharts[1] == chart.label);
-                        chartData.sides[sideId].incidentChartSideId[1] = chartSideId;
+                        currentSubSide.isOnBorder = false;
 
                         chart.adjacentCharts.push_back(adjChartLabel);
                     }
+                    else {
+                        currentSubSide.isOnBorder = true;
+                        currentSubSide.incidentChartSideId[1] = -1;
+                    }
+
+                    assert(currentSubSide.vertices.size() >= 2);
+                    currentSubSide.size = currentSubSide.vertices.size() - 1;
+
+                    chartData.subSides.push_back(currentSubSide);
+
+
+                    //Pop last vertex
+                    if (currentSide.vertices.size() > 0) {
+                        assert(currentSide.vertices.back() == currentSubSide.vertices.front());
+                        currentSide.vertices.pop_back();
+                    }
+                    currentSide.vertices.insert(
+                                currentSide.vertices.end(),
+                                currentSubSide.vertices.begin(),
+                                currentSubSide.vertices.end());
+                }
+                else {
+                    assert(currentSubSide.vertices.size() == 0);
+
+                    //Add the side to other chart
+                    if (adjChartLabel >= 0) {
+                        int chartSideId = chart.chartSubSides.size();
+                        chart.chartSubSides.push_back(subSideId);
+
+                        assert(chartData.subSides[subSideId].incidentCharts[1] == chart.label);
+                        chartData.subSides[subSideId].incidentChartSideId[1] = chartSideId;
+
+                        chart.adjacentCharts.push_back(adjChartLabel);
+
+                        //Pop last vertex
+                        if (currentSide.vertices.size() > 0) {
+                            assert(currentSide.vertices.back() == chartData.subSides[subSideId].vertices.back());
+                            currentSide.vertices.pop_back();
+                        }
+
+                        //Add side vertices
+                        currentSide.vertices.insert(
+                                    currentSide.vertices.end(),
+                                    chartData.subSides[subSideId].vertices.rbegin(),
+                                    chartData.subSides[subSideId].vertices.rend());
+                    }
                 }
 
-            } while (vCurrent != vStart);
+                currentSide.subsides.push_back(subSideId);
+                currentSide.length += chartData.subSides[subSideId].length;
+                currentSide.size += chartData.subSides[subSideId].size;
+
+                if (isCorner) {
+                    chart.chartSides.push_back(currentSide);
+                    currentSide = ChartSide();
+                }
+
+            } while (vCurrentId != vStartId);
+
+            assert(isCorner);
 
         } while (!remainingVertices.empty());
+
+        assert(chart.chartSides.size() >= 3 && chart.chartSides.size() <= 6);
     }
 
     return chartData;
@@ -307,6 +396,19 @@ void findChartFaces(
             charts[chart.label] = chart;
         }
     }
+}
+
+double dotProjectedOntoPlane(
+        const PolyMesh::CoordType& edge1,
+        const PolyMesh::CoordType& edge2,
+        const PolyMesh::CoordType& normal)
+{
+    PolyMesh::CoordType proj1 = edge1 - (normal * edge1.dot(normal));
+    PolyMesh::CoordType proj2 = edge2 - (normal * edge2.dot(normal));
+    proj1.Normalize();
+    proj2.Normalize();
+
+    return proj1.dot(proj2);
 }
 
 }

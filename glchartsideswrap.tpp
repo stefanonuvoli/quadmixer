@@ -25,26 +25,31 @@ void GLChartSidesWrap<MeshType>::GLDraw()
         glDepthRange(0.0,0.999999);
         glLineWidth(4);
 
-        for (int sId = 0; sId < chartData->sides.size(); sId++) {
-            const QuadBoolean::ChartSide& side = chartData->sides[sId];
+        for (int sId = 0; sId < chartData->subSides.size(); sId++) {
+            const QuadBoolean::ChartSubSide& side = chartData->subSides[sId];
             for (int i = 0; i < side.vertices.size()-1; i++) {
-                vcg::glColor(vcg::Color4b(20,20,20,255));
+                vcg::glColor(vcg::Color4b(100,100,100,255));
                 glBegin(GL_LINES);
-                vcg::glVertex(side.vertices[i]->P());
-                vcg::glVertex(side.vertices[i+1]->P());
+                vcg::glVertex(mesh->vert[side.vertices[i]].P());
+                vcg::glVertex(mesh->vert[side.vertices[i+1]].P());
                 glEnd();
             }
 
-            typename MeshType::VertexType* centerV = side.vertices.at(side.vertices.size()/2);
+            assert(side.vertices.size()>1);
+
+            typename MeshType::VertexType& firstV = mesh->vert[side.vertices.at((side.vertices.size()-1)/2+1)];
+            typename MeshType::VertexType& endV = mesh->vert[side.vertices.at((side.vertices.size()-1)/2)];
+            typename MeshType::CoordType centerV = (endV.P() + firstV.P())/2;
 
             std::string sideInfo = std::to_string(side.size);
             if (this->ilpResult != nullptr) {
                 sideInfo += " -> " + std::to_string((*ilpResult)[sId]);
             }
 
-            drawTextGL(centerV->P().X(),
-                       centerV->P().Y(),
-                       centerV->P().Z(),
+            vcg::glColor(vcg::Color4b(0,0,0,255));
+            drawTextGL(centerV.X(),
+                       centerV.Y(),
+                       centerV.Z(),
                        sideInfo.c_str());
         }
 

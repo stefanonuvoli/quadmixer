@@ -44,7 +44,7 @@ public:
     void setNewSurface(PolyMesh* boolean);
     void setChartSides(ChartData* chartData);
     void setIlpResult(std::vector<int>* ilpResult);
-    void setQuadrangulatedSurface(PolyMesh* quadrangulatedNewSurface);
+    void setQuadrangulated(PolyMesh* quadrangulatedNewSurface);
     void setQuadLayoutQuadrangulated(QuadData* quadDataQuadrangulated);
     void setResult(PolyMesh* result);
     void setQuadLayoutResult(QuadData* quadDataResult);
@@ -94,7 +94,7 @@ private:
     GLPolyWrap<PolyMesh> glWrapBoolean;
     GLPolyWrap<PolyMesh> glWrapPreservedSurface;
     GLPolyWrap<PolyMesh> glWrapNewSurface;
-    GLPolyWrap<PolyMesh> glWrapQuadrangulatedSurface;
+    GLPolyWrap<PolyMesh> glWrapQuadrangulated;
     GLPolyWrap<PolyMesh> glWrapResult;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayout1;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayout2;

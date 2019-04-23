@@ -31,6 +31,7 @@ BOOSTPATH = /usr/include/boost
 VCGLIBPATH = /usr/include/vcglib
 CGALPATH = /usr/include/CGAL
 GUROBIPATH = /usr/include/gurobi
+MOSEKPATH = /usr/include/mosek/8/tools/platform/linux64x86
 PATTERNSPATH = $$PWD/patterns
 
 #Quad booleans
@@ -50,8 +51,8 @@ SOURCES += \
     glchartsideswrap.tpp \
     glarea.cpp \
     gldrawtext.cpp \
-    patterns.cpp \
-    quadrangulation.cpp
+    quadpatterns.cpp \
+    quadquadmapping.cpp
 
 HEADERS += \
     quadboolean.h \
@@ -69,8 +70,8 @@ HEADERS += \
     glchartsideswrap.h \
     glarea.h \
     gldrawtext.h \
-    patterns.h \
-    quadrangulation.h
+    quadpatterns.h \
+    quadquadmapping.h
 
 FORMS += \
     quadbooleanwindow.ui
@@ -100,6 +101,7 @@ MODULES += CGAL
 LIBS += -lmpfr -lgmp -lCGAL -frounding-math -lCGAL_Core
 LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
 
+#libigl
 MODULES += LIBIGL
 INCLUDEPATH += $$LIBIGLPATH/include/
 QMAKE_CXXFLAGS += -isystem $$LIBIGLPATH/include/
@@ -121,11 +123,18 @@ SOURCES += \
 #patterns
 include($$PATTERNSPATH/patterns.pri)
 
-#Compile gurobi
+#gurobi
 MODULES += GUROBI
 INCLUDEPATH += $$GUROBIPATH/include
 LIBS += -L$$GUROBIPATH/lib -lgurobi_g++5.2 -lgurobi81
 DEFINES += GUROBI_DEFINED
+
+#mosek
+MODULES += MOSEK
+INCLUDEPATH += $$MOSEKPATH/h
+LIBS += -L$$MOSEKPATH/bin -lfusion64 -lmosek64
+DEFINES += MOSEK_DEFINED
+
 
 message(Included modules: $$MODULES)
 

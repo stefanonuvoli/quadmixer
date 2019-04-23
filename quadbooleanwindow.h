@@ -30,12 +30,10 @@ public:
     void traceQuads();
     void computeBooleans();
     void getPreservedQuads();
-    void solveILP();
     void getPatchDecomposition();
+    void solveILP();
     void quadrangulateNewSurface();
     void getResult();
-
-    void updateVisibility();
 
 private slots:
 
@@ -65,6 +63,8 @@ private slots:
     void on_showResultLayoutCheckBox_stateChanged(int arg1);
 
     void on_resetTrackballButton_clicked();
+
+    void updateVisibility();
 
 private:
 
@@ -105,6 +105,7 @@ private:
     std::vector<int> ilpResult;
 
     PolyMesh quadrangulatedNewSurface;
+    std::vector<int> quadrangulatedNewSurfaceLabel;
     QuadData quadDataQuadrangulated;
 
     PolyMesh result;

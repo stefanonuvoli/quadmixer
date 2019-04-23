@@ -1,4 +1,4 @@
-#include "patterns.h"
+#include "quadpatterns.h"
 
 #include "patterns/ktmethod/patchgen/PatchParam.h"
 #include "patterns/meshtypes.h"
@@ -16,8 +16,8 @@ void computePattern(
         const Eigen::VectorXi &l,
         Eigen::MatrixXd& patchV,
         Eigen::MatrixXi& patchF,
-        std::vector<unsigned int>& borders,
-        std::vector<unsigned int>& corners)
+        std::vector<size_t>& borders,
+        std::vector<size_t>& corners)
 {
     PatchG<PMesh,patchgen::PatchParam> patch;
 
@@ -36,7 +36,7 @@ void computePattern(
     }
 
     patchgen::PatchParam param;
-    patch.generate_topology(l,param);
+    patch.generate_topology(l, param);
     patch.determine_geometry(l);
 
     VCGToEigen(patch.mesh, patchV, patchF, 4);

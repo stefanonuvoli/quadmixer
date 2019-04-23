@@ -79,9 +79,9 @@ void GLArea::setIlpResult(std::vector<int>* ilpResult)
     this->glWrapChartSides.ilpResult = ilpResult;
 }
 
-void GLArea::setQuadrangulatedSurface(PolyMesh* quadrangulatedNewSurface)
+void GLArea::setQuadrangulated(PolyMesh* quadrangulated)
 {
-    initMeshWrapper(this->glWrapQuadrangulatedSurface, quadrangulatedNewSurface);
+    initMeshWrapper(this->glWrapQuadrangulated, quadrangulated);
 }
 
 void GLArea::setQuadLayoutQuadrangulated(QuadData* quadDataQuadrangulated)
@@ -155,7 +155,7 @@ void GLArea::setChartSidesVisibility(bool visible)
 
 void GLArea::setQuadrangulatedVisibility(bool visible)
 {
-    glWrapQuadrangulatedSurface.visible = visible;
+    glWrapQuadrangulated.visible = visible;
 }
 
 void GLArea::setQuadLayoutQuadrangulatedVisibility(bool visible)
@@ -287,7 +287,7 @@ void GLArea::paintGL()
     glWrapQuadLayoutPreserved1.GLDraw();
     glWrapQuadLayoutPreserved2.GLDraw();
     glWrapChartSides.GLDraw();
-    glWrapQuadrangulatedSurface.GLDraw();
+    glWrapQuadrangulated.GLDraw();
     glWrapQuadLayoutQuadrangulated.GLDraw();
     glWrapResult.GLDraw();
     glWrapQuadLayoutResult.GLDraw();

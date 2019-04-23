@@ -115,19 +115,9 @@ public:
         }while(start.V()!=frontiers[0]);
         frontiers.pop_back();
 
-        //store corners
-        vector<int> corners;
-        for(int i=0;i<frontiers.size();i++){
-            if(frontiers[i]->IsS()){
-                corners.push_back(vcg::tri::Index(mesh,frontiers[i]));
-            }
-        }
-
         for (VertexPointer vp : frontiers) {
             this->borders.push_back(vcg::tri::Index(mesh,vp));
         }
-        this->corners = corners;
-
 
         Eigen::VectorXi current(numberSides);
         for(int i=0;i<numberSides;i++)
@@ -142,6 +132,7 @@ public:
                     double theta=side_angle*t;
                     frontiers[i]->P()=CoordType(cos(theta),sin(theta),0.0);
                     cout<<"corner index "<<vcg::tri::Index(mesh,frontiers[i])<<endl;
+                    this->corners.push_back(vcg::tri::Index(mesh,frontiers[i]));
                     t++;
                 }
             }

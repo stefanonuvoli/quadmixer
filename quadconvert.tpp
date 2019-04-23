@@ -2,8 +2,15 @@
 #include <vcg/complex/algorithms/inertia.h>
 #include <vcg/complex/complex.h>
 
+
 template<class M>
-void VCGToEigen(M& vcgMesh, Eigen::MatrixXd& V, Eigen::MatrixXi& F, int numVertices, int dim) {
+void VCGToEigen(
+        M& vcgMesh,
+        Eigen::MatrixXd& V,
+        Eigen::MatrixXi& F,
+        int numVertices,
+        int dim)
+{
     assert(dim >= 2);
     assert(numVertices > 2);
 
@@ -23,7 +30,68 @@ void VCGToEigen(M& vcgMesh, Eigen::MatrixXd& V, Eigen::MatrixXi& F, int numVerti
 }
 
 template<class M>
-void eigenToVCG(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, M& vcgMesh, int numVertices, int dim) {
+void VCGToEigenSelected(
+        M& vcgMesh,
+        Eigen::MatrixXd& V,
+        Eigen::MatrixXi& F,
+        std::vector<int>& vMap,
+        std::vector<int>& fMap,
+        int numVertices,
+        int dim)
+{
+    assert(dim >= 2);
+    assert(numVertices > 2);
+
+
+    int nSelectedVertices = 0;
+    for (size_t i = 0; i < vcgMesh.vert.size(); i++){
+        if (vcgMesh.vert[i].IsS()) {
+            nSelectedVertices++;
+        }
+    }
+    int nSelectedFaces = 0;
+    for (size_t i = 0; i < vcgMesh.face.size(); i++){
+        if (vcgMesh.face[i].IsS()) {
+            nSelectedFaces++;
+        }
+    }
+
+    V.resize(nSelectedVertices, dim);
+    F.resize(nSelectedFaces, numVertices);
+
+    vMap.resize(vcgMesh.vert.size(), -1);
+    int vId = 0;
+    for (size_t i = 0; i < vcgMesh.vert.size(); i++){
+        if (vcgMesh.vert[i].IsS()) {
+            vMap[i] = vId;
+            for (int j = 0; j < dim; j++) {
+                V(vId, j) = vcgMesh.vert[i].P()[j];
+            }
+            vId++;
+        }
+    }
+
+    fMap.resize(vcgMesh.face.size(), -1);
+    int fId = 0;
+    for (size_t i = 0; i < vcgMesh.face.size(); i++){
+        if (vcgMesh.face[i].IsS()) {
+            fMap[i] = fId;
+            for (int j = 0; j < vcgMesh.face[i].VN(); j++) {
+                F(fId, j) = vMap[vcg::tri::Index(vcgMesh, vcgMesh.face[i].V(j))];
+            }
+            fId++;
+        }
+    }
+}
+
+template<class M>
+void eigenToVCG(
+        const Eigen::MatrixXd& V,
+        const Eigen::MatrixXi& F,
+        M& vcgMesh,
+        int numVertices,
+        int dim)
+{
     assert(dim >= 2);
     assert(numVertices > 2);
 
@@ -37,7 +105,7 @@ void eigenToVCG(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F, M& vcgMesh, 
     vcg::tri::Allocator<M>::AddFaces(vcgMesh, static_cast<size_t>(F.rows()));
     for (int i = 0; i < F.rows(); i++) {
         vcgMesh.face[static_cast<size_t>(i)].Alloc(numVertices);
-        for (int j = 0; j < dim; j++) {
+        for (int j = 0; j < numVertices; j++) {
             vcgMesh.face[static_cast<size_t>(i)].V(j) = &(vcgMesh.vert[static_cast<size_t>(F(i,j))]);
         }
     }

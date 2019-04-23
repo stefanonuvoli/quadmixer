@@ -1,4 +1,4 @@
-#include "quadrangulation.h"
+#include "quadquadmapping.h"
 
 #include <igl/lscm.h>
 
@@ -21,33 +21,31 @@ Eigen::VectorXd barycentricToPoint(
         const Eigen::VectorXd& p);
 
 
-std::vector<double> getSideLengths(
-        const std::vector<std::vector<unsigned int>>& sides,
-        const Eigen::MatrixXd& vertices);
+//std::vector<double> getSideLengths(
+//        const std::vector<std::vector<size_t>>& sides,
+//        const Eigen::MatrixXd& vertices);
 
-double getSingleSideLength(
-        const std::vector<unsigned int>& side,
-        const Eigen::MatrixXd& vertices);
+//double getSingleSideLength(
+//        const std::vector<size_t>& side,
+//        const Eigen::MatrixXd& vertices);
 
 void computeQuadrangulation(
         const Eigen::MatrixXd& chartV,
         const Eigen::MatrixXi& chartF,
         const Eigen::MatrixXd& patchV,
         const Eigen::MatrixXi& patchF,
-        const std::vector<std::vector<unsigned int>>& chartSides,
-        const std::vector<std::vector<unsigned int>>& patchSides,
+        const std::vector<std::vector<size_t>>& chartSides,
         const std::vector<double>& chartSideLengths,
+        const std::vector<std::vector<size_t>>& patchSides,
         Eigen::MatrixXd& uvMap,
         Eigen::MatrixXd& quadrangulationV,
         Eigen::MatrixXi& quadrangulationF)
 {
-
-
     Eigen::VectorXi b;
     Eigen::MatrixXd bc;
 
     int chartBorderSize = 0;
-    for (const std::vector<unsigned int>& side : chartSides)
+    for (const std::vector<size_t>& side : chartSides)
         chartBorderSize += side.size()-1;
 
     b.resize(chartBorderSize);
@@ -56,8 +54,8 @@ void computeQuadrangulation(
     int fixedId = 0;
     for (size_t sId = 0; sId < chartSides.size(); sId++) {
         //Get first and last corner of the side
-        const unsigned int& firstPatchSideCornerId = patchSides[sId][0];
-        const unsigned int& lastPatchSideCornerId = patchSides[sId][patchSides[sId].size() - 1];
+        const size_t& firstPatchSideCornerId = patchSides[sId][0];
+        const size_t& lastPatchSideCornerId = patchSides[sId][patchSides[sId].size() - 1];
 
         //Coordinate of the current corner
         const Eigen::VectorXd& cornerCoord = patchV.row(firstPatchSideCornerId);
@@ -70,9 +68,10 @@ void computeQuadrangulation(
                 currentLength += (chartV.row(chartSides[sId][i]) - chartV.row(chartSides[sId][i-1])).norm();
             }
 
-            unsigned int vId = chartSides[sId][i];
+            size_t vId = chartSides[sId][i];
 
             double lengthRatio = currentLength / chartSideLengths[sId];
+            assert(lengthRatio >= 0 && lengthRatio < 1);
 
             const Eigen::VectorXd uv = cornerCoord + (vector * lengthRatio);
 
@@ -133,6 +132,7 @@ void computeQuadrangulation(
 
         quadrangulationV.row(i) = mappedPoint;
     }
+
     quadrangulationF = patchF;
 }
 
@@ -170,55 +170,85 @@ Eigen::VectorXd barycentricToPoint(
     return coordinates;
 }
 
-std::vector<std::vector<unsigned int>> getSides(
-        const std::vector<unsigned int>& borders,
-        const std::vector<unsigned int>& corners)
+std::vector<std::vector<size_t>> getPatchSides(
+        const std::vector<size_t>& borders,
+        const std::vector<size_t>& corners,
+        const Eigen::VectorXi& l)
 {
-    std::vector<std::vector<unsigned int>> sides(corners.size());
-    size_t bId = 0;
-    for (size_t sId = 0; sId < corners.size(); sId++) {
-        while (borders[bId] != corners[sId]) {
+    assert(corners.size() == l.size());
+
+    std::vector<std::vector<size_t>> sides(corners.size());
+    size_t startCornerId = 0;
+
+    bool foundSolution;
+    do {
+        assert(startCornerId < corners.size());
+
+        size_t bId = 0;
+        while (borders[bId] != corners[startCornerId]) {
             bId = (bId + 1) % borders.size();
         }
 
-        std::vector<unsigned int> side;
-        while (borders[bId] != corners[(sId + 1) % corners.size()]) {
-            side.push_back(borders[bId]);
+        foundSolution = true;
+        size_t cId = startCornerId;
+        size_t sId = 0;
+        do {
+            assert(borders[bId] == corners[cId]);
 
-            bId = (bId + 1) % borders.size();
-        }
-        side.push_back(corners[(sId + 1) % corners.size()]);
+            cId = (cId + 1) % corners.size();
 
-        sides[sId] = side;
-    }
+            std::vector<size_t> side;
+
+            while (borders[bId] != corners[cId]) {
+                side.push_back(borders[bId]);
+                bId = (bId + 1) % borders.size();
+            }
+
+            assert(borders[bId] == corners[cId]);
+            assert(side[side.size() - 1] != corners[cId]);
+
+            if (side.size() != l(sId)) {
+                foundSolution = false;
+                break;
+            }
+
+            side.push_back(corners[cId]);
+
+            sides[sId] = side;
+            sId++;
+        } while (startCornerId != cId);
+        std::cout << std::endl;
+
+        startCornerId++;
+    } while (!foundSolution);
 
     return sides;
 }
 
-std::vector<double> getSideLengths(
-        const std::vector<std::vector<unsigned int>>& sides,
-        const Eigen::MatrixXd& vertices)
-{
-    std::vector<double> lengths(sides.size());
+//std::vector<double> getSideLengths(
+//        const std::vector<std::vector<size_t>>& sides,
+//        const Eigen::MatrixXd& vertices)
+//{
+//    std::vector<double> lengths(sides.size());
 
-    for (size_t sId = 0; sId < sides.size(); sId++) {
-        lengths[sId] = getSingleSideLength(sides[sId], vertices);
-    }
+//    for (size_t sId = 0; sId < sides.size(); sId++) {
+//        lengths[sId] = getSingleSideLength(sides[sId], vertices);
+//    }
 
-    return lengths;
-}
+//    return lengths;
+//}
 
-double getSingleSideLength(
-        const std::vector<unsigned int>& side,
-        const Eigen::MatrixXd& vertices)
-{
-        double length = 0;
+//double getSingleSideLength(
+//        const std::vector<size_t>& side,
+//        const Eigen::MatrixXd& vertices)
+//{
+//        double length = 0;
 
-        for (size_t i = 1; i < side.size(); i++) {
-            length += (vertices.row(side[i]) - vertices.row(side[i-1])).norm();
-        }
+//        for (size_t i = 1; i < side.size(); i++) {
+//            length += (vertices.row(side[i]) - vertices.row(side[i-1])).norm();
+//        }
 
-        return length;
-}
+//        return length;
+//}
 
 }

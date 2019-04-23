@@ -5,8 +5,12 @@
 
 namespace QuadBoolean {
 
-int getAverageEdgeLength(ChartData& chartData);
-std::vector<int> solveChartSideILP(ChartData& chartData, double avgSubdivision);
+enum ILPMethod { LEASTSQUARES, ABS };
+
+std::vector<int> solveChartSideILP(
+        const ChartData& chartData,
+        const double weight,
+        const ILPMethod& method = LEASTSQUARES);
 
 }
 
