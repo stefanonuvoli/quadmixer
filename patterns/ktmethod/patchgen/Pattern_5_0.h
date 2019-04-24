@@ -110,7 +110,7 @@ namespace patchgen {
             (*pfi).Alloc(4); //V0, C[1], C[2], C[3]
             (*pfi).V(0)=&patch.vert[5];(*pfi).V(1)=&patch.vert[1];(*pfi).V(2)=&patch.vert[2];(*pfi).V(3)=&patch.vert[3];
 
-            cout<<"patch 5 -0 "<<endl;
+//            cout<<"patch 5 -0 "<<endl;
         }
         /*static VariableIndicators& get_variable_indicators() {
             static VariableIndicators variable_indicators;

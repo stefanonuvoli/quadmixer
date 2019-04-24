@@ -1,33 +1,30 @@
 #ifndef GLAREA_H
 #define GLAREA_H
 
-#include "quadcommontypes.h"
+#include "meshtypes.h"
 
-/// Opengl related imports
 #include <GL/glew.h>
 #include <QGLWidget>
 
-/// vcg imports
 #include <vcg/complex/complex.h>
 #include <vcg/complex/algorithms/update/bounding.h>
 #include <vcg/complex/algorithms/update/normal.h>
 #include <vcg/complex/algorithms/create/platonic.h>
 
-/// wrapper imports
 #include <wrap/io_trimesh/import.h>
 #include <wrap/gui/trackball.h>
 
-#include "glpolywrap.h"
-#include "glquadlayoutwrap.h"
-#include "glchartsideswrap.h"
+#include "globjects/glpolywrap.h"
+#include "globjects/glquadlayoutwrap.h"
+#include "globjects/glchartsideswrap.h"
 
 class GLArea : public QGLWidget
 {
     Q_OBJECT
 
     typedef QuadBoolean::PolyMesh PolyMesh;
-    typedef QuadBoolean::QuadData QuadData;
-    typedef QuadBoolean::ChartData ChartData;
+    typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
+    typedef QuadBoolean::internal::ChartData ChartData;
 
 public:
 
@@ -35,19 +32,19 @@ public:
 
     void setMesh1(PolyMesh* mesh);
     void setMesh2(PolyMesh* mesh);
-    void setQuadLayout1(QuadData* quadData1);
-    void setQuadLayout2(QuadData* quadData2);
+    void setQuadLayout1(QuadLayoutData* quadLayoutData1);
+    void setQuadLayout2(QuadLayoutData* quadLayoutData2);
     void setBoolean(PolyMesh* boolean);
     void setPreservedSurface(PolyMesh* boolean);
-    void setQuadLayoutPreserved1(QuadData* quadData2);
-    void setQuadLayoutPreserved2(QuadData* quadData2);
+    void setQuadLayoutPreserved1(QuadLayoutData* quadLayoutData2);
+    void setQuadLayoutPreserved2(QuadLayoutData* quadLayoutData2);
     void setNewSurface(PolyMesh* boolean);
     void setChartSides(ChartData* chartData);
     void setIlpResult(std::vector<int>* ilpResult);
     void setQuadrangulated(PolyMesh* quadrangulatedNewSurface);
-    void setQuadLayoutQuadrangulated(QuadData* quadDataQuadrangulated);
+    void setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangulated);
     void setResult(PolyMesh* result);
-    void setQuadLayoutResult(QuadData* quadDataResult);
+    void setQuadLayoutResult(QuadLayoutData* quadLayoutDataResult);
 
     void setMesh1Visibility(bool visible);
     void setMesh2Visibility(bool visible);
@@ -109,8 +106,8 @@ private:
     float sceneRadius;
 
     void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
-    void initQuadLayoutWrapper(GLQuadLayoutWrap<PolyMesh>& glWrap, QuadData* quadData);
-    void initChartSidesWrapper(GLChartSidesWrap<PolyMesh>& glWrap, ChartData* quadData);
+    void initQuadLayoutWrapper(GLQuadLayoutWrap<PolyMesh>& glWrap, QuadLayoutData* quadLayoutData);
+    void initChartSidesWrapper(GLChartSidesWrap<PolyMesh>& glWrap, ChartData* chartData);
 };
 
 #endif //GLAREA_H

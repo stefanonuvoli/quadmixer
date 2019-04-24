@@ -210,7 +210,7 @@ namespace patchgen {
             for (int i = 0; i < param.q[3]; ++i)
                insert_edgeloop<PatchT>(patch,startPos);
 
-            cout<<"patch 6 -- 2 "<<endl;
+//            cout<<"patch 6 -- 2 "<<endl;
         }
         /*static VariableIndicators& get_variable_indicators() {
             static VariableIndicators variable_indicators;

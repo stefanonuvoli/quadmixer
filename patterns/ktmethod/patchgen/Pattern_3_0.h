@@ -86,7 +86,7 @@ namespace patchgen {
             typename PatchT::FaceIterator pfi=vcg::tri::Allocator<PatchT>::AddFaces(patch,1);
             (*pfi).Alloc(4);
             (*pfi).V(0)=&patch.vert[0];(*pfi).V(1)=&patch.vert[3];(*pfi).V(2)=&patch.vert[1];(*pfi).V(3)=&patch.vert[2];
-            cout<<"patch 3 -0 "<<endl;
+//            cout<<"patch 3 -0 "<<endl;
         }
         /*static VariableIndicators& get_variable_indicators() {
             static VariableIndicators variable_indicators;

@@ -40,15 +40,15 @@ public:
         finish=false;
         mesh.Clear();
         numberSides=num_sides;
-        std::cout << "nsides =" << num_sides <<endl;
-        std::cout << "pattern=" << param.pattern_id;
+//        std::cout << "nsides =" << num_sides <<endl;
+//        std::cout << "pattern=" << param.pattern_id;
         for(int i=0;i<num_sides;i++)
             paddingValues.push_back(param.p[i]);
 
         std::string param_str = patchgen::get_param_str(num_sides, param.pattern_id, param);
-        if (!param_str.empty())
-            std::cout << ", param=" << param_str;
-        std::cout << "\n";
+//        if (!param_str.empty())
+//            std::cout << ", param=" << param_str;
+//        std::cout << "\n";
 
         // generate topology
         patchgen::generate_subtopology(num_sides, param.pattern_id, param, mesh);
@@ -73,13 +73,13 @@ public:
 
     void generate_topology(const Eigen::VectorXi& l, PatchParam& param) {
         int num_sides = l.size();
-        std::cout << "input=[";
-        for (int i = 0; i < num_sides; ++i)
-            std::cout << " " << l[i];
-        std::cout << " ]\n";
+//        std::cout << "input=[";
+//        for (int i = 0; i < num_sides; ++i)
+//            std::cout << " " << l[i];
+//        std::cout << " ]\n";
 
         param = patchgen::get_default_parameter(l);
-        std::cout << "\n";
+//        std::cout << "\n";
 
         generate_topology(param);
     }
@@ -122,7 +122,7 @@ public:
         Eigen::VectorXi current(numberSides);
         for(int i=0;i<numberSides;i++)
             current[i]=get_SideK(mesh,i).size()-1;
-        cout<<"current version "<<current.transpose()<<endl;
+//        cout<<"current version "<<current.transpose()<<endl;
         points.clear();
         if(num_sides>2){
             double side_angle = 2 * 3.1416 / num_sides;
@@ -131,7 +131,7 @@ public:
                 if(frontiers[i]->IsS()){
                     double theta=side_angle*t;
                     frontiers[i]->P()=CoordType(cos(theta),sin(theta),0.0);
-                    cout<<"corner index "<<vcg::tri::Index(mesh,frontiers[i])<<endl;
+//                    cout<<"corner index "<<vcg::tri::Index(mesh,frontiers[i])<<endl;
                     this->corners.push_back(vcg::tri::Index(mesh,frontiers[i]));
                     t++;
                 }
@@ -236,7 +236,7 @@ public:
         std::vector<std::pair<int,int>> correspondence;
         if(!utility::ispermuted(l_l,sideIndexes_l,correspondence)){
             finish=false;
-            cout<<"INCONSISTENTE PATCHES 2D"<<endl;
+//            cout<<"INCONSISTENTE PATCHES 2D"<<endl;
             return;
         }
         /*vector<int> corners=getCorners();
@@ -341,8 +341,8 @@ public:
              l[i]=borderpatch[i].size()-1;
              //cout<<"side "<<l[i]<<endl;
          }
-         if(l.sum()%2!=0)
-             cout<<"falhou"<<endl;
+//         if(l.sum()%2!=0)
+//             cout<<"falhou"<<endl;
          assert(l.sum()%2==0);
          vector<vector<typename MeshType::CoordType>> positions=borderpatch;
          /*if(l.sum()%2!=0){
@@ -364,27 +364,27 @@ public:
         auto side_indexR=vcg::tri::Allocator<MeshType>::template GetPerVertexAttribute<int>(mesh,std::string("RightSide"));
         bool founded=false;
         vcg::face::Pos<FaceType> start;
-        cout<<"side "<<side<<endl;
+//        cout<<"side "<<side<<endl;
         for(FaceIterator fi=mesh.face.begin();fi!=mesh.face.end();fi++){
             for(int k=0;k<fi->VN();k++){
                 if(fi->V(k)->IsS()){
-                    cout<<"corner "<<tri::Index(mesh,fi->V(k))<<endl;
-                    cout<<"sideL "<<side_indexL[fi->V(k)]<<endl;
-                    cout<<"sideR "<<side_indexR[fi->V(k)]<<endl;
+//                    cout<<"corner "<<tri::Index(mesh,fi->V(k))<<endl;
+//                    cout<<"sideL "<<side_indexL[fi->V(k)]<<endl;
+//                    cout<<"sideR "<<side_indexR[fi->V(k)]<<endl;
                     if(side_indexR[fi->V(k)]==side){
-                        cout<<"corner "<<tri::Index(mesh,fi->V(k))<<" is right"<<endl;
-                        cout<<"searching extreme"<<endl;
+//                        cout<<"corner "<<tri::Index(mesh,fi->V(k))<<" is right"<<endl;
+//                        cout<<"searching extreme"<<endl;
                         start.Set(&*fi,k,fi->V(k));
                         int count=0;
                         while(side_indexL[start.VFlip()]!=side && count<10){
                             start.NextE();
-                            cout<<"test "<<tri::Index(mesh,start.VFlip())<<endl;
-                            cout<<" sideL "<<side_indexL[start.VFlip()]<<endl;
-                            cout<<" sideR "<<side_indexR[start.VFlip()]<<endl;
+//                            cout<<"test "<<tri::Index(mesh,start.VFlip())<<endl;
+//                            cout<<" sideL "<<side_indexL[start.VFlip()]<<endl;
+//                            cout<<" sideR "<<side_indexR[start.VFlip()]<<endl;
                             count++;
                         }
                         start.FlipV();
-                        cout<<"extreme "<<tri::Index(mesh,fi->V(k))<<endl;
+//                        cout<<"extreme "<<tri::Index(mesh,fi->V(k))<<endl;
                         founded=true;
                         break;
                     }
@@ -409,16 +409,16 @@ public:
             }
         }while(side_indexL[start.V()]==side_indexR[start.V()]);
 
-        cout<<"side "<<side<<endl;
-        for(int i=0;i<result.size();i++)
-            cout<<" "<<result[i];
-        cout<<endl;
+//        cout<<"side "<<side<<endl;
+//        for(int i=0;i<result.size();i++)
+//            cout<<" "<<result[i];
+//        cout<<endl;
         return result;
     }
     void addPading(){
         assert(!paddingValues.empty());
         for(int i=0;i<paddingValues.size();i++){
-            cout<<"p["<<i<<"]= "<<paddingValues[i]<<endl;
+//            cout<<"p["<<i<<"]= "<<paddingValues[i]<<endl;
             for (int j = 0; j < paddingValues[i];j++)
                 addQuadStrip_on_sideK(mesh,(numberSides-i)%numberSides);
         }

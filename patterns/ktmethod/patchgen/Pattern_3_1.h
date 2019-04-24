@@ -161,7 +161,7 @@ namespace patchgen {
                insert_edgeloop<PatchT>(patch,startPos);
 
             //UpdateSelection<PatchT>::VertexFromBorderFlag(patch);
-            cout<<"patch 3 -- 1 "<<endl;
+//            cout<<"patch 3 -- 1 "<<endl;
         }
         /*static VariableIndicators& get_variable_indicators() {
             static VariableIndicators variable_indicators;

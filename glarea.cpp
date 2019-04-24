@@ -16,8 +16,6 @@ GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
 }
 
 
-
-
 void GLArea::setMesh1(PolyMesh* mesh1)
 {
     initMeshWrapper(this->glWrapMesh1, mesh1);
@@ -32,14 +30,14 @@ void GLArea::setMesh2(PolyMesh* mesh2){
     this->glWrapQuadLayoutPreserved2.mesh = mesh2;
 }
 
-void GLArea::setQuadLayout1(QuadData* quadData1)
+void GLArea::setQuadLayout1(QuadLayoutData* quadLayoutData1)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayout1, quadData1);
+    initQuadLayoutWrapper(this->glWrapQuadLayout1, quadLayoutData1);
 }
 
-void GLArea::setQuadLayout2(QuadData* quadData2)
+void GLArea::setQuadLayout2(QuadLayoutData* quadLayoutData2)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayout2, quadData2);
+    initQuadLayoutWrapper(this->glWrapQuadLayout2, quadLayoutData2);
 }
 
 void GLArea::setBoolean(PolyMesh* boolean)
@@ -50,17 +48,17 @@ void GLArea::setBoolean(PolyMesh* boolean)
 void GLArea::setPreservedSurface(PolyMesh* preservedSurface)
 {
     initMeshWrapper(this->glWrapPreservedSurface, preservedSurface);
-//    this->glWrapQuadDataPreserved.mesh = preservedSurface;
+//    this->glWrapQuadLayoutDataPreserved.mesh = preservedSurface;
 }
 
-void GLArea::setQuadLayoutPreserved1(QuadData* quadDataPreserved1)
+void GLArea::setQuadLayoutPreserved1(QuadLayoutData* quadLayoutDataPreserved1)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayoutPreserved1, quadDataPreserved1);
+    initQuadLayoutWrapper(this->glWrapQuadLayoutPreserved1, quadLayoutDataPreserved1);
 }
 
-void GLArea::setQuadLayoutPreserved2(QuadData* quadDataPreserved2)
+void GLArea::setQuadLayoutPreserved2(QuadLayoutData* quadLayoutDataPreserved2)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayoutPreserved2, quadDataPreserved2);
+    initQuadLayoutWrapper(this->glWrapQuadLayoutPreserved2, quadLayoutDataPreserved2);
 }
 
 void GLArea::setNewSurface(PolyMesh* newSurface)
@@ -84,9 +82,9 @@ void GLArea::setQuadrangulated(PolyMesh* quadrangulated)
     initMeshWrapper(this->glWrapQuadrangulated, quadrangulated);
 }
 
-void GLArea::setQuadLayoutQuadrangulated(QuadData* quadDataQuadrangulated)
+void GLArea::setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangulated)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayoutQuadrangulated, quadDataQuadrangulated);
+    initQuadLayoutWrapper(this->glWrapQuadLayoutQuadrangulated, quadLayoutDataQuadrangulated);
 }
 
 void GLArea::setResult(PolyMesh* result)
@@ -94,9 +92,9 @@ void GLArea::setResult(PolyMesh* result)
     initMeshWrapper(this->glWrapResult, result);
 }
 
-void GLArea::setQuadLayoutResult(QuadData* quadDataResult)
+void GLArea::setQuadLayoutResult(QuadLayoutData* quadLayoutDataResult)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayoutResult, quadDataResult);
+    initQuadLayoutWrapper(this->glWrapQuadLayoutResult, quadLayoutDataResult);
 }
 
 
@@ -220,10 +218,10 @@ void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
     glWrap.mesh = mesh;
 }
 
-void GLArea::initQuadLayoutWrapper(GLQuadLayoutWrap<PolyMesh> &glWrap, QuadData *quadData)
+void GLArea::initQuadLayoutWrapper(GLQuadLayoutWrap<PolyMesh> &glWrap, QuadLayoutData* quadLayoutData)
 {
-    assert(quadData != nullptr);
-    glWrap.quadData = quadData;
+    assert(quadLayoutData != nullptr);
+    glWrap.quadLayoutData = quadLayoutData;
 }
 
 void GLArea::initChartSidesWrapper(GLChartSidesWrap<PolyMesh> &glWrap, ChartData *chartData)
