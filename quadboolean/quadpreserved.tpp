@@ -58,44 +58,44 @@ void getPreservedSurfaceMesh(
 
 template<class TriangleMeshType>
 void getNewSurfaceMesh(
-        TriangleMeshType& triUnion,
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
+        TriangleMeshType& triResult,
+        const size_t& nFirstFaces,
+        const std::vector<int>& birthQuad1,
+        const std::vector<int>& birthQuad2,
         const std::vector<bool>& preservedQuad1,
         const std::vector<bool>& preservedQuad2,
         const Eigen::VectorXi& J,
         TriangleMeshType& newSurface)
 {
-    int nFirstFaces = triMesh1.face.size();
-
     //Selected the new surface triangle faces
-    std::vector<bool> isNewSurface(triUnion.face.size(), false);
+    std::vector<bool> isNewSurface(triResult.face.size(), false);
+
     for (int i = 0; i < J.rows(); i++) {
         int birthFace = J[i];
 
         //If the birth face is in the first mesh
         if (birthFace < nFirstFaces) {
             int firstMeshIndex = birthFace;
-            if (!preservedQuad1[triMesh1.face[firstMeshIndex].Q()]) {
+            if (!preservedQuad1[birthQuad1[firstMeshIndex]]) {
                 isNewSurface[i] = true;
             }
         }
         //The birth face is in the second mesh
         else {
-            int secondMeshIndex = birthFace-nFirstFaces;
-            if (!preservedQuad2[triMesh2.face[secondMeshIndex].Q()]) {
+            int secondMeshIndex = birthFace - nFirstFaces;
+            if (!preservedQuad2[birthQuad2[secondMeshIndex]]) {
                 isNewSurface[i] = true;
             }
         }
     }
 
-    vcg::tri::UpdateFlags<TriangleMeshType>::FaceClearS(triUnion);
-    for (size_t i = 0; i < triUnion.face.size(); i++) {
+    vcg::tri::UpdateFlags<TriangleMeshType>::FaceClearS(triResult);
+    for (size_t i = 0; i < triResult.face.size(); i++) {
         if (isNewSurface[i]) {
-            triUnion.face[i].SetS();
+            triResult.face[i].SetS();
         }
     }
-    vcg::tri::Append<TriangleMeshType, TriangleMeshType>::Mesh(newSurface, triUnion, true);
+    vcg::tri::Append<TriangleMeshType, TriangleMeshType>::Mesh(newSurface, triResult, true);
     vcg::tri::Clean<TriangleMeshType>::RemoveDuplicateVertex(newSurface);
     vcg::tri::Clean<TriangleMeshType>::RemoveUnreferencedVertex(newSurface);
 }
@@ -117,7 +117,7 @@ void computePreservedQuadForMesh(
     for (int i = 0; i < J.rows(); i++) {
         int birthFace = J[i] - offset;
 
-        //If the birth face is in the first mesh
+        //If the birth face is in the current mesh
         if (birthFace < triMesh.face.size()) {
             preservedQuad[birthQuad[birthFace]] = true;
         }
@@ -126,7 +126,7 @@ void computePreservedQuadForMesh(
     for (int i = 0; i < J.rows(); i++) {
         int birthFace = J[i] - offset;
 
-        //If the birth face is in the first mesh
+        //If the birth face is in the current mesh
         if (birthFace < triMesh.face.size()) {
             bool isNew = true;
 
@@ -140,7 +140,6 @@ void computePreservedQuadForMesh(
                 preservedQuad[birthQuad[birthFace]] = false;
             }
         }
-
     }
 }
 
@@ -161,6 +160,9 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
     std::set<int>& labels = quadLayoutData.labels;
     std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
 
+    if (labels.size() == 0) {
+        return newFaceLabel;
+    }
 
     int maxPatchId = *labels.rbegin();
 

@@ -26,6 +26,9 @@ QuadLayoutData<PolyMeshType> getQuadLayoutData(
             labels.insert(faceLabel[i]);
     }
 
+    if (labels.size() == 0)
+        return quadLayoutData;
+
     int maxPatchId = *labels.rbegin();
 
     quadPatches.resize(maxPatchId+1);

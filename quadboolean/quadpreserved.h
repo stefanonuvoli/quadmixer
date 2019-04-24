@@ -22,9 +22,10 @@ void getPreservedSurfaceMesh(
 
 template<class TriangleMeshType>
 void getNewSurfaceMesh(
-        TriangleMeshType& triUnion,
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
+        TriangleMeshType& triResult,
+        const size_t& nFirstFaces,
+        const std::vector<int>& birthQuad1,
+        const std::vector<int>& birthQuad2,
         const std::vector<bool>& preservedQuad1,
         const std::vector<bool>& preservedQuad2,
         const Eigen::VectorXi& J,

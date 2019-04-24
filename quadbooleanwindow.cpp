@@ -102,6 +102,8 @@ void QuadBooleanWindow::doComputeBooleans() {
     triMesh1.Clear();
     triMesh2.Clear();
     boolean.Clear();
+    birthQuad1.clear();
+    birthQuad2.clear();
 
     chrono::steady_clock::time_point start;
 
@@ -149,8 +151,12 @@ void QuadBooleanWindow::doComputeBooleans() {
 
 void QuadBooleanWindow::doGetSurfaces() {
     preservedSurface.Clear();
+    preservedSurfaceLabel.clear();
+    preservedQuad1.clear();
+    preservedQuad2.clear();
+    preservedFaceLabel1.clear();
+    preservedFaceLabel2.clear();
     newSurface.Clear();
-
 
     int minRectangleSide = ui.minRectangleSideSpinBox->value();
     bool mergeQuads = ui.mergeCheckBox->isChecked();
@@ -170,6 +176,9 @@ void QuadBooleanWindow::doGetSurfaces() {
                 birthQuad1, birthQuad2,
                 preservedQuad1, preservedQuad2);
 
+    preservedFaceLabel1 = quadTracerLabel1;
+    preservedFaceLabel2 = quadTracerLabel2;
+
     std::cout << std::endl << " >> "
               << "Find preserved quads: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
@@ -180,12 +189,12 @@ void QuadBooleanWindow::doGetSurfaces() {
     std::unordered_set<int> affectedPatches1;
     std::unordered_set<int> affectedPatches2;
 
-    QuadBoolean::internal::findAffectedPatches(mesh1, preservedQuad1, quadTracerLabel1, affectedPatches1);
-    QuadBoolean::internal::findAffectedPatches(mesh2, preservedQuad2, quadTracerLabel2, affectedPatches2);
+    QuadBoolean::internal::findAffectedPatches(mesh1, preservedQuad1, preservedFaceLabel1, affectedPatches1);
+    QuadBoolean::internal::findAffectedPatches(mesh2, preservedQuad2, preservedFaceLabel2, affectedPatches2);
 
     //Maximum rectangles in the patches
-    preservedFaceLabel1 = QuadBoolean::internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, quadTracerLabel1, preservedQuad1, minRectangleSide, true);
-    preservedFaceLabel2 = QuadBoolean::internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, quadTracerLabel2, preservedQuad2, minRectangleSide, true);
+    preservedFaceLabel1 = QuadBoolean::internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, minRectangleSide, true);
+    preservedFaceLabel2 = QuadBoolean::internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, minRectangleSide, true);
 
     std::cout << std::endl << " >> "
               << "Max rectangle: "
@@ -246,7 +255,14 @@ void QuadBooleanWindow::doGetSurfaces() {
                 preservedSurface, preservedSurfaceLabel);
 
     //New mesh (to be decomposed in patch)
-    QuadBoolean::internal::getNewSurfaceMesh(boolean, triMesh1, triMesh2, preservedQuad1, preservedQuad2, J, newSurface);
+    size_t nFirstFaces = triMesh1.face.size();
+    QuadBoolean::internal::getNewSurfaceMesh(
+                boolean,
+                nFirstFaces,
+                birthQuad1, birthQuad2,
+                preservedQuad1, preservedQuad2,
+                J,
+                newSurface);
 
     std::cout << std::endl << " >> "
               << "Get surfaces: "

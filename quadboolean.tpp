@@ -92,6 +92,10 @@ void quadBoolean(
                  J);
 
 
+
+     preservedFaceLabel1 = quadTracerLabel1;
+     preservedFaceLabel2 = quadTracerLabel2;
+
      //Find preserved quads
      internal::findPreservedQuads(
                  triMesh1, triMesh2,
@@ -102,12 +106,12 @@ void quadBoolean(
                  preservedQuad1, preservedQuad2);
 
      //Find affected patches
-     internal::findAffectedPatches(mesh1, preservedQuad1, quadTracerLabel1, affectedPatches1);
-     internal::findAffectedPatches(mesh2, preservedQuad2, quadTracerLabel2, affectedPatches2);
+     internal::findAffectedPatches(mesh1, preservedQuad1, preservedFaceLabel1, affectedPatches1);
+     internal::findAffectedPatches(mesh2, preservedQuad2, preservedFaceLabel2, affectedPatches2);
 
      //Maximum rectangles in the patches
-     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, quadTracerLabel1, preservedQuad1, minRectangleSide, true);
-     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, quadTracerLabel2, preservedQuad2, minRectangleSide, true);
+     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, minRectangleSide, true);
+     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, minRectangleSide, true);
 
      //Merge rectangular patches
      if (mergeQuads) {
@@ -132,13 +136,17 @@ void quadBoolean(
                  preservedFaceLabel1, preservedFaceLabel2,
                  preservedSurface, preservedSurfaceLabel);
 
+
      //New mesh (to be decomposed in patch)
-     internal::getNewSurfaceMesh(
+     size_t nFirstFaces = triMesh1.face.size();
+     QuadBoolean::internal::getNewSurfaceMesh(
                  boolean,
-                 triMesh1, triMesh2,
+                 nFirstFaces,
+                 birthQuad1, birthQuad2,
                  preservedQuad1, preservedQuad2,
                  J,
                  newSurface);
+
 
      //Get chart data
      chartData = internal::getCharts(newSurface, newSurfaceLabel);
