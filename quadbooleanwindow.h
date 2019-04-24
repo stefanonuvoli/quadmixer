@@ -2,11 +2,11 @@
 #define QUADBOOLEANWINDOW_H
 
 
-#include "quadcommontypes.h"
+#include "meshtypes.h"
 #include "ui_quadbooleanwindow.h"
 
-#include "quadpatches.h"
-#include "quadcharts.h"
+#include "quadboolean/quadlayoutdata.h"
+#include "quadboolean/quadcharts.h"
 
 class QuadBooleanWindow : public QMainWindow
 {
@@ -15,8 +15,8 @@ Q_OBJECT
 private:
 
     typedef QuadBoolean::PolyMesh PolyMesh;
-    typedef QuadBoolean::QuadData QuadData;
-    typedef QuadBoolean::ChartData TriangleChartData;
+    typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
+    typedef QuadBoolean::internal::ChartData TriangleChartData;
 
 public:
 
@@ -27,20 +27,20 @@ public:
 
     void setTrackballOnMeshes();
 
-    void traceQuads();
-    void computeBooleans();
-    void getPreservedQuads();
-    void getPatchDecomposition();
-    void solveILP();
-    void quadrangulateNewSurface();
-    void getResult();
+    void doTraceQuads();
+    void doComputeBooleans();
+    void doGetSurfaces();
+    void doPatchDecomposition();
+    void doSolveILP();
+    void doQuadrangulate();
+    void doGetResult();
 
 private slots:
 
     void on_loadMeshesPushButton_clicked();
     void on_quadTracerPushButton_clicked();
     void on_computeBooleanPushButton_clicked();
-    void on_getPreservedQuadsPushButton_clicked();
+    void on_getSurfacesPushButton_clicked();
     void on_decompositionPushButton_clicked();
     void on_ilpPushButton_clicked();
     void on_computeAllPushButton_clicked();
@@ -64,19 +64,14 @@ private slots:
 
     void on_resetTrackballButton_clicked();
 
-    void updateVisibility();
-
 private:
 
     Ui::mainWindow ui;
 
     PolyMesh mesh1;
     PolyMesh mesh2;
-    std::vector<int> tracerFaceLabel1;
-    std::vector<int> tracerFaceLabel2;
-
-    QuadData quadData1;
-    QuadData quadData2;
+    std::vector<int> quadTracerLabel1;
+    std::vector<int> quadTracerLabel2;
 
     PolyMesh triMesh1, triMesh2, boolean;
     Eigen::MatrixXd VA, VB, VR;
@@ -85,13 +80,16 @@ private:
     std::vector<int> birthQuad1;
     std::vector<int> birthQuad2;
 
+    QuadLayoutData quadLayoutData1;
+    QuadLayoutData quadLayoutData2;
+
     std::vector<bool> preservedQuad1;
     std::vector<bool> preservedQuad2;
 
     std::vector<int> preservedFaceLabel1;
     std::vector<int> preservedFaceLabel2;
-    QuadData quadDataPreserved1;
-    QuadData quadDataPreserved2;
+    QuadLayoutData quadLayoutDataPreserved1;
+    QuadLayoutData quadLayoutDataPreserved2;
 
     PolyMesh preservedSurface;
     std::vector<int> preservedSurfaceLabel;
@@ -100,16 +98,22 @@ private:
     std::vector<int> newSurfaceLabel;
     TriangleChartData newSurfaceChartData;
 
-    QuadBoolean::ChartData chartData;
+    QuadBoolean::internal::ChartData chartData;
 
     std::vector<int> ilpResult;
 
     PolyMesh quadrangulatedNewSurface;
     std::vector<int> quadrangulatedNewSurfaceLabel;
-    QuadData quadDataQuadrangulated;
+    QuadLayoutData quadLayoutDataQuadrangulatedNewSurface;
 
     PolyMesh result;
-    QuadData quadDataResult;
+    QuadLayoutData quadLayoutDataResult;
+
+
+    void updateVisibility();
+    void colorizeMesh(
+            PolyMesh& mesh,
+            const std::vector<int>& faceLabel);
 };
 
 #endif //QUADBOOLEANWINDOW_H

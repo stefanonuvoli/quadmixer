@@ -36,42 +36,47 @@ PATTERNSPATH = $$PWD/patterns
 
 #Quad booleans
 SOURCES += \
-    quadboolean.cpp \
-    quadpatchtracer.tpp \
-    quadpatches.cpp \
-    quadilp.cpp \
-    quadbooleanwindow.cpp \
-    quadconvert.tpp \
-    quadbooleaninterface.cpp \
-    quadutils.cpp \
-    glpolywrap.tpp \
     main.cpp \
-    quadcharts.cpp \
-    glquadlayoutwrap.tpp \
-    glchartsideswrap.tpp \
+    quadboolean.tpp \
+    quadbooleanwindow.cpp \
     glarea.cpp \
-    gldrawtext.cpp \
-    quadpatterns.cpp \
-    quadquadmapping.cpp
+    quadboolean/quadpatchtracer.tpp \
+    quadboolean/quadilp.cpp \
+    quadboolean/quadconvert.tpp \
+    quadboolean/quadutils.cpp \
+    quadboolean/quadcharts.tpp \
+    quadboolean/quadpatterns.cpp \
+    quadboolean/quadquadmapping.cpp \
+    quadboolean/quadlayoutdata.tpp \
+    quadboolean/quadpreserved.tpp \
+    quadboolean/quadlibiglbooleaninterface.cpp \
+    globjects/glpolywrap.tpp \
+    globjects/glquadlayoutwrap.tpp \
+    globjects/glchartsideswrap.tpp \
+    globjects/gldrawtext.cpp \
+    quadboolean/quadbooleansteps.tpp
 
 HEADERS += \
     quadboolean.h \
-    quadpatchtracer.h \
-    quadpatches.h \
-    quadilp.h \
     quadbooleanwindow.h \
-    quadbooleaninterface.h \
-    quadcommontypes.h \
-    quadconvert.h \
-    quadutils.h \
-    glpolywrap.h \
-    quadcharts.h \
-    glquadlayoutwrap.h \
-    glchartsideswrap.h \
     glarea.h \
-    gldrawtext.h \
-    quadpatterns.h \
-    quadquadmapping.h
+    quadboolean/quadpatchtracer.h \
+    quadboolean/quadilp.h \
+    quadboolean/quadconvert.h \
+    quadboolean/quadutils.h \
+    quadboolean/quadcharts.h \
+    quadboolean/quadpatterns.h \
+    quadboolean/quadquadmapping.h \
+    quadboolean/quadlayoutdata.h \
+    quadboolean/quadpreserved.h \
+    quadboolean/quadlibiglbooleaninterface.h \
+    globjects/glpolywrap.h \
+    globjects/glquadlayoutwrap.h \
+    globjects/glchartsideswrap.h \
+    globjects/gldrawtext.h \
+    meshtypes.h \
+    quadboolean/quadbooleansteps.h \
+    quadboolean/quadbooleanoperation.h
 
 FORMS += \
     quadbooleanwindow.ui

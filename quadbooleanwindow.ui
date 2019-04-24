@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1182</width>
-    <height>579</height>
+    <width>1693</width>
+    <height>567</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -89,9 +89,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="getPreservedQuadsPushButton">
+        <widget class="QPushButton" name="getSurfacesPushButton">
          <property name="text">
-          <string>Get preserved quads</string>
+          <string>Get surfaces</string>
          </property>
         </widget>
        </item>
@@ -141,6 +141,45 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QCheckBox" name="motorcycleCheckBox">
+         <property name="text">
+          <string>Motorcycle</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="operationFrame">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QRadioButton" name="operationUnionRadio">
+            <property name="text">
+             <string>Union</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="operationDifferenceRadio">
+            <property name="text">
+             <string>Difference</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
        <item>
         <widget class="QLabel" name="minRectangleSideLabel">
          <property name="text">
@@ -204,10 +243,44 @@
           <double>0.990000000000000</double>
          </property>
          <property name="singleStep">
-          <double>0.100000000000000</double>
+          <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>0.200000000000000</double>
+          <double>0.010000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="chartSmoothingLabel">
+         <property name="text">
+          <string>Chart smoothing</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="chartSmoothingSpinBox">
+         <property name="maximum">
+          <number>100</number>
+         </property>
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="meshSmoothingLabel">
+         <property name="text">
+          <string>Mesh smoothing</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="meshSmoothingSpinBox">
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>15</number>
          </property>
         </widget>
        </item>
@@ -417,7 +490,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1182</width>
+     <width>1693</width>
      <height>22</height>
     </rect>
    </property>
