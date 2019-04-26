@@ -123,6 +123,9 @@ void QuadBooleanWindow::doComputeBooleans() {
     if (ui.operationUnionRadio->isChecked()) {
         operation = QuadBoolean::Operation::UNION;
     }
+    else if (ui.operationIntersectionRadio->isChecked()) {
+        operation = QuadBoolean::Operation::INTERSECTION;
+    }
     else if (ui.operationDifferenceRadio->isChecked()) {
         operation = QuadBoolean::Operation::DIFFERENCE;
     }

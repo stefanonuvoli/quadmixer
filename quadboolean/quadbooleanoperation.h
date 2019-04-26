@@ -3,7 +3,7 @@
 
 namespace QuadBoolean {
 
-enum Operation { UNION, DIFFERENCE };
+enum Operation { UNION, INTERSECTION, DIFFERENCE };
 
 }
 

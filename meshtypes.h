@@ -34,7 +34,8 @@ class PolyFace : public vcg::Face<
         vcg::face::BitFlags,
         vcg::face::PFVAdj,
         vcg::face::PFFAdj,
-        vcg::face::CurvatureDird> {};
+        vcg::face::CurvatureDird,
+        vcg::face::Mark> {};
 
 class PolyEdge : public vcg::Edge<
         MyPolyTypes,

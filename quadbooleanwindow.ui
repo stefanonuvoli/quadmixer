@@ -163,7 +163,7 @@
           <item>
            <widget class="QRadioButton" name="operationUnionRadio">
             <property name="text">
-             <string>Union</string>
+             <string>U</string>
             </property>
             <property name="checked">
              <bool>true</bool>
@@ -171,9 +171,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QRadioButton" name="operationIntersectionRadio">
+            <property name="text">
+             <string>I</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QRadioButton" name="operationDifferenceRadio">
             <property name="text">
-             <string>Difference</string>
+             <string>D</string>
             </property>
            </widget>
           </item>

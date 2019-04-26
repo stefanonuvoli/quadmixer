@@ -66,8 +66,13 @@ void computeBooleanOperation(
     //Boolean operation on trimeshes
     if (operation == QuadBoolean::Operation::UNION)
         trimeshUnion(VA,FA,VB,FB,VR,FR,J);
-    else
+    else if (operation == QuadBoolean::Operation::INTERSECTION)
+        trimeshIntersection(VA,FA,VB,FB,VR,FR,J);
+    else if (operation == QuadBoolean::Operation::DIFFERENCE)
         trimeshDifference(VA,FA,VB,FB,VR,FR,J);
+    else
+        return;
+
 
     //Result on VCG
     eigenToVCG(VR, FR, result);
@@ -389,10 +394,9 @@ void quadrangulate(
     }
     vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedNewSurface, meshSmoothingIterations, 0.5, true);
 
-//NOT NEEDED?
-//    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
-//    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
-//    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
+    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
+    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
 }
 
 
