@@ -23,6 +23,7 @@ class GLArea : public QGLWidget
     Q_OBJECT
 
     typedef QuadBoolean::PolyMesh PolyMesh;
+    typedef QuadBoolean::TriangleMesh TriangleMesh;
     typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
     typedef QuadBoolean::internal::ChartData ChartData;
 
@@ -34,11 +35,11 @@ public:
     void setMesh2(PolyMesh* mesh);
     void setQuadLayout1(QuadLayoutData* quadLayoutData1);
     void setQuadLayout2(QuadLayoutData* quadLayoutData2);
-    void setBoolean(PolyMesh* boolean);
+    void setBoolean(TriangleMesh* boolean);
     void setPreservedSurface(PolyMesh* boolean);
     void setQuadLayoutPreserved1(QuadLayoutData* quadLayoutData2);
     void setQuadLayoutPreserved2(QuadLayoutData* quadLayoutData2);
-    void setNewSurface(PolyMesh* boolean);
+    void setNewSurface(TriangleMesh* boolean);
     void setChartSides(ChartData* chartData);
     void setIlpResult(std::vector<int>* ilpResult);
     void setQuadrangulated(PolyMesh* quadrangulatedNewSurface);
@@ -88,16 +89,16 @@ private:
 
     GLPolyWrap<PolyMesh> glWrapMesh1;
     GLPolyWrap<PolyMesh> glWrapMesh2;
-    GLPolyWrap<PolyMesh> glWrapBoolean;
+    GLPolyWrap<TriangleMesh> glWrapBoolean;
     GLPolyWrap<PolyMesh> glWrapPreservedSurface;
-    GLPolyWrap<PolyMesh> glWrapNewSurface;
+    GLPolyWrap<TriangleMesh> glWrapNewSurface;
     GLPolyWrap<PolyMesh> glWrapQuadrangulated;
     GLPolyWrap<PolyMesh> glWrapResult;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayout1;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayout2;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutPreserved1;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutPreserved2;
-    GLChartSidesWrap<PolyMesh> glWrapChartSides;
+    GLChartSidesWrap<TriangleMesh> glWrapChartSides;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulated;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutResult;
 
@@ -105,9 +106,12 @@ private:
     vcg::Point3f sceneCenter;
     float sceneRadius;
 
-    void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
-    void initQuadLayoutWrapper(GLQuadLayoutWrap<PolyMesh>& glWrap, QuadLayoutData* quadLayoutData);
-    void initChartSidesWrapper(GLChartSidesWrap<PolyMesh>& glWrap, ChartData* chartData);
+    template<class MeshType>
+    void initMeshWrapper(GLPolyWrap<MeshType>& glWrap, MeshType* mesh);
+    template<class MeshType>
+    void initQuadLayoutWrapper(GLQuadLayoutWrap<MeshType>& glWrap, QuadLayoutData* quadLayoutData);
+    template<class MeshType>
+    void initChartSidesWrapper(GLChartSidesWrap<MeshType>& glWrap, ChartData* chartData);
 };
 
 #endif //GLAREA_H

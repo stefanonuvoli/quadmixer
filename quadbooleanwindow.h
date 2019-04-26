@@ -15,6 +15,7 @@ Q_OBJECT
 private:
 
     typedef QuadBoolean::PolyMesh PolyMesh;
+    typedef QuadBoolean::TriangleMesh TriangleMesh;
     typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
     typedef QuadBoolean::internal::ChartData TriangleChartData;
 
@@ -73,7 +74,7 @@ private:
     std::vector<int> quadTracerLabel1;
     std::vector<int> quadTracerLabel2;
 
-    PolyMesh triMesh1, triMesh2, boolean;
+    TriangleMesh triMesh1, triMesh2, boolean;
     Eigen::MatrixXd VA, VB, VR;
     Eigen::MatrixXi FA, FB, FR;
     Eigen::VectorXi J;
@@ -94,7 +95,7 @@ private:
     PolyMesh preservedSurface;
     std::vector<int> preservedSurfaceLabel;
 
-    PolyMesh newSurface;
+    TriangleMesh newSurface;
     std::vector<int> newSurfaceLabel;
     TriangleChartData newSurfaceChartData;
 
@@ -111,8 +112,10 @@ private:
 
 
     void updateVisibility();
+
+    template<class MeshType>
     void colorizeMesh(
-            PolyMesh& mesh,
+            MeshType& mesh,
             const std::vector<int>& faceLabel);
 };
 

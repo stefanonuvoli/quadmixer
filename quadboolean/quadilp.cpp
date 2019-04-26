@@ -55,6 +55,9 @@ std::vector<int> solveChartSideILP(
 
 //                vars[i].set(GRB_DoubleAttr_Start, sideSubdivision);
             }
+            else {
+                vars[i] = model.addVar(subside.size-1, subside.size, 0.0, GRB_INTEGER, "s" + to_string(i));
+            }
         }
 
 
@@ -62,30 +65,33 @@ std::vector<int> solveChartSideILP(
         for (size_t i = 0; i < chartData.subSides.size(); i++) {
             const ChartSubSide& subside = chartData.subSides[i];
 
+            int sideSubdivision;
             //If it is not a border (free)
             if (!subside.isOnBorder) {
                 assert(subside.incidentCharts[0] >= 0 && subside.incidentCharts[1] >= 0);
                 assert(avgLength[subside.incidentCharts[0]] > 0 && avgLength[subside.incidentCharts[1]] > 0);
 
-
                 double incidentChartAverageLength = (avgLength[subside.incidentCharts[0]] + avgLength[subside.incidentCharts[1]])/2;
-                int sideSubdivision = static_cast<int>(std::round(subside.length / incidentChartAverageLength));
+                sideSubdivision = static_cast<int>(std::round(subside.length / incidentChartAverageLength));
+            }
+            else {
+                sideSubdivision = subside.size;
+            }
 
-                size_t dId = diff.size();
-                size_t aId = abs.size();
+            size_t dId = diff.size();
+            size_t aId = abs.size();
 
-                if (method == LEASTSQUARES) {
-                    obj += weight * (vars[i] - sideSubdivision) * (vars[i] - sideSubdivision);
-                }
-                else {
-                    diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
-                    abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
+            if (method == LEASTSQUARES) {
+                obj += weight * (vars[i] - sideSubdivision) * (vars[i] - sideSubdivision);
+            }
+            else {
+                diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
+                abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
 
-                    model.addConstr(diff[dId] == vars[i] - sideSubdivision, "dc" + to_string(dId));
-                    model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
+                model.addConstr(diff[dId] == vars[i] - sideSubdivision, "dc" + to_string(dId));
+                model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                    obj += weight * abs[aId];
-                }
+                obj += weight * abs[aId];
             }
         }
 
@@ -96,35 +102,51 @@ std::vector<int> solveChartSideILP(
                 //Quad case
                 if (nSides == 4) {
                     for (size_t j = 0; j <= 1; j++) {
-                        bool areBorders = true;
-
                         const ChartSide& side1 = chart.chartSides[j];
                         const ChartSide& side2 = chart.chartSides[(j+2)%4];
 
                         GRBLinExpr subSide1Sum = 0;
                         for (const size_t& subSideId : side1.subsides) {
-                            const ChartSubSide& subSide = chartData.subSides[subSideId];
-                            if (subSide.isOnBorder) {
-                                subSide1Sum += subSide.size;
-                            }
-                            else {
-                                subSide1Sum += vars[subSideId];
-                                areBorders = false;
-                            }
+                            subSide1Sum += vars[subSideId];
                         }
                         GRBLinExpr subSide2Sum = 0;
                         for (const size_t& subSideId : side2.subsides) {
-                            const ChartSubSide& subSide = chartData.subSides[subSideId];
-                            if (subSide.isOnBorder) {
-                                subSide2Sum += subSide.size;
-                            }
-                            else {
-                                subSide2Sum += vars[subSideId];
-                                areBorders = false;
-                            }
+                            subSide2Sum += vars[subSideId];
                         }
 
-                        if (!areBorders) {
+                        if (method == LEASTSQUARES) {
+                            obj += (1-weight) * (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
+                        }
+                        else {
+                            size_t dId = diff.size();
+                            size_t aId = abs.size();
+
+                            diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
+                            abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
+
+                            model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
+                            model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
+
+                            obj += (1-weight) * abs[aId];
+                        }
+                    }
+                }
+                //Other cases
+                else {
+                    for (size_t j1 = 0; j1 < nSides; j1++) {
+                        for (size_t j2 = j1+1; j2 < nSides; j2++) {
+                            const ChartSide& side1 = chart.chartSides[j1];
+                            const ChartSide& side2 = chart.chartSides[j2];
+                            GRBLinExpr subSide1Sum = 0;
+                            for (const size_t& subSideId : side1.subsides) {
+                                subSide1Sum += vars[subSideId];
+                            }
+                            GRBLinExpr subSide2Sum = 0;
+                            for (const size_t& subSideId : side2.subsides) {
+                                subSide2Sum += vars[subSideId];
+                            }
+
+
                             if (method == LEASTSQUARES) {
                                 obj += (1-weight) * (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
                             }
@@ -141,61 +163,6 @@ std::vector<int> solveChartSideILP(
                                 obj += (1-weight) * abs[aId];
                             }
                         }
-
-                    }
-                }
-                //Other cases
-                else {
-                    for (size_t j1 = 0; j1 < nSides; j1++) {
-                        for (size_t j2 = j1+1; j2 < nSides; j2++) {
-                            const ChartSide& side1 = chart.chartSides[j1];
-                            const ChartSide& side2 = chart.chartSides[j2];
-
-                            bool areBorders = true;
-
-                            GRBLinExpr subSide1Sum = 0;
-                            for (const size_t& subSideId : side1.subsides) {
-                                const ChartSubSide& subSide = chartData.subSides[subSideId];
-                                if (subSide.isOnBorder) {
-                                    subSide1Sum += subSide.size;
-                                }
-                                else {
-                                    subSide1Sum += vars[subSideId];
-                                    areBorders = false;
-                                }
-                            }
-                            GRBLinExpr subSide2Sum = 0;
-                            for (const size_t& subSideId : side2.subsides) {
-                                const ChartSubSide& subSide = chartData.subSides[subSideId];
-                                if (subSide.isOnBorder) {
-                                    subSide2Sum += subSide.size;
-                                }
-                                else {
-                                    subSide2Sum += vars[subSideId];
-                                    areBorders = false;
-                                }
-                            }
-
-
-                            if (!areBorders) {
-                                if (method == LEASTSQUARES) {
-                                    obj += (1-weight) * (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
-                                }
-                                else {
-                                    size_t dId = diff.size();
-                                    size_t aId = abs.size();
-
-                                    diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
-                                    abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
-
-                                    model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
-                                    model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
-
-                                    obj += (1-weight) * abs[aId];
-                                }
-                            }
-
-                        }
                     }
                 }
             }
@@ -206,17 +173,10 @@ std::vector<int> solveChartSideILP(
                 if (chart.faces.size() > 0) {
                     GRBLinExpr sumExp = 0;
                     for (const size_t& subSideId : chart.chartSubSides) {
-                        const ChartSubSide& subSide = chartData.subSides[subSideId];
-                        if (subSide.isOnBorder) {
-                            sumExp += subSide.size;
-                        }
-                        else {
-                            sumExp += vars[subSideId];
-                        }
+                        sumExp += vars[subSideId];
                     }
                     free[i] = model.addVar(2, GRB_INFINITY, 0.0, GRB_INTEGER, "f" + to_string(i));
                     model.addConstr(free[i]*2 == sumExp);
-                    model.addConstr(free[i]*2 + 1 == sumExp + 1);
                 }
             }
         }
@@ -234,13 +194,13 @@ std::vector<int> solveChartSideILP(
         model.optimize();
 
         for (size_t i = 0; i < chartData.subSides.size(); i++) {
-            const ChartSubSide& subSide = chartData.subSides[i];
-            if (subSide.isOnBorder) {
-                result[i] = subSide.size;
+            result[i] = static_cast<int>(std::round(vars[i].get(GRB_DoubleAttr_X)));
+
+#ifndef NDEBUG
+            if (chartData.subSides[i].isOnBorder && result[i] != chartData.subSides[i].size) {
+                std::cout << "Different border size: from " << result[i] << " to " << chartData.subSides[i].size << std::endl;
             }
-            else {
-                result[i] = static_cast<int>(std::round(vars[i].get(GRB_DoubleAttr_X)));
-            }
+#endif
 //            std::cout << subSide.size << " -> " << result[i] << std::endl;
         }
 

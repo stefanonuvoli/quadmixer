@@ -25,13 +25,14 @@ FINAL_RELEASE {
     message(Final Release!)
 }
 
-LIBIGLPATH = /usr/include/libigl
 EIGENPATH = /usr/include/eigen3
 BOOSTPATH = /usr/include/boost
-VCGLIBPATH = /usr/include/vcglib
 CGALPATH = /usr/include/CGAL
 GUROBIPATH = /usr/include/gurobi
-MOSEKPATH = /usr/include/mosek/8/tools/platform/linux64x86
+GLPATH = /usr/include/GL
+
+LIBIGLPATH = $$PWD/libigl
+VCGLIBPATH = $$PWD/vcglib
 PATTERNSPATH = $$PWD/patterns
 
 #Quad booleans
@@ -43,18 +44,18 @@ SOURCES += \
     quadboolean/quadpatchtracer.tpp \
     quadboolean/quadilp.cpp \
     quadboolean/quadconvert.tpp \
-    quadboolean/quadutils.cpp \
     quadboolean/quadcharts.tpp \
     quadboolean/quadpatterns.cpp \
     quadboolean/quadquadmapping.cpp \
     quadboolean/quadlayoutdata.tpp \
     quadboolean/quadpreserved.tpp \
     quadboolean/quadlibiglbooleaninterface.cpp \
+    quadboolean/quadbooleansteps.tpp \
     globjects/glpolywrap.tpp \
     globjects/glquadlayoutwrap.tpp \
     globjects/glchartsideswrap.tpp \
     globjects/gldrawtext.cpp \
-    quadboolean/quadbooleansteps.tpp
+    quadboolean/quadutils.tpp
 
 HEADERS += \
     quadboolean.h \
@@ -70,13 +71,15 @@ HEADERS += \
     quadboolean/quadlayoutdata.h \
     quadboolean/quadpreserved.h \
     quadboolean/quadlibiglbooleaninterface.h \
+    quadboolean/patch_decomposer.h \
+    quadboolean/field_tracer.h \
+    quadboolean/quadbooleansteps.h \
+    quadboolean/quadbooleanoperation.h \
     globjects/glpolywrap.h \
     globjects/glquadlayoutwrap.h \
     globjects/glchartsideswrap.h \
     globjects/gldrawtext.h \
-    meshtypes.h \
-    quadboolean/quadbooleansteps.h \
-    quadboolean/quadbooleanoperation.h
+    meshtypes.h
 
 FORMS += \
     quadbooleanwindow.ui
@@ -90,7 +93,7 @@ unix:!macx {
 
 #Compile glew
 DEFINES += GLEW_STATIC
-INCLUDEPATH += /usr/include/GL
+INCLUDEPATH += $$GLPATH
 
 #eigen
 MODULES += EIGEN
@@ -110,7 +113,6 @@ LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
 MODULES += LIBIGL
 INCLUDEPATH += $$LIBIGLPATH/include/
 QMAKE_CXXFLAGS += -isystem $$LIBIGLPATH/include/
-
 #vcglib
 MODULES += VCGLIB
 DEFINES += VCGLIB_DEFINED
@@ -134,94 +136,4 @@ INCLUDEPATH += $$GUROBIPATH/include
 LIBS += -L$$GUROBIPATH/lib -lgurobi_g++5.2 -lgurobi81
 DEFINES += GUROBI_DEFINED
 
-#mosek
-MODULES += MOSEK
-INCLUDEPATH += $$MOSEKPATH/h
-LIBS += -L$$MOSEKPATH/bin -lfusion64 -lmosek64
-DEFINES += MOSEK_DEFINED
-
-
 message(Included modules: $$MODULES)
-
-
-##QUADRANGULATION
-#SOURCES += \
-#    charts.cpp \
-#    patterns.cpp \
-#    quadrangulation.cpp \
-#    testquadrangulation.cpp \
-#    maintestquadrangulation.cpp
-#HEADERS += \
-#    charts.h \
-#    patterns.h \
-#    quadrangulation.h \
-#    testquadrangulation.h
-
-
-
-## Patch decomposition
-#HEADERS += \
-#    $$VCGLIBPATH/wrap/ply/plylib.h \
-#    $$VCGLIBPATH/wrap/gui/trackmode.h \
-#    $$VCGLIBPATH/wrap/gui/trackball.h \
-#    mainwindow.h \
-#    glarea.h \
-#    patchdecomposition.h
-#SOURCES += \
-#    $$VCGLIBPATH/wrap/ply/plylib.cpp \
-#    $$VCGLIBPATH/wrap/gui/trackmode.cpp \
-#    $$VCGLIBPATH/wrap/gui/trackball.cpp \
-#    mainwindow.cpp \
-#    glarea.cpp \
-#    mainpatchdecomposition.cpp \
-#    patchdecomposition.cpp
-#FORMS += mainwindow.ui
-#LIBS += -lGLEW
-
-
-
-#DEFINES += MULTI_LABEL_OPTIMIZATION_INCLUDED
-#INCLUDEPATH += $$PWD/$$MULTILABELOPTIMIZATIONPATH
-#SOURCES += \
-#    $$MULTILABELOPTIMIZATIONPATH/GCoptimization.cpp \
-#    $$MULTILABELOPTIMIZATIONPATH/graph.cpp \
-#    $$MULTILABELOPTIMIZATIONPATH/LinkedBlockList.cpp \
-#    $$MULTILABELOPTIMIZATIONPATH/maxflow.cpp \
-#    $$MULTILABELOPTIMIZATIONPATH/example.cpp
-
-
-
-#CINOLIBPATH = /usr/include/cinolib
-#MULTILABELOPTIMIZATIONPATH = $$PWD/MultiLabelOptimization
-#DIRECTIONALPATH = /usr/include/Directional
-
-##cg3
-#CONFIG += CG3_CORE CG3_MESHES
-#include(../cg3lib/cg3.pri)
-#DEFINES += CG3_IGNORE_TYPESAFE_SERIALIZATION_CHECK
-
-##Directional
-#INCLUDEPATH += $$DIRECTIONALPATH/include/
-
-##cinolib
-#DEFINES += CINOLIB_DEFINED
-#MODULES += CINOLIB
-
-#DEFINES += CINOLIB_USES_OPENGL
-#DEFINES += CINOLIB_USES_QT
-
-#macx{
-#    QMAKE_CXXFLAGS   = -Wno-c++11-extensions
-#}
-#INCLUDEPATH     += $$CINOLIBPATH/include/ #-> link to cinolib
-#QMAKE_CXXFLAGS += -isystem $$CINOLIBPATH #-> link to cinolib
-
-## just for Linux
-#unix:!macx {
-#    DEFINES += GL_GLEXT_PROTOTYPES
-#    LIBS    += -lGLU
-#}
-
-## Compile glew
-#DEFINES += GLEW_STATIC
-#INCLUDEPATH += /usr/include/GL

@@ -10,8 +10,9 @@
 namespace QuadBoolean {
 namespace internal {
 
-std::vector<int> splitQuadInTriangle(PolyMesh& mesh) {
-    typedef PolyMesh::VertexType VertexType;
+template <class PolyMeshType>
+std::vector<int> splitQuadInTriangle(PolyMeshType& mesh) {
+    typedef typename PolyMeshType::VertexType VertexType;
 
     std::vector<int> birthQuad(mesh.face.size()*2, -1);
 
@@ -34,7 +35,7 @@ std::vector<int> splitQuadInTriangle(PolyMesh& mesh) {
 
             size_t newFaceId = mesh.face.size();
 
-            vcg::tri::Allocator<PolyMesh>::AddFaces(mesh,1);
+            vcg::tri::Allocator<PolyMeshType>::AddFaces(mesh,1);
             mesh.face.back().Alloc(3);
             mesh.face.back().V(0) = v[startIndex];
             mesh.face.back().V(1) = v[(startIndex + 1)%4];

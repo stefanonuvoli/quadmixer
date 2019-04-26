@@ -40,7 +40,7 @@ void GLArea::setQuadLayout2(QuadLayoutData* quadLayoutData2)
     initQuadLayoutWrapper(this->glWrapQuadLayout2, quadLayoutData2);
 }
 
-void GLArea::setBoolean(PolyMesh* boolean)
+void GLArea::setBoolean(TriangleMesh* boolean)
 {
     initMeshWrapper(this->glWrapBoolean, boolean);
 }
@@ -61,7 +61,7 @@ void GLArea::setQuadLayoutPreserved2(QuadLayoutData* quadLayoutDataPreserved2)
     initQuadLayoutWrapper(this->glWrapQuadLayoutPreserved2, quadLayoutDataPreserved2);
 }
 
-void GLArea::setNewSurface(PolyMesh* newSurface)
+void GLArea::setNewSurface(TriangleMesh* newSurface)
 {
     initMeshWrapper(this->glWrapNewSurface, newSurface);
     glWrapChartSides.mesh = newSurface;
@@ -203,28 +203,30 @@ void GLArea::setSceneCenter(const vcg::Point3f &value)
 
 
 
-
-void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
+template<class MeshType>
+void GLArea::initMeshWrapper(GLPolyWrap<MeshType>& glWrap, MeshType* mesh) {
     assert(mesh != nullptr);
 
-    //PolygonalAlgorithm<MyQuadMesh>::UpdateFaceNormals(*this);
-    vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(*mesh);
-    vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*mesh);
+    //PolygonalAlgorithm<MeshType>::UpdateFaceNormals(*this);
+    vcg::PolygonalAlgorithm<MeshType>::UpdateFaceNormalByFitting(*mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(*mesh);
 
-    vcg::tri::UpdateBounding<PolyMesh>::Box(*mesh);
-    vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(*mesh);
-    vcg::tri::UpdateNormal<PolyMesh>::PerFaceNormalized(*mesh);
+    vcg::tri::UpdateBounding<MeshType>::Box(*mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerVertexNormalizedPerFace(*mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(*mesh);
 
     glWrap.mesh = mesh;
 }
 
-void GLArea::initQuadLayoutWrapper(GLQuadLayoutWrap<PolyMesh> &glWrap, QuadLayoutData* quadLayoutData)
+template<class MeshType>
+void GLArea::initQuadLayoutWrapper(GLQuadLayoutWrap<MeshType> &glWrap, QuadLayoutData* quadLayoutData)
 {
     assert(quadLayoutData != nullptr);
     glWrap.quadLayoutData = quadLayoutData;
 }
 
-void GLArea::initChartSidesWrapper(GLChartSidesWrap<PolyMesh> &glWrap, ChartData *chartData)
+template<class MeshType>
+void GLArea::initChartSidesWrapper(GLChartSidesWrap<MeshType> &glWrap, ChartData *chartData)
 {
     assert(chartData != nullptr);
     glWrap.chartData = chartData;

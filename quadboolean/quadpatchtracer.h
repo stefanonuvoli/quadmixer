@@ -1,5 +1,5 @@
-#ifndef QUADRANGULATION_QUADPATCHTRACER_H
-#define QUADRANGULATION_QUADPATCHTRACER_H
+#ifndef QUADPATCHTRACER_H
+#define QUADPATCHTRACER_H
 
 #include <set>
 #include <vector>
@@ -49,4 +49,4 @@ public:
 
 #include "quadpatchtracer.tpp"
 
-#endif // QUADRANGULATION_QUADPATCHTRACER_H
+#endif // QUADPATCHTRACER_H

@@ -291,21 +291,24 @@ void QuadBooleanWindow::doPatchDecomposition() {
 
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel.resize(newSurface.face.size(), -1);
+    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface);
 
-    //TODO DELETE
-    newSurface.Clear();
-    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(newSurface, preservedSurface);
-    std::vector<int> birthQuad = QuadBoolean::internal::splitQuadInTriangle(newSurface);
-    newSurfaceLabel.resize(newSurface.face.size(), -1);
-    for (size_t i = 0; i < newSurface.face.size(); i++) {
-        newSurfaceLabel[i] = preservedSurfaceLabel[birthQuad[i]];
-    }
-    vcg::tri::Clean<PolyMesh>::RemoveDuplicateVertex(newSurface);
-    vcg::tri::Clean<PolyMesh>::RemoveUnreferencedVertex(newSurface);
-    vcg::tri::UpdateNormal<PolyMesh>::PerFaceNormalized(newSurface);
-    vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(newSurface);
-    vcg::tri::UpdateTopology<PolyMesh>::FaceFace(newSurface);
+    //TEST
+
+//    newSurfaceLabel.resize(newSurface.face.size(), -1);
+//    newSurface.Clear();
+//    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(newSurface, preservedSurface);
+//    std::vector<int> birthQuad = QuadBoolean::internal::splitQuadInTriangle(newSurface);
+//    newSurfaceLabel.resize(newSurface.face.size(), -1);
+//    for (size_t i = 0; i < newSurface.face.size(); i++) {
+//        newSurfaceLabel[i] = preservedSurfaceLabel[birthQuad[i]];
+//    }
+//    vcg::tri::Clean<PolyMesh>::RemoveDuplicateVertex(newSurface);
+//    vcg::tri::Clean<PolyMesh>::RemoveUnreferencedVertex(newSurface);
+//    vcg::tri::UpdateNormal<PolyMesh>::PerFaceNormalized(newSurface);
+//    vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(newSurface);
+//    vcg::tri::UpdateTopology<PolyMesh>::FaceFace(newSurface);
+
     //-----------
 
     std::cout << std::endl << " >> "
@@ -469,7 +472,7 @@ void QuadBooleanWindow::on_computeBooleanPushButton_clicked()
     doComputeBooleans();
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(boolean, "results/boolean.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "results/boolean.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
     ui.showMesh1CheckBox->setChecked(false);
@@ -514,7 +517,7 @@ void QuadBooleanWindow::on_getSurfacesPushButton_clicked()
     ui.glArea->updateGL();
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(newSurface, "results/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "results/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "results/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 }
@@ -542,7 +545,7 @@ void QuadBooleanWindow::on_decompositionPushButton_clicked()
     ui.glArea->updateGL();
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(newSurface, "results/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "results/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 }
 
@@ -767,9 +770,9 @@ void QuadBooleanWindow::updateVisibility()
     ui.glArea->setQuadLayoutResultVisibility(ui.showResultLayoutCheckBox->isChecked());
 }
 
-
+template<class MeshType>
 void QuadBooleanWindow::colorizeMesh(
-        PolyMesh& mesh,
+        MeshType& mesh,
         const std::vector<int>& faceLabel)
 {
     std::set<int> faceLabelSet;
@@ -779,12 +782,17 @@ void QuadBooleanWindow::colorizeMesh(
     float subd = (float) 1 / (std::max(static_cast<size_t>(1), faceLabelSet.size() - 1));
 
     for (size_t i = 0; i < mesh.face.size(); i++) {
-        if (faceLabel[i] >= 0) {
+        if (faceLabel[i] == 3) {
             vcg::Color4b color;
             color.SetHSVColor(subd * std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])), 1.0, 1.0);
 
 //            color=vcg::Color4b::Scatter(faceLabel.size(),std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])));
 
+            mesh.face[i].C() = color;
+        }
+        else {
+
+            vcg::Color4b color(1.0,1.0,1.0,255);
             mesh.face[i].C() = color;
         }
     }

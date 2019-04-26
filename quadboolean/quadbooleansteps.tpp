@@ -5,6 +5,7 @@
 #include "quadpreserved.h"
 #include "quadilp.h"
 #include "quadconvert.h"
+#include "patch_decomposer.h"
 #include "quadpatterns.h"
 #include "quadquadmapping.h"
 #include "quadlibiglbooleaninterface.h"
@@ -39,10 +40,13 @@ void triangulateQuadMesh(
         std::vector<int>& birthQuad)
 {
     //Copy
-    vcg::tri::Append<TriangleMeshType, PolyMeshType>::Mesh(triMesh, mesh);
+    PolyMeshType tmpPoly;
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpPoly, mesh);
 
     //Triangulate and get birth data
-    birthQuad = splitQuadInTriangle(triMesh);
+    birthQuad = splitQuadInTriangle(tmpPoly);
+
+    vcg::tri::Append<TriangleMeshType, PolyMeshType>::Mesh(triMesh, tmpPoly);
 }
 
 template<class TriangleMeshType>
@@ -60,8 +64,8 @@ void computeBooleanOperation(
         Eigen::VectorXi& J)
 {
     //Get trimeshes
-    vcg::tri::MeshToMatrix<PolyMesh>::GetTriMeshData(triMesh1, FA, VA);
-    vcg::tri::MeshToMatrix<PolyMesh>::GetTriMeshData(triMesh2, FB, VB);
+    vcg::tri::MeshToMatrix<TriangleMeshType>::GetTriMeshData(triMesh1, FA, VA);
+    vcg::tri::MeshToMatrix<TriangleMeshType>::GetTriMeshData(triMesh2, FB, VB);
 
     //Boolean operation on trimeshes
     if (operation == QuadBoolean::Operation::UNION)
@@ -201,8 +205,8 @@ void quadrangulate(
         //Input mesh
         Eigen::MatrixXd chartV;
         Eigen::MatrixXi chartF;
-        vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(newSurface);
-        vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(newSurface);
+        vcg::tri::UpdateFlags<TriangleMeshType>::FaceClearS(newSurface);
+        vcg::tri::UpdateFlags<TriangleMeshType>::VertexClearS(newSurface);
         for (const size_t& fId : chart.faces) {
             newSurface.face[fId].SetS();
             for (int k = 0; k < newSurface.face[fId].VN(); k++) {
@@ -394,9 +398,29 @@ void quadrangulate(
     }
     vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedNewSurface, meshSmoothingIterations, 0.5, true);
 
-    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
-    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
-    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
+    //NOT NEEDED?
+//    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
+//    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
+//    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
+}
+
+template<class TriangleMeshType>
+std::vector<int> getPatchDecomposition(TriangleMeshType& newSurface)
+{
+    std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
+
+    PatchDecomposer<TriangleMeshType> decomposer(newSurface);
+    typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
+    std::vector<std::vector<size_t>> partitions;
+    decomposer.SetParam(parameters);
+    decomposer.BatchProcess(partitions);
+
+    for (size_t pId = 0; pId < partitions.size(); pId++) {
+        for (const size_t& fId : partitions[pId])
+            newSurfaceLabel[fId] = static_cast<int>(pId);
+    }
+
+    return newSurfaceLabel;
 }
 
 

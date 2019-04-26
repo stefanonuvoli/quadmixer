@@ -50,33 +50,37 @@ class PolyMesh : public vcg::tri::TriMesh<
 
 ///* ----- Triangle mesh ----- */
 
-//class TriangleVertex;
-//class TriangleFace;
-//struct MyTriangleTypes : public UsedTypes<
-//        Use<TriangleVertex>::AsVertexType,
-//        Use<TriangleFace>::AsFaceType>{};
-//class TriangleVertex : public vcg::Vertex<
-//        MyTriangleTypes,
-//        vcg::vertex::Coord3d,
-//        vcg::vertex::Normal3d,
-//        vcg::vertex::Color4b,
-//        vcg::vertex::Qualityd,
-//        vcg::vertex::BitFlags,
-//        vcg::vertex::CurvatureDird>{};
+class TriangleVertex;
+class TriangleFace;
+struct MyTriangleTypes : public vcg::UsedTypes<
+        vcg::Use<TriangleVertex>::AsVertexType,
+        vcg::Use<TriangleFace>::AsFaceType>{};
 
-//class TriangleFace : public vcg::Face<
-//        MyTriangleTypes,
-//        vcg::face::VertexRef,
-//        vcg::face::Normal3d,
-//        vcg::face::Color4b,
-//        vcg::face::Qualityd,
-//        vcg::face::BitFlags,
-//        vcg::face::FFAdj,
-//        vcg::face::CurvatureDird> {};
+class TriangleVertex : public vcg::Vertex<
+        MyTriangleTypes,
+        vcg::vertex::Coord3d,
+        vcg::vertex::Normal3d,
+        vcg::vertex::VFAdj,
+        vcg::vertex::Color4b,
+        vcg::vertex::Qualityd,
+        vcg::vertex::BitFlags,
+        vcg::vertex::CurvatureDird>{};
 
-//class TriangleMesh : public vcg::tri::TriMesh<
-//        std::vector<TriangleVertex>,
-//        std::vector<TriangleFace> > {};
+class TriangleFace : public vcg::Face<
+        MyTriangleTypes,
+        vcg::face::VertexRef,
+        vcg::face::Normal3d,
+        vcg::face::Color4b,
+        vcg::face::Qualityd,
+        vcg::face::BitFlags,
+        vcg::face::FFAdj,
+        vcg::face::VFAdj,
+        vcg::face::CurvatureDird,
+        vcg::face::Mark> {};
+
+class TriangleMesh : public vcg::tri::TriMesh<
+        std::vector<TriangleVertex>,
+        std::vector<TriangleFace> > {};
 
 }
 

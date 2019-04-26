@@ -6,13 +6,12 @@
 namespace QuadBoolean {
 namespace internal {
 
-std::vector<int> splitQuadInTriangle(PolyMesh& mesh);
-
-void colorizeMesh(
-        PolyMesh& mesh,
-        const std::vector<int>& faceLabel);
+template <class PolyMeshType>
+std::vector<int> splitQuadInTriangle(PolyMeshType& mesh);
 
 }
 }
+
+#include "quadutils.tpp"
 
 #endif // QUADUTILS_H

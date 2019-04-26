@@ -77,6 +77,9 @@ void quadrangulate(
         PolyMeshType& quadrangulatedNewSurface,
         std::vector<int>& quadrangulatedNewSurfaceLabel);
 
+template<class TriangleMeshType>
+std::vector<int> getPatchDecomposition(TriangleMeshType& newSurface);
+
 }
 }
 

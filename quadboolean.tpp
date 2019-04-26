@@ -91,8 +91,6 @@ void quadBoolean(
                  FA, FB, FR,
                  J);
 
-
-
      preservedFaceLabel1 = quadTracerLabel1;
      preservedFaceLabel2 = quadTracerLabel2;
 
@@ -115,18 +113,18 @@ void quadBoolean(
 
      //Merge rectangular patches
      if (mergeQuads) {
-         int nMerged1 = mergeQuadPatches(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
-         int nMerged2 = mergeQuadPatches(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
+         int nMerged1 = internal::mergeQuadPatches(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
+         int nMerged2 = internal::mergeQuadPatches(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
      }
      if (deleteSmall) {
          //Delete small patches
-         int nSmall1 = deleteSmallQuadPatches(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
-         int nSmall2 = deleteSmallQuadPatches(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
+         int nSmall1 = internal::deleteSmallQuadPatches(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
+         int nSmall2 = internal::deleteSmallQuadPatches(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
      }
      if (deleteNonConnected) {
          //Delete non-connected patches
-         int nNonConnected1 = deleteNonConnectedQuadPatches(mesh1, preservedFaceLabel1, preservedQuad1);
-         int nNonConnected2 = deleteNonConnectedQuadPatches(mesh2, preservedFaceLabel2, preservedQuad2);
+         int nNonConnected1 = internal::deleteNonConnectedQuadPatches(mesh1, preservedFaceLabel1, preservedQuad1);
+         int nNonConnected2 = internal::deleteNonConnectedQuadPatches(mesh2, preservedFaceLabel2, preservedQuad2);
      }
 
      //Get mesh of the preserved surface
@@ -139,7 +137,8 @@ void quadBoolean(
 
      //New mesh (to be decomposed in patch)
      size_t nFirstFaces = triMesh1.face.size();
-     QuadBoolean::internal::getNewSurfaceMesh(
+
+     internal::getNewSurfaceMesh(
                  boolean,
                  nFirstFaces,
                  birthQuad1, birthQuad2,
@@ -147,6 +146,9 @@ void quadBoolean(
                  J,
                  newSurface);
 
+
+     //Get patch decomposition of the new surface
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface);
 
      //Get chart data
      chartData = internal::getCharts(newSurface, newSurfaceLabel);
