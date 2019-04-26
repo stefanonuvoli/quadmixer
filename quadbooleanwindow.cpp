@@ -782,17 +782,12 @@ void QuadBooleanWindow::colorizeMesh(
     float subd = (float) 1 / (std::max(static_cast<size_t>(1), faceLabelSet.size() - 1));
 
     for (size_t i = 0; i < mesh.face.size(); i++) {
-        if (faceLabel[i] == 3) {
+        if (faceLabel[i] >= 0) {
             vcg::Color4b color;
             color.SetHSVColor(subd * std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])), 1.0, 1.0);
 
 //            color=vcg::Color4b::Scatter(faceLabel.size(),std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])));
 
-            mesh.face[i].C() = color;
-        }
-        else {
-
-            vcg::Color4b color(1.0,1.0,1.0,255);
             mesh.face[i].C() = color;
         }
     }
