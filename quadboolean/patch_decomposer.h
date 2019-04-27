@@ -1997,8 +1997,12 @@ public:
 
        GetPartitions(Partitions);
 
-       vcg::tri::Clean<MeshType>::RemoveNonManifoldVertex(mesh);
-
+       vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
+       UpdateMeshAttributes(mesh);
+       int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+       int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+       std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+       std::cout<<"non manuf E:"<<nonManifE<<std::endl;
        //copy index on quality
        for (size_t i=0;i<mesh.vert.size();i++)
         mesh.vert[i].Q()=i;
@@ -2011,8 +2015,10 @@ public:
            GetPartitionMesh(Partitions[i],TempMesh);
            std::vector<size_t> IndexC;
            GetCorners(TempMesh,IndexC);
+
 //           std::cout<<"Partition: "<<i<<std::endl;
 //           std::cout<<"Corners: "<<IndexC.size()<<std::endl;
+
            for (size_t j=0;j<IndexC.size();j++)
            {
                IndexC[j]=TempMesh.vert[IndexC[j]].Q();
