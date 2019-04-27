@@ -225,11 +225,11 @@ class PatchDecomposer
         }
         std::sort(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
 
-//        for (size_t i=0;i<CandidatesPathLenghts.size();i++)
-//        {
-////            std::cout<<"Test"<<CandidatesPathLenghts[i].first<<
-////                       ","<<CandidatesPathLenghts[i].second<<std::endl;
-//        }
+        //        for (size_t i=0;i<CandidatesPathLenghts.size();i++)
+        //        {
+        ////            std::cout<<"Test"<<CandidatesPathLenghts[i].first<<
+        ////                       ","<<CandidatesPathLenghts[i].second<<std::endl;
+        //        }
     }
 
 
@@ -551,12 +551,12 @@ public:
                 {
                     GetPartitionStats(FacePartitions[i],StatsCol,PQualities[i],true);
                     size_t NumHoles=PQualities[i].NumHoles;
-//                    if (NumHoles!=1)
-//                    {
-//                        MeshType SaveMesh;
-//                        GetPartitionMesh(FacePartitions[i],SaveMesh);
-//                        //vcg::tri::io::ExporterPLY<MeshType>::Save(SaveMesh,"non_one_hole.ply");
-//                    }
+                    //                    if (NumHoles!=1)
+                    //                    {
+                    //                        MeshType SaveMesh;
+                    //                        GetPartitionMesh(FacePartitions[i],SaveMesh);
+                    //                        //vcg::tri::io::ExporterPLY<MeshType>::Save(SaveMesh,"non_one_hole.ply");
+                    //                    }
                     for (size_t j=0;j<FacePartitions[i].size();j++)
                     {
                         size_t IndexF=FacePartitions[i][j];
@@ -652,58 +652,58 @@ private:
     }
 
 
-//    void GetPartitionMesh(const std::vector<size_t> &PartitionFaces,
-//                          MeshType &partition_mesh)
-//    {
+    //    void GetPartitionMesh(const std::vector<size_t> &PartitionFaces,
+    //                          MeshType &partition_mesh)
+    //    {
 
-//        int t0=clock();
-//        partition_mesh.Clear();
+    //        int t0=clock();
+    //        partition_mesh.Clear();
 
-//        std::map<size_t,size_t> VertMap;
-//        std::vector<CoordType> PosV;
+    //        std::map<size_t,size_t> VertMap;
+    //        std::vector<CoordType> PosV;
 
-//        for (size_t i=0;i<PartitionFaces.size();i++)
-//        {
-//            FaceType *f=&mesh.face[PartitionFaces[i]];
-//            for (size_t j=0;j<3;j++)
-//            {
-//                size_t IndexV=vcg::tri::Index(mesh,f->V(j));
-//                if (VertMap.count(IndexV)==0)
-//                {
-//                    PosV.push_back(f->P(j));
-//                    VertMap[IndexV]=PosV.size()-1;
-//                }
-//            }
-//        }
-//        partition_mesh.vert.resize(PosV.size());
-//        partition_mesh.vn=PosV.size();
-//        for (size_t i=0;i<PosV.size();i++)
-//            partition_mesh.vert[i].P()=PosV[i];
+    //        for (size_t i=0;i<PartitionFaces.size();i++)
+    //        {
+    //            FaceType *f=&mesh.face[PartitionFaces[i]];
+    //            for (size_t j=0;j<3;j++)
+    //            {
+    //                size_t IndexV=vcg::tri::Index(mesh,f->V(j));
+    //                if (VertMap.count(IndexV)==0)
+    //                {
+    //                    PosV.push_back(f->P(j));
+    //                    VertMap[IndexV]=PosV.size()-1;
+    //                }
+    //            }
+    //        }
+    //        partition_mesh.vert.resize(PosV.size());
+    //        partition_mesh.vn=PosV.size();
+    //        for (size_t i=0;i<PosV.size();i++)
+    //            partition_mesh.vert[i].P()=PosV[i];
 
-//        int t1=clock();
+    //        int t1=clock();
 
-//        partition_mesh.face.resize(PartitionFaces.size());
-//        partition_mesh.fn=PartitionFaces.size();
-//        for (size_t i=0;i<PartitionFaces.size();i++)
-//        {
-//            FaceType *f=&mesh.face[PartitionFaces[i]];
-//            for (size_t j=0;j<3;j++)
-//            {
-//                size_t IndexVOld=vcg::tri::Index(mesh,f->V(j));
-//                assert(VertMap.count(IndexVOld)>0);
-//                size_t IndexVNew=VertMap[IndexVOld];
-//                partition_mesh.face[i].V(j)=&partition_mesh.vert[IndexVNew];
-//            }
-//        }
+    //        partition_mesh.face.resize(PartitionFaces.size());
+    //        partition_mesh.fn=PartitionFaces.size();
+    //        for (size_t i=0;i<PartitionFaces.size();i++)
+    //        {
+    //            FaceType *f=&mesh.face[PartitionFaces[i]];
+    //            for (size_t j=0;j<3;j++)
+    //            {
+    //                size_t IndexVOld=vcg::tri::Index(mesh,f->V(j));
+    //                assert(VertMap.count(IndexVOld)>0);
+    //                size_t IndexVNew=VertMap[IndexVOld];
+    //                partition_mesh.face[i].V(j)=&partition_mesh.vert[IndexVNew];
+    //            }
+    //        }
 
-//        int t2=clock();
-//        vcg::tri::UpdateTopology<MeshType>::FaceFace(partition_mesh);
-//        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(partition_mesh);
-//        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(partition_mesh);
-//        vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(partition_mesh);
-//        vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(partition_mesh);
+    //        int t2=clock();
+    //        vcg::tri::UpdateTopology<MeshType>::FaceFace(partition_mesh);
+    //        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(partition_mesh);
+    //        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(partition_mesh);
+    //        vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(partition_mesh);
+    //        vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(partition_mesh);
 
-//    }
+    //    }
 
 #define CONVEX 4.0
 #define CONCAVE 4.0
@@ -1190,33 +1190,34 @@ private:
 
     void SmoothPartitionsSteps(size_t SmoothSteps)
     {
-
         //save old normal
+        //UpdateMeshAttributes(mesh);
         std::vector<CoordType> OldNorm;
         for (size_t i=0;i<mesh.face.size();i++)
             OldNorm.push_back(mesh.face[i].N());
 
-        MeshType currM;
-        vcg::tri::Append<MeshType,MeshType>::Mesh(currM,mesh);
-        UpdateMeshAttributes(currM);
+//        MeshType currM;
+//        vcg::tri::Append<MeshType,MeshType>::Mesh(currM,mesh);
+//        UpdateMeshAttributes(currM);
 
-        vcg::GridStaticPtr<FaceType,typename FaceType::ScalarType> Grid;
-        Grid.Set(currM.face.begin(),currM.face.end());
+        //        vcg::GridStaticPtr<FaceType,typename FaceType::ScalarType> Grid;
+        //        Grid.Set(currM.face.begin(),currM.face.end());
         for (size_t i=0;i<SmoothSteps;i++)
         {
             SmoothPartitionsStep();
-            ScalarType maxD=mesh.bbox.Diag();
-            ScalarType minD=0;
-            CoordType closestPT;
-            for (size_t i=0;i<mesh.vert.size();i++)
-            {
-                FaceType *f=vcg::tri::GetClosestFaceBase(mesh,Grid,mesh.vert[i].P(),maxD,minD,closestPT);
-                mesh.vert[i].P()=closestPT;
-            }
+            //            ScalarType maxD=mesh.bbox.Diag();
+            //            ScalarType minD=0;
+            //            CoordType closestPT;
+            //            for (size_t i=0;i<mesh.vert.size();i++)
+            //            {
+            //                FaceType *f=vcg::tri::GetClosestFaceBase(currM,Grid,mesh.vert[i].P(),maxD,minD,closestPT);
+            //                mesh.vert[i].P()=closestPT;
+            //            }
         }
 
         UpdateMeshAttributes(mesh);
         //vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testMesh.ply");
+
         for (size_t i=0;i<mesh.face.size();i++)
         {
             vcg::Matrix33<ScalarType> Rot;
@@ -1395,7 +1396,7 @@ private:
 
             for (size_t j=0;j<FacePartitions[i].size();j++)
                 IndexF.push_back(FacePartitions[i][j]);
-                //mesh.face[FacePartitions[i][j]].SetS();
+            //mesh.face[FacePartitions[i][j]].SetS();
         }
         vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
         for (size_t i=0;i<IndexF.size();i++)
@@ -1412,6 +1413,43 @@ private:
         vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
         vcg::tri::UpdateSelection<MeshType>::VertexClear(mesh);
     }
+
+//    void GetNonOKPartitions(std::vector<std::vector<size_t> > &FacePartitions)
+//    {
+//        OKMesh.Clear();
+//        NonOKMesh.Clear();
+
+//        //then save the partitions on quality
+//        for (size_t i=0;i<FacePartitions.size();i++)
+//            for (size_t j=0;j<FacePartitions[i].size();j++)
+//                mesh.face[FacePartitions[i][j]].Q()=i;
+
+//        //vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+//        std::vector<size_t> IndexF;
+//        for (size_t i=0;i<FacePartitions.size();i++)
+//        {
+//            if ((checkHolesOnly)&&(IsOkPartitionHoles(FacePartitions[i])))continue;
+//            if ((!checkHolesOnly)&&(IsOkPartition(FacePartitions[i])))continue;
+
+//            for (size_t j=0;j<FacePartitions[i].size();j++)
+//                IndexF.push_back(FacePartitions[i][j]);
+//            //mesh.face[FacePartitions[i][j]].SetS();
+//        }
+//        vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+//        for (size_t i=0;i<IndexF.size();i++)
+//            mesh.face[IndexF[i]].SetS();
+
+//        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
+//        vcg::tri::Append<MeshType,MeshType>::Mesh(NonOKMesh,mesh,true);
+
+//        vcg::tri::UpdateSelection<MeshType>::VertexClear(mesh);
+//        vcg::tri::UpdateSelection<MeshType>::FaceInvert(mesh);
+//        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
+//        vcg::tri::Append<MeshType,MeshType>::Mesh(OKMesh,mesh,true);
+
+//        vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+//        vcg::tri::UpdateSelection<MeshType>::VertexClear(mesh);
+//    }
 
     void TraceFromBorders()
     {
@@ -1436,8 +1474,10 @@ private:
         PruneCollidingCandidates();
         TraceVert=TraceVertCandidates;
         TraceDir=TraceDirCandidates;
-        //for (size_t i=0;i<Param.SmoothSteps;i++)
-        SmoothPartitionsSteps(Param.SmoothSteps);
+        HasBeenChoosen.clear();
+        HasBeenChoosen.resize(TraceVertCandidates.size(),true);
+        for (size_t i=0;i<Param.SmoothSteps;i++)
+            SmoothPartitionsSteps(Param.SmoothSteps);
         FindPartitioningPaths();
     }
 
@@ -1445,7 +1485,7 @@ private:
     {
         Closing.Clear();
         size_t holeSize=ToClose.face.size();
-        size_t f0=ToClose.face.size();        
+        size_t f0=ToClose.face.size();
         UpdateMeshAttributes(ToClose);
         vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(ToClose,holeSize);
         size_t f1=ToClose.face.size();
@@ -1587,20 +1627,17 @@ private:
         UpdateMeshAttributes(mesh);
         vcg::tri::CrossField<MeshType>::SetVertCrossVectorFromFace(mesh);
 
-        //std::cout<<"A"<<std::endl;
-        Reset();
-        //std::cout<<"B"<<std::endl;
 
-        //std::cout<<"C"<<std::endl;
+        Reset();
+
         DetectBorderConstraints();
-        //std::cout<<"D"<<std::endl;
+
         FieldTracer->Init(BorderCornersConvex);
-        //std::cout<<"E"<<std::endl;
-        //std::cout<<"AZZ"<<std::endl;
+
         InitStartDirections();
-        //std::cout<<"BAOI"<<std::endl;
+
         TraceFromBorders();
-        //std::cout<<"DE"<<std::endl;
+
         std::vector<std::vector<CoordType > > PathPos1;
         GetCurrentPathCoords(PathPos1);
         //PathDir1=TraceDir;
@@ -1614,37 +1651,72 @@ private:
 
         std::cout<<"*** getting the ones with more than 1 hole ***"<<std::endl;
         MeshType OKMesh1,NonOKMesh1;
-        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testA.ply");
+        //vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testA.ply");
         std::cout<<"there are "<<FacePartitions.size()<<" partitions"<<std::endl;
         SplitMeshNonOkPartition(FacePartitions,OKMesh1,NonOKMesh1,true);
-        vcg::tri::io::ExporterPLY<MeshType>::Save(OKMesh1,"test0.ply");
-        vcg::tri::io::ExporterPLY<MeshType>::Save(NonOKMesh1,"test1.ply");
-        MeshType Closing;
-        if (NonOKMesh1.face.size()>0)
-        {
-            //std::cout<<"*** NonOKMesh "<<NonOKMesh.face.size()<<std::endl;
-            GetClosingMesh(NonOKMesh1,Closing);
-            //std::cout<<"*** de boia 0 ***"<<std::endl;
+        //        vcg::tri::io::ExporterPLY<MeshType>::Save(OKMesh1,"test0.ply");
+        //        vcg::tri::io::ExporterPLY<MeshType>::Save(NonOKMesh1,"test1.ply");
+        //        MeshType Closing;
+        //        if (NonOKMesh1.face.size()>0)
+        //        {
+        //            //std::cout<<"*** NonOKMesh "<<NonOKMesh.face.size()<<std::endl;
+        //            GetClosingMesh(NonOKMesh1,Closing);
+        //            //std::cout<<"*** de boia 0 ***"<<std::endl;
 
-            mesh.Clear();
-            vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,Closing);
-            UpdateMeshAttributes(mesh);
-            TraceVert.clear();
-            TraceDir.clear();
-            //std::cout<<"*** de boia 1 ***"<<std::endl;
+        //            mesh.Clear();
+        //            vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,Closing);
+        //            UpdateMeshAttributes(mesh);
+        //            TraceVert.clear();
+        //            TraceDir.clear();
+        //            //std::cout<<"*** de boia 1 ***"<<std::endl;
 
-            GetPartitions(FacePartitions);
-            std::cout<<"*** de boia 2 ***"<<std::endl;
-            //SavePartitionOnQuality(FacePartitions,mesh,Offset1);
+        //            GetPartitions(FacePartitions);
+        //            std::cout<<"*** de boia 2 ***"<<std::endl;
+        //            //SavePartitionOnQuality(FacePartitions,mesh,Offset1);
 
-            std::cout<<"*** reassemble ***"<<std::endl;
-        }
+        //            std::cout<<"*** reassemble ***"<<std::endl;
+        //        }
 
         mesh.Clear();
+
         vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,OKMesh0);
+
+        //        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+        //        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+        //        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+        //        UpdateMeshAttributes(mesh);
+        //        int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        //        int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        //        std::cout<<"non manuf V0:"<<nonManifV<<std::endl;
+        //        std::cout<<"non manuf E0:"<<nonManifE<<std::endl;
+
         vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,OKMesh1);
-        if (NonOKMesh1.face.size()>0)
-            vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,Closing);
+        //        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+        //        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+        //        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+        UpdateMeshAttributes(mesh);
+        //        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        //        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        //        std::cout<<"non manuf V1:"<<nonManifV<<std::endl;
+        //        std::cout<<"non manuf E1:"<<nonManifE<<std::endl;
+
+        //        UpdateMeshAttributes(Closing);
+        //        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(Closing);
+        //        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(Closing);
+        //        std::cout<<"non manuf VClose:"<<nonManifV<<std::endl;
+        //        std::cout<<"non manuf EClose:"<<nonManifE<<std::endl;
+
+        //        if (NonOKMesh1.face.size()>0)
+        //            vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,Closing);
+
+        //        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+        //        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+        //        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+        //        UpdateMeshAttributes(mesh);
+        //        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        //        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        //        std::cout<<"non manuf V2:"<<nonManifV<<std::endl;
+        //        std::cout<<"non manuf E2:"<<nonManifE<<std::endl;
 
         vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
         vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
@@ -1687,6 +1759,163 @@ private:
 
     }
 
+
+//    void SplitBadPartitions()
+//    {
+//        std::vector<std::vector<CoordType > > PathPos0;
+//        GetCurrentPathCoords(PathPos0);
+//        //PathDir0=TraceDir;
+
+//        std::cout<<"*** Getting non ok partitions ***"<<std::endl;
+//        std::vector<std::vector<size_t> > FacePartitions;
+//        GetPartitions(FacePartitions);
+//        //SavePartitionOnQuality(FacePartitions,mesh);
+//        //size_t Offset0=FacePartitions.size();
+
+//        MeshType OKMesh0,NonOKMesh0;
+//        SplitMeshNonOkPartition(FacePartitions,OKMesh0,NonOKMesh0,false);
+//        if (NonOKMesh0.face.size()==0)return;
+
+//        std::cout<<"*** filtering ***"<<std::endl;
+//        //FilterPathCoords(OKMesh0,PathPos0);
+//        mesh.Clear();
+
+//        std::cout<<"*** Retracing bad partitions ***"<<std::endl;
+//        vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,NonOKMesh0);
+//        UpdateMeshAttributes(mesh);
+//        vcg::tri::CrossField<MeshType>::SetVertCrossVectorFromFace(mesh);
+
+
+//        Reset();
+
+//        DetectBorderConstraints();
+
+//        FieldTracer->Init(BorderCornersConvex);
+
+//        InitStartDirections();
+
+//        TraceFromBorders();
+
+//        std::vector<std::vector<CoordType > > PathPos1;
+//        GetCurrentPathCoords(PathPos1);
+//        //PathDir1=TraceDir;
+
+//        std::cout<<"*** Getting non ok partitions ***"<<std::endl;
+//        FacePartitions.clear();
+//        GetPartitions(FacePartitions);
+//        //size_t Offset1=FacePartitions.size();
+//        //SavePartitionOnQuality(FacePartitions,mesh,Offset0);
+//        //return;
+
+//        std::cout<<"*** getting the ones with more than 1 hole ***"<<std::endl;
+//        MeshType OKMesh1,NonOKMesh1;
+//        //vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testA.ply");
+//        std::cout<<"there are "<<FacePartitions.size()<<" partitions"<<std::endl;
+//        SplitMeshNonOkPartition(FacePartitions,OKMesh1,NonOKMesh1,true);
+//        //        vcg::tri::io::ExporterPLY<MeshType>::Save(OKMesh1,"test0.ply");
+//        //        vcg::tri::io::ExporterPLY<MeshType>::Save(NonOKMesh1,"test1.ply");
+//        //        MeshType Closing;
+//        //        if (NonOKMesh1.face.size()>0)
+//        //        {
+//        //            //std::cout<<"*** NonOKMesh "<<NonOKMesh.face.size()<<std::endl;
+//        //            GetClosingMesh(NonOKMesh1,Closing);
+//        //            //std::cout<<"*** de boia 0 ***"<<std::endl;
+
+//        //            mesh.Clear();
+//        //            vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,Closing);
+//        //            UpdateMeshAttributes(mesh);
+//        //            TraceVert.clear();
+//        //            TraceDir.clear();
+//        //            //std::cout<<"*** de boia 1 ***"<<std::endl;
+
+//        //            GetPartitions(FacePartitions);
+//        //            std::cout<<"*** de boia 2 ***"<<std::endl;
+//        //            //SavePartitionOnQuality(FacePartitions,mesh,Offset1);
+
+//        //            std::cout<<"*** reassemble ***"<<std::endl;
+//        //        }
+
+//        mesh.Clear();
+
+//        vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,OKMesh0);
+
+//        //        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+//        //        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+//        //        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+//        //        UpdateMeshAttributes(mesh);
+//        //        int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+//        //        int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+//        //        std::cout<<"non manuf V0:"<<nonManifV<<std::endl;
+//        //        std::cout<<"non manuf E0:"<<nonManifE<<std::endl;
+
+//        vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,OKMesh1);
+//        //        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+//        //        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+//        //        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+//        UpdateMeshAttributes(mesh);
+//        //        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+//        //        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+//        //        std::cout<<"non manuf V1:"<<nonManifV<<std::endl;
+//        //        std::cout<<"non manuf E1:"<<nonManifE<<std::endl;
+
+//        //        UpdateMeshAttributes(Closing);
+//        //        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(Closing);
+//        //        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(Closing);
+//        //        std::cout<<"non manuf VClose:"<<nonManifV<<std::endl;
+//        //        std::cout<<"non manuf EClose:"<<nonManifE<<std::endl;
+
+//        //        if (NonOKMesh1.face.size()>0)
+//        //            vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,Closing);
+
+//        //        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+//        //        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+//        //        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+//        //        UpdateMeshAttributes(mesh);
+//        //        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+//        //        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+//        //        std::cout<<"non manuf V2:"<<nonManifV<<std::endl;
+//        //        std::cout<<"non manuf E2:"<<nonManifE<<std::endl;
+
+//        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+//        vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+//        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+//        UpdateMeshAttributes(mesh);
+//        //GetPartitionFromQuality(mesh,FacePartitions);
+
+//        std::vector<std::vector<CoordType > > PathPos2=PathPos0;
+//        PathPos2.insert(PathPos2.end(),PathPos1.begin(),PathPos1.end());
+
+//        //        std::vector<std::vector<CoordType > > PathDir2=PathDir0;
+//        //        PathDir2.insert(PathPos2.end(),PathPos1.begin(),PathPos1.end());
+
+//        Reset();
+//        FilterPathCoords(mesh,PathPos2);
+//        PathCoordsToIndex(mesh,PathPos2,TraceVert);
+
+//        TraceVertCandidates=TraceVert;
+//        TraceDir.resize(TraceVert.size());
+
+//        for (size_t i=0;i<TraceVert.size();i++)
+//        {
+//            TraceDir[i].resize(TraceVert[i].size(),0);
+
+//            CoordType Pos0=mesh.vert[TraceVert[i][0]].P();
+//            CoordType Pos1=mesh.vert[TraceVert[i][1]].P();
+//            CoordType Dir=Pos1-Pos0;
+//            Dir.Normalize();
+//            TraceDir[i][0]=FieldTracer->GetClosestDirTo(TraceVert[i][0],Dir);
+
+//            for (size_t j=1;j<TraceVert[i].size();j++)
+//                TraceDir[i][j]=FieldTracer->FollowDirection(TraceVert[i][j-1],TraceVert[i][j],TraceDir[i][j-1]);
+//        }
+//        TraceDirCandidates=TraceDir;
+//        HasBeenChoosen=std::vector<bool>(TraceVertCandidates.size(),true);
+
+//        SmoothPartitionsSteps(Param.SmoothSteps);
+//        ColorPatches(Partitions);
+//        std::cout<<"*** DONE ***"<<std::endl;
+
+//    }
 
     void Remesh(MeshType &to_remesh)
     {
@@ -1740,6 +1969,11 @@ public:
 
     void RemeshStep()
     {
+        int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        //        std::cout<<"non manuf V0:"<<nonManifV<<std::endl;
+        //        std::cout<<"non manuf E0:"<<nonManifE<<std::endl;
+
         if (Param.InitialSmooth)
         {
             vcg::tri::UpdateSelection<MeshType>::VertexFromBorderFlag(mesh);
@@ -1759,7 +1993,7 @@ public:
             {
                 vcg::PolygonalAlgorithm<MeshType>::Laplacian(mesh,true,3,0.5);
             }
-//            vcg::tri::Smooth<MeshType>::VertexCoordLaplacian(mesh,3,true);
+            //            vcg::tri::Smooth<MeshType>::VertexCoordLaplacian(mesh,3,true);
             UpdateMeshAttributes(mesh);
         }
 
@@ -1778,6 +2012,12 @@ public:
         Remesh(mesh);
 
         UpdateMeshAttributes(mesh);
+
+        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        //        std::cout<<"non manuf V1:"<<nonManifV<<std::endl;
+        //        std::cout<<"non manuf E1:"<<nonManifE<<std::endl;
+
     }
 
 #ifdef DRAWTRACE
@@ -1971,21 +2211,26 @@ public:
     {
         UpdateMeshAttributes(mesh);
 
-//        if (Param.InitialRemesh)
-//            RemeshStep();
+        int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
 
-//       InitField();
+        //        if (Param.InitialRemesh)
+        //            RemeshStep();
 
-//       InitTracing();
+        //       InitField();
 
-//       TraceBorders();
+        //       InitTracing();
+
+        //       TraceBorders();
         if (Param.InitialRemesh)
-        RemeshStep();
+            RemeshStep();
 
         InitField();
 
-//        mesh.UpdateAttributes();
-//        vcg::tri::CrossField<MyTriMesh>::SetVertCrossVectorFromFace(mesh);
+        //        mesh.UpdateAttributes();
+        //        vcg::tri::CrossField<MyTriMesh>::SetVertCrossVectorFromFace(mesh);
 
         //PatchDeco.SetParam(Param);
         InitTracing();
@@ -1995,37 +2240,39 @@ public:
         //RType=OldRType=QuadBoolean::internal::PatchDecomposer<MyTriMesh>::Partitions;
 
 
-       GetPartitions(Partitions);
+        GetPartitions(Partitions);
 
-       vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
-       UpdateMeshAttributes(mesh);
-       int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
-       int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
-       std::cout<<"non manuf V:"<<nonManifV<<std::endl;
-       std::cout<<"non manuf E:"<<nonManifE<<std::endl;
-       //copy index on quality
-       for (size_t i=0;i<mesh.vert.size();i++)
-        mesh.vert[i].Q()=i;
+        vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
+        UpdateMeshAttributes(mesh);
+        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+        //copy index on quality
+        for (size_t i=0;i<mesh.vert.size();i++)
+            mesh.vert[i].Q()=i;
 
-       Corners.resize(Partitions.size());
-       std::cout<<"There are:"<<Partitions.size()<<std::endl;
-       for (size_t i=0;i<Partitions.size();i++)
-       {
-           MeshType TempMesh;
-           GetPartitionMesh(Partitions[i],TempMesh);
-           std::vector<size_t> IndexC;
-           GetCorners(TempMesh,IndexC);
-
-//           std::cout<<"Partition: "<<i<<std::endl;
-//           std::cout<<"Corners: "<<IndexC.size()<<std::endl;
-
-           for (size_t j=0;j<IndexC.size();j++)
-           {
-               IndexC[j]=TempMesh.vert[IndexC[j]].Q();
-               //std::cout<<"Index "<<IndexC[j]<<std::endl;
+        Corners.resize(Partitions.size());
+        std::cout<<"There are:"<<Partitions.size()<<std::endl;
+        for (size_t i=0;i<Partitions.size();i++)
+        {
+            MeshType TempMesh;
+            GetPartitionMesh(Partitions[i],TempMesh);
+            std::vector<size_t> IndexC;
+            GetCorners(TempMesh,IndexC);
+            if ((IndexC.size()<Param.MinSides)||(IndexC.size()>Param.MaxSides))
+            {
+                std::cout<<"Partition: "<<i<<std::endl;
+                std::cout<<"Corners: "<<IndexC.size()<<std::endl;
             }
-           Corners[i]=IndexC;
-       }
+
+            for (size_t j=0;j<IndexC.size();j++)
+            {
+                IndexC[j]=TempMesh.vert[IndexC[j]].Q();
+                //std::cout<<"Index "<<IndexC[j]<<std::endl;
+            }
+            Corners[i]=IndexC;
+        }
     }
 
     PatchDecomposer(MeshType &_mesh):mesh(_mesh)
