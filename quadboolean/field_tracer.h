@@ -838,24 +838,26 @@ public:
         return true;
     }
 
-//    //*** DRAWING FUNCTIONS ***
-//    //draw a trace
-//    void DrawTrace(std::vector<size_t> &CurrTrace,
-//                   vcg::Color4b TraceCol)
-//    {
-//        vcg::glColor(TraceCol);
+#ifdef DRAWTRACE
+    //*** DRAWING FUNCTIONS ***
+    //draw a trace
+    void DrawTrace(std::vector<size_t> &CurrTrace,
+                   vcg::Color4b TraceCol)
+    {
+        vcg::glColor(TraceCol);
 
-//        glPushAttrib(GL_ALL_ATTRIB_BITS);
-//        glDisable(GL_LIGHTING);
-//        glDepthRange(0,0.99998);
-//        glLineWidth(12);
-//        glBegin(GL_LINE_STRIP);
-//        for (size_t i=0;i<CurrTrace.size();++i)
-//            vcg::glVertex(mesh.vert[CurrTrace[i]].P());
-//        glEnd();
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDisable(GL_LIGHTING);
+        glDepthRange(0,0.99998);
+        glLineWidth(12);
+        glBegin(GL_LINE_STRIP);
+        for (size_t i=0;i<CurrTrace.size();++i)
+            vcg::glVertex(mesh.vert[CurrTrace[i]].P());
+        glEnd();
 
-//        glPopAttrib();
-//    }
+        glPopAttrib();
+    }
+#endif
 
     //*** CONSTRUCTORS ***
     //draw a trace

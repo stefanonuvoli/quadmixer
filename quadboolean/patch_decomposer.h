@@ -209,7 +209,9 @@ class PatchDecomposer
 
     void DrawTrace(size_t IndexTrace,vcg::Color4b TraceCol)
     {
+#ifdef DRAWTRACE
         FieldTracer->DrawTrace(TraceVert[IndexTrace],TraceCol);
+#endif
     }
 
     void InitCandidatesPathLenghts()
@@ -1737,76 +1739,74 @@ public:
 
     }
 
+#ifdef DRAWTRACE
+    void GLDrawStartingDir()
+    {
+        //
 
-//    void GLDrawStartingDir()
-//    {
-//        //
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        //        vcg::glColor(vcg::Color4b(0,255,0,255));
+        glDisable(GL_LIGHTING);
+        glDepthRange(0,0.99998);
+        //        glPointSize(12);
+        //        glBegin(GL_POINTS);
+        //        for (size_t i=0;i<StartTraceV.size();++i)
+        //            vcg::glVertex(mesh.vert[StartTraceV[i]].P());
+        //        glEnd();
 
-//        glPushAttrib(GL_ALL_ATTRIB_BITS);
-//        //        vcg::glColor(vcg::Color4b(0,255,0,255));
-//        glDisable(GL_LIGHTING);
-//        glDepthRange(0,0.99998);
-//        //        glPointSize(12);
-//        //        glBegin(GL_POINTS);
-//        //        for (size_t i=0;i<StartTraceV.size();++i)
-//        //            vcg::glVertex(mesh.vert[StartTraceV[i]].P());
-//        //        glEnd();
+        //        assert(StartTraceDir.size()==StartTraceV.size());
 
-//        //        assert(StartTraceDir.size()==StartTraceV.size());
+        //        std::set<std::pair<size_t,size_t> >::iterator IteNonTraced=NonTracedCorners.begin();
+        //        for (IteNonTraced;IteNonTraced!=NonTracedCorners.end();IteNonTraced++)
+        //        {
+        //            size_t IndexV=(*IteNonTraced).first;
+        //            size_t IndexDir=(*IteNonTraced).second;
+        //            CoordType Pos0=mesh.vert[IndexV].P();
+        //            CoordType Dir=FieldTracer->GetDirection(IndexV,IndexDir);
+        //            CoordType Pos1=Pos0+Dir*mesh.bbox.Diag()*0.002;
+        //            vcg::glColor(vcg::Color4b(255,0,0,255));
+        //            glLineWidth(10);
+        //            glBegin(GL_LINES);
+        //            vcg::glVertex(Pos0);
+        //            vcg::glVertex(Pos1);
+        //            glEnd();
 
-//        //        std::set<std::pair<size_t,size_t> >::iterator IteNonTraced=NonTracedCorners.begin();
-//        //        for (IteNonTraced;IteNonTraced!=NonTracedCorners.end();IteNonTraced++)
-//        //        {
-//        //            size_t IndexV=(*IteNonTraced).first;
-//        //            size_t IndexDir=(*IteNonTraced).second;
-//        //            CoordType Pos0=mesh.vert[IndexV].P();
-//        //            CoordType Dir=FieldTracer->GetDirection(IndexV,IndexDir);
-//        //            CoordType Pos1=Pos0+Dir*mesh.bbox.Diag()*0.002;
-//        //            vcg::glColor(vcg::Color4b(255,0,0,255));
-//        //            glLineWidth(10);
-//        //            glBegin(GL_LINES);
-//        //            vcg::glVertex(Pos0);
-//        //            vcg::glVertex(Pos1);
-//        //            glEnd();
+        //        }
 
-//        //        }
+        for (size_t i=0;i<StartTraceV.size();++i)
+        {
+            CoordType Pos0=mesh.vert[StartTraceV[i]].P();
+            if (BorderCornersConcave.count(StartTraceV[i])==0)continue;
+            for (size_t j=0;j<StartTraceDir[i].size();++j)
+            {
+                CoordType Dir=FieldTracer->GetDirection(StartTraceV[i],StartTraceDir[i][j]);
+                CoordType Pos1=Pos0+Dir*mesh.bbox.Diag()*0.01;
+                //                        if (NonTracedCorners.count(std::pair<size_t,size_t>(StartTraceV[i],StartTraceDir[i][j]))==1)
+                //                        {
+                vcg::glColor(vcg::Color4b(255,0,0,255));
+                glLineWidth(20);
+                glBegin(GL_LINES);
+                vcg::glVertex(Pos0);
+                vcg::glVertex(Pos1);
+                glEnd();
+                //                        }
+                //                        else continue;
+                //                if (NonExpandedCorners.count(std::pair<size_t,size_t>(i,j))==1)
+                //                {
+                //                    vcg::glColor(vcg::Color4b(255,255,0,255));
+                //                    glLineWidth(10);
+                //                }
+                //                else
+                //                {
+                //                    vcg::glColor(vcg::Color4b(0,0,255,255));
+                //                    glLineWidth(5);
+                //                }
 
-//        for (size_t i=0;i<StartTraceV.size();++i)
-//        {
-//            CoordType Pos0=mesh.vert[StartTraceV[i]].P();
-//            if (BorderCornersConcave.count(StartTraceV[i])==0)continue;
-//            for (size_t j=0;j<StartTraceDir[i].size();++j)
-//            {
-//                CoordType Dir=FieldTracer->GetDirection(StartTraceV[i],StartTraceDir[i][j]);
-//                CoordType Pos1=Pos0+Dir*mesh.bbox.Diag()*0.01;
-//                //                        if (NonTracedCorners.count(std::pair<size_t,size_t>(StartTraceV[i],StartTraceDir[i][j]))==1)
-//                //                        {
-//                vcg::glColor(vcg::Color4b(255,0,0,255));
-//                glLineWidth(20);
-//                glBegin(GL_LINES);
-//                vcg::glVertex(Pos0);
-//                vcg::glVertex(Pos1);
-//                glEnd();
-//                //                        }
-//                //                        else continue;
-//                //                if (NonExpandedCorners.count(std::pair<size_t,size_t>(i,j))==1)
-//                //                {
-//                //                    vcg::glColor(vcg::Color4b(255,255,0,255));
-//                //                    glLineWidth(10);
-//                //                }
-//                //                else
-//                //                {
-//                //                    vcg::glColor(vcg::Color4b(0,0,255,255));
-//                //                    glLineWidth(5);
-//                //                }
-
-//            }
-//        }
-
-
-
-//        glPopAttrib();
-//    }
+            }
+        }
+        glPopAttrib();
+    }
+#endif
 
     void InitTracing()
     {
@@ -1925,7 +1925,8 @@ public:
 
     //Parameters Param;
 
-    void BatchProcess(std::vector<std::vector<size_t> > &Partitions)
+    void BatchProcess(std::vector<std::vector<size_t> > &Partitions,
+                      std::vector<std::vector<size_t> > &Corners)
     {
         if (Param.InitialRemesh)
             RemeshStep();
@@ -1937,6 +1938,23 @@ public:
        TraceBorders();
 
        GetPartitions(Partitions);
+
+       //copy index on quality
+       for (size_t i=0;i<mesh.vert.size();i++)
+        mesh.vert[i].Q()=i;
+
+       Corners.resize(Partitions.size());
+       for (size_t i=0;i<Partitions.size();i++)
+       {
+           MeshType TempMesh;
+           GetPartitionMesh(Partitions[i],TempMesh);
+           std::vector<size_t> IndexC;
+           GetCorners(TempMesh,IndexC);
+           for (size_t j=0;j<IndexC.size();j++)
+               IndexC[j]=TempMesh.vert[IndexC[j]].Q();
+
+           Corners[i]=IndexC;
+       }
     }
 
     PatchDecomposer(MeshType &_mesh):mesh(_mesh)
