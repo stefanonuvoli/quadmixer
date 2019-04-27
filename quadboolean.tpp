@@ -147,11 +147,13 @@ void quadBoolean(
                  newSurface);
 
 
-     //Get patch decomposition of the new surface
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface);
+     //Get patch decomposition of the new surface     
+     std::vector<std::vector<size_t>> newSurfacePartitions;
+     std::vector<std::vector<size_t>> newSurfaceCorners;
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners);
 
      //Get chart data
-     chartData = internal::getCharts(newSurface, newSurfaceLabel);
+     chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
      //Solve ILP to find best side size
      ilpResult = internal::findBestSideSize(chartData, alpha);

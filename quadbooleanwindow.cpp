@@ -160,6 +160,7 @@ void QuadBooleanWindow::doGetSurfaces() {
     preservedFaceLabel1.clear();
     preservedFaceLabel2.clear();
     newSurface.Clear();
+    initialNewSurface.Clear();
 
     int minRectangleSide = ui.minRectangleSideSpinBox->value();
     bool mergeQuads = ui.mergeCheckBox->isChecked();
@@ -265,7 +266,7 @@ void QuadBooleanWindow::doGetSurfaces() {
                 birthQuad1, birthQuad2,
                 preservedQuad1, preservedQuad2,
                 J,
-                newSurface);
+                initialNewSurface);
 
     std::cout << std::endl << " >> "
               << "Get surfaces: "
@@ -276,6 +277,8 @@ void QuadBooleanWindow::doGetSurfaces() {
 
     quadLayoutDataPreserved1 = QuadBoolean::internal::getQuadLayoutData(mesh1, preservedFaceLabel1);
     quadLayoutDataPreserved2 = QuadBoolean::internal::getQuadLayoutData(mesh2, preservedFaceLabel2);
+
+    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
 
     ui.glArea->setPreservedSurface(&preservedSurface);
     ui.glArea->setNewSurface(&newSurface);
@@ -288,10 +291,15 @@ void QuadBooleanWindow::doGetSurfaces() {
 void QuadBooleanWindow::doPatchDecomposition() {
     chrono::steady_clock::time_point start;
 
+    newSurfacePartitions.clear();
+    newSurfaceCorners.clear();
+    newSurfaceLabel.clear();
+    newSurface.Clear();
+    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
 
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface);
+    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners);
 
     //TEST
 
@@ -320,7 +328,7 @@ void QuadBooleanWindow::doPatchDecomposition() {
     start = chrono::steady_clock::now();
 
 
-    chartData = QuadBoolean::internal::getCharts(newSurface, newSurfaceLabel);
+    chartData = QuadBoolean::internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
     std::cout << std::endl << " >> "
               << "Get patches and sides: "
@@ -414,6 +422,8 @@ void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
             mesh2.Clear();
             loadMesh(mesh1, filename1);
             loadMesh(mesh2, filename2);
+            ui.glArea->setMesh1(&mesh1);
+            ui.glArea->setMesh2(&mesh2);
 
             ui.showMesh1CheckBox->setChecked(true);
             ui.showMesh2CheckBox->setChecked(true);

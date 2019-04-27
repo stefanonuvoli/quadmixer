@@ -201,6 +201,10 @@ void quadrangulate(
             continue;
 
         const std::vector<ChartSide>& chartSides = chart.chartSides;
+        if (chartSides.size() < 3 || chartSides.size() >= 6) {
+            std::cout << "Chart " << cId << " with corners less than 3 or greater than 6!" << std::endl;
+            continue;
+        }
 
         //Input mesh
         Eigen::MatrixXd chartV;
@@ -216,7 +220,6 @@ void quadrangulate(
         std::vector<int> vMap, fMap;
         VCGToEigenSelected(newSurface, chartV, chartF, vMap, fMap, 3);
 
-        assert(chartSides.size() >= 3 && chartSides.size() <= 6);
 
         //Input subdivisions
         Eigen::VectorXi l(chartSides.size());
@@ -405,19 +408,24 @@ void quadrangulate(
 }
 
 template<class TriangleMeshType>
-std::vector<int> getPatchDecomposition(TriangleMeshType& newSurface)
+std::vector<int> getPatchDecomposition(
+        TriangleMeshType& newSurface,
+        std::vector<std::vector<size_t>>& partitions,
+        std::vector<std::vector<size_t>>& corners)
 {
-    std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
 
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
-    std::vector<std::vector<size_t>> partitions;
-    decomposer.SetParam(parameters);
-    decomposer.BatchProcess(partitions);
 
+    decomposer.SetParam(parameters);
+    decomposer.BatchProcess(partitions, corners);
+
+    std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
     for (size_t pId = 0; pId < partitions.size(); pId++) {
-        for (const size_t& fId : partitions[pId])
+        for (const size_t& fId : partitions[pId]) {
+            assert(newSurfaceLabel[fId] == -1);
             newSurfaceLabel[fId] = static_cast<int>(pId);
+        }
     }
 
     return newSurfaceLabel;

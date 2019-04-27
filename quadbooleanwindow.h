@@ -95,8 +95,13 @@ private:
     PolyMesh preservedSurface;
     std::vector<int> preservedSurfaceLabel;
 
+    TriangleMesh initialNewSurface;
+
     TriangleMesh newSurface;
     std::vector<int> newSurfaceLabel;
+
+    std::vector<std::vector<size_t>> newSurfacePartitions;
+    std::vector<std::vector<size_t>> newSurfaceCorners;
     TriangleChartData newSurfaceChartData;
 
     QuadBoolean::internal::ChartData chartData;

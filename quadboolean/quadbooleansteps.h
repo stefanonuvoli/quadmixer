@@ -78,7 +78,10 @@ void quadrangulate(
         std::vector<int>& quadrangulatedNewSurfaceLabel);
 
 template<class TriangleMeshType>
-std::vector<int> getPatchDecomposition(TriangleMeshType& newSurface);
+std::vector<int> getPatchDecomposition(
+        TriangleMeshType& newSurface,
+        std::vector<std::vector<size_t>>& partitions,
+        std::vector<std::vector<size_t>>& corners);
 
 }
 }

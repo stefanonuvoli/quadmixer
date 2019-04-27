@@ -16,23 +16,22 @@ struct ChartSubSide {
     std::array<int, 2> incidentChartSideId;
     std::vector<size_t> vertices;
 
-    bool isOnBorder;
-
     double length;
     int size;
+
+    bool isOnBorder;
 };
 
 struct ChartSide {
     std::vector<size_t> vertices;
     std::vector<size_t> subsides;
     std::vector<bool> reversedSubside;
-    int size;
+
     double length;
+    int size;
 };
 
 struct Chart {
-    int label;
-
     std::vector<size_t> faces;
     std::vector<size_t> borderFaces;
 
@@ -41,6 +40,8 @@ struct Chart {
     std::vector<size_t> chartSubSides;
 
     std::vector<ChartSide> chartSides;
+
+    int label;
 };
 
 struct ChartData {
@@ -49,8 +50,14 @@ struct ChartData {
     std::vector<ChartSubSide> subSides;
 };
 
+//template<class TriangleMeshType>
+//ChartData getCharts(TriangleMeshType& mesh, const std::vector<int>& faceLabel);
+
 template<class TriangleMeshType>
-ChartData getCharts(TriangleMeshType& mesh, const std::vector<int>& faceLabel);
+ChartData getPatchDecompositionChartData(
+        TriangleMeshType& mesh,
+        const std::vector<int>& faceLabel,
+        const std::vector<std::vector<size_t>>& corners);
 
 }
 }
