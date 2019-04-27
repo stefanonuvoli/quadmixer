@@ -1997,6 +1997,8 @@ public:
 
        GetPartitions(Partitions);
 
+       vcg::tri::Clean<MeshType>::RemoveNonManifoldVertex(mesh);
+
        //copy index on quality
        for (size_t i=0;i<mesh.vert.size();i++)
         mesh.vert[i].Q()=i;
