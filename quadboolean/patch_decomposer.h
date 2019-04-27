@@ -544,12 +544,12 @@ public:
                 {
                     GetPartitionStats(FacePartitions[i],StatsCol,PQualities[i],true);
                     size_t NumHoles=PQualities[i].NumHoles;
-                    if (NumHoles!=1)
-                    {
-                        MeshType SaveMesh;
-                        GetPartitionMesh(FacePartitions[i],SaveMesh);
-                        //vcg::tri::io::ExporterPLY<MeshType>::Save(SaveMesh,"non_one_hole.ply");
-                    }
+//                    if (NumHoles!=1)
+//                    {
+//                        MeshType SaveMesh;
+//                        GetPartitionMesh(FacePartitions[i],SaveMesh);
+//                        //vcg::tri::io::ExporterPLY<MeshType>::Save(SaveMesh,"non_one_hole.ply");
+//                    }
                     for (size_t j=0;j<FacePartitions[i].size();j++)
                     {
                         size_t IndexF=FacePartitions[i][j];
@@ -625,59 +625,78 @@ private:
     }
 
 
-
     void GetPartitionMesh(const std::vector<size_t> &PartitionFaces,
                           MeshType &partition_mesh)
     {
-
-        int t0=clock();
         partition_mesh.Clear();
 
-        std::map<size_t,size_t> VertMap;
-        std::vector<CoordType> PosV;
-        //vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(mesh);
         for (size_t i=0;i<PartitionFaces.size();i++)
-        {
-            FaceType *f=&mesh.face[PartitionFaces[i]];
-            for (size_t j=0;j<3;j++)
-            {
-                size_t IndexV=vcg::tri::Index(mesh,f->V(j));
-                if (VertMap.count(IndexV)==0)
-                {
-                    PosV.push_back(f->P(j));
-                    VertMap[IndexV]=PosV.size()-1;
-                }
-            }
-        }
-        partition_mesh.vert.resize(PosV.size());
-        partition_mesh.vn=PosV.size();
-        for (size_t i=0;i<PosV.size();i++)
-            partition_mesh.vert[i].P()=PosV[i];
+            mesh.face[PartitionFaces[i]].SetS();
 
-        int t1=clock();
-
-        partition_mesh.face.resize(PartitionFaces.size());
-        partition_mesh.fn=PartitionFaces.size();
-        for (size_t i=0;i<PartitionFaces.size();i++)
-        {
-            FaceType *f=&mesh.face[PartitionFaces[i]];
-            for (size_t j=0;j<3;j++)
-            {
-                size_t IndexVOld=vcg::tri::Index(mesh,f->V(j));
-                assert(VertMap.count(IndexVOld)>0);
-                size_t IndexVNew=VertMap[IndexVOld];
-                partition_mesh.face[i].V(j)=&partition_mesh.vert[IndexVNew];
-            }
-        }
-
-        int t2=clock();
-        vcg::tri::UpdateTopology<MeshType>::FaceFace(partition_mesh);
-        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(partition_mesh);
-        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(partition_mesh);
-        vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(partition_mesh);
-        vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(partition_mesh);
-
+        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(partition_mesh,mesh,true);
+        UpdateMeshAttributes(partition_mesh);
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(partition_mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(partition_mesh);
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(mesh);
     }
+
+
+//    void GetPartitionMesh(const std::vector<size_t> &PartitionFaces,
+//                          MeshType &partition_mesh)
+//    {
+
+//        int t0=clock();
+//        partition_mesh.Clear();
+
+//        std::map<size_t,size_t> VertMap;
+//        std::vector<CoordType> PosV;
+
+//        for (size_t i=0;i<PartitionFaces.size();i++)
+//        {
+//            FaceType *f=&mesh.face[PartitionFaces[i]];
+//            for (size_t j=0;j<3;j++)
+//            {
+//                size_t IndexV=vcg::tri::Index(mesh,f->V(j));
+//                if (VertMap.count(IndexV)==0)
+//                {
+//                    PosV.push_back(f->P(j));
+//                    VertMap[IndexV]=PosV.size()-1;
+//                }
+//            }
+//        }
+//        partition_mesh.vert.resize(PosV.size());
+//        partition_mesh.vn=PosV.size();
+//        for (size_t i=0;i<PosV.size();i++)
+//            partition_mesh.vert[i].P()=PosV[i];
+
+//        int t1=clock();
+
+//        partition_mesh.face.resize(PartitionFaces.size());
+//        partition_mesh.fn=PartitionFaces.size();
+//        for (size_t i=0;i<PartitionFaces.size();i++)
+//        {
+//            FaceType *f=&mesh.face[PartitionFaces[i]];
+//            for (size_t j=0;j<3;j++)
+//            {
+//                size_t IndexVOld=vcg::tri::Index(mesh,f->V(j));
+//                assert(VertMap.count(IndexVOld)>0);
+//                size_t IndexVNew=VertMap[IndexVOld];
+//                partition_mesh.face[i].V(j)=&partition_mesh.vert[IndexVNew];
+//            }
+//        }
+
+//        int t2=clock();
+//        vcg::tri::UpdateTopology<MeshType>::FaceFace(partition_mesh);
+//        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(partition_mesh);
+//        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(partition_mesh);
+//        vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(partition_mesh);
+//        vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(partition_mesh);
+
+//    }
 
 #define CONVEX 4.0
 #define CONCAVE 4.0
@@ -1164,6 +1183,7 @@ private:
 
     void SmoothPartitionsSteps(size_t SmoothSteps)
     {
+
         //save old normal
         std::vector<CoordType> OldNorm;
         for (size_t i=0;i<mesh.face.size();i++)
@@ -1189,6 +1209,7 @@ private:
         }
 
         UpdateMeshAttributes(mesh);
+        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testMesh.ply");
         for (size_t i=0;i<mesh.face.size();i++)
         {
             vcg::Matrix33<ScalarType> Rot;
@@ -1358,14 +1379,21 @@ private:
             for (size_t j=0;j<FacePartitions[i].size();j++)
                 mesh.face[FacePartitions[i][j]].Q()=i;
 
+        //vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+        std::vector<size_t> IndexF;
         for (size_t i=0;i<FacePartitions.size();i++)
         {
             if ((checkHolesOnly)&&(IsOkPartitionHoles(FacePartitions[i])))continue;
             if ((!checkHolesOnly)&&(IsOkPartition(FacePartitions[i])))continue;
 
             for (size_t j=0;j<FacePartitions[i].size();j++)
-                mesh.face[FacePartitions[i][j]].SetS();
+                IndexF.push_back(FacePartitions[i][j]);
+                //mesh.face[FacePartitions[i][j]].SetS();
         }
+        vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+        for (size_t i=0;i<IndexF.size();i++)
+            mesh.face[IndexF[i]].SetS();
+
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
         vcg::tri::Append<MeshType,MeshType>::Mesh(NonOKMesh,mesh,true);
 
@@ -1373,6 +1401,9 @@ private:
         vcg::tri::UpdateSelection<MeshType>::FaceInvert(mesh);
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
         vcg::tri::Append<MeshType,MeshType>::Mesh(OKMesh,mesh,true);
+
+        vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+        vcg::tri::UpdateSelection<MeshType>::VertexClear(mesh);
     }
 
     void TraceFromBorders()
@@ -1395,14 +1426,11 @@ private:
             }
         }
         std::cout<<"Traced successfully "<<TraceVertCandidates.size()<<" out of "<<StartTraceV.size()<<std::endl;
-
         PruneCollidingCandidates();
         TraceVert=TraceVertCandidates;
         TraceDir=TraceDirCandidates;
-
         //for (size_t i=0;i<Param.SmoothSteps;i++)
         SmoothPartitionsSteps(Param.SmoothSteps);
-
         FindPartitioningPaths();
     }
 
@@ -1537,7 +1565,7 @@ private:
         std::vector<std::vector<size_t> > FacePartitions;
         GetPartitions(FacePartitions);
         //SavePartitionOnQuality(FacePartitions,mesh);
-        size_t Offset0=FacePartitions.size();
+        //size_t Offset0=FacePartitions.size();
 
         MeshType OKMesh0,NonOKMesh0;
         SplitMeshNonOkPartition(FacePartitions,OKMesh0,NonOKMesh0,false);
@@ -1573,12 +1601,17 @@ private:
         std::cout<<"*** Getting non ok partitions ***"<<std::endl;
         FacePartitions.clear();
         GetPartitions(FacePartitions);
-        size_t Offset1=FacePartitions.size();
+        //size_t Offset1=FacePartitions.size();
         //SavePartitionOnQuality(FacePartitions,mesh,Offset0);
+        //return;
 
         std::cout<<"*** getting the ones with more than 1 hole ***"<<std::endl;
         MeshType OKMesh1,NonOKMesh1;
+        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testA.ply");
+        std::cout<<"there are "<<FacePartitions.size()<<" partitions"<<std::endl;
         SplitMeshNonOkPartition(FacePartitions,OKMesh1,NonOKMesh1,true);
+        vcg::tri::io::ExporterPLY<MeshType>::Save(OKMesh1,"test0.ply");
+        vcg::tri::io::ExporterPLY<MeshType>::Save(NonOKMesh1,"test1.ply");
         MeshType Closing;
         if (NonOKMesh1.face.size()>0)
         {
@@ -1737,6 +1770,7 @@ public:
 
         Remesh(mesh);
 
+        UpdateMeshAttributes(mesh);
     }
 
 #ifdef DRAWTRACE
@@ -1928,14 +1962,29 @@ public:
     void BatchProcess(std::vector<std::vector<size_t> > &Partitions,
                       std::vector<std::vector<size_t> > &Corners)
     {
+//        if (Param.InitialRemesh)
+//            RemeshStep();
+
+//       InitField();
+
+//       InitTracing();
+
+//       TraceBorders();
         if (Param.InitialRemesh)
-            RemeshStep();
+        RemeshStep();
 
-       InitField();
+        InitField();
 
-       InitTracing();
+//        mesh.UpdateAttributes();
+//        vcg::tri::CrossField<MyTriMesh>::SetVertCrossVectorFromFace(mesh);
 
-       TraceBorders();
+        //PatchDeco.SetParam(Param);
+        InitTracing();
+
+        TraceBorders();
+
+        //RType=OldRType=QuadBoolean::internal::PatchDecomposer<MyTriMesh>::Partitions;
+
 
        GetPartitions(Partitions);
 
@@ -1944,6 +1993,7 @@ public:
         mesh.vert[i].Q()=i;
 
        Corners.resize(Partitions.size());
+       std::cout<<"There are:"<<Partitions.size()<<std::endl;
        for (size_t i=0;i<Partitions.size();i++)
        {
            MeshType TempMesh;
@@ -1951,8 +2001,10 @@ public:
            std::vector<size_t> IndexC;
            GetCorners(TempMesh,IndexC);
            for (size_t j=0;j<IndexC.size();j++)
+           {
                IndexC[j]=TempMesh.vert[IndexC[j]].Q();
-
+               //std::cout<<"Index "<<IndexC[j]<<std::endl;
+            }
            Corners[i]=IndexC;
        }
     }
