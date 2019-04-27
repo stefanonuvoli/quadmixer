@@ -80,8 +80,14 @@ void computeQuadrangulation(
         }
     }
 
-    //Apply Least Square Conformal Maps
-    igl::lscm(chartV, chartF, b, bc, uvMap);
+    if (b.size() < chartV.rows()) {
+        //Apply Least Square Conformal Maps
+        igl::lscm(chartV, chartF, b, bc, uvMap);
+    }
+    else {
+        //Get the UV map with all fixed border
+        uvMap = bc;
+    }
 
     //AABB tree for point location
     igl::AABB<Eigen::MatrixXd, 2> tree;
@@ -128,6 +134,14 @@ void computeQuadrangulation(
     }
 
     quadrangulationF = patchF;
+
+    //Flip of faces
+    for (int i = 0; i < quadrangulationF.rows(); i++) {
+        assert(quadrangulationF.cols() == 4);
+        for (int j = 0; j < quadrangulationF.cols()/2; j++) {
+            std::swap(quadrangulationF(i,j), quadrangulationF(i, quadrangulationF.cols() - 1 - j));
+        }
+    }
 }
 
 
@@ -145,6 +159,10 @@ Eigen::VectorXd pointToBarycentric(
     baryc(0) = ((t2.y() - t3.y()) * (p.x() - t3.x()) + (t3.x() - t2.x()) * (p.y() - t3.y())) / det;
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
     baryc(2) = 1 - baryc(0) - baryc(1);
+
+    baryc(0) = std::max(std::min(baryc(0), 1.0), 0.0);
+    baryc(1) = std::max(std::min(baryc(1), 1.0), 0.0);
+    baryc(2) = std::max(std::min(baryc(2), 1.0), 0.0);
 
     return baryc;
 }
@@ -165,8 +183,10 @@ Eigen::VectorXd barycentricToPoint(
 }
 
 std::vector<std::vector<size_t>> getPatchSides(
-        const std::vector<size_t>& borders,
-        const std::vector<size_t>& corners,
+        Eigen::MatrixXd& patchV,
+        Eigen::MatrixXi& patchF,
+        std::vector<size_t>& borders,
+        std::vector<size_t>& corners,
         const Eigen::VectorXi& l)
 {
     assert(corners.size() == l.size());
@@ -176,8 +196,6 @@ std::vector<std::vector<size_t>> getPatchSides(
 
     bool foundSolution;
     do {
-        assert(startCornerId < corners.size());
-
         size_t bId = 0;
         while (borders[bId] != corners[startCornerId]) {
             bId = (bId + 1) % borders.size();
@@ -212,8 +230,70 @@ std::vector<std::vector<size_t>> getPatchSides(
             sId++;
         } while (startCornerId != cId);
 
-        startCornerId++;
-    } while (!foundSolution);
+       startCornerId++;
+    } while (!foundSolution && startCornerId < corners.size());
+
+    if (!foundSolution) {
+        for (int i = 0; i < patchV.rows(); i++) {
+            for (int j = 0; j < patchV.cols(); j++) {
+                patchV(i,j) = 0 - patchV(i,j);
+            }
+        }
+
+        for (int i = 0; i < patchF.rows(); i++) {
+            assert(patchF.cols() == 4);
+            for (int j = 0; j < patchF.cols()/2; j++) {
+                std::swap(patchF(i,j), patchF(i, patchF.cols() - 1 - j));
+            }
+        }
+
+        std::reverse(corners.begin(), corners.end());
+        std::reverse(borders.begin(), borders.end());
+
+        startCornerId = 0;
+        do {
+            assert(startCornerId < corners.size());
+
+            size_t bId = 0;
+            while (borders[bId] != corners[startCornerId]) {
+                bId = (bId + 1) % borders.size();
+            }
+
+            foundSolution = true;
+            size_t cId = startCornerId;
+            size_t sId = 0;
+            do {
+                assert(borders[bId] == corners[cId]);
+
+                cId = (cId + 1) % corners.size();
+
+                std::vector<size_t> side;
+
+                while (borders[bId] != corners[cId]) {
+                    side.push_back(borders[bId]);
+                    bId = (bId + 1) % borders.size();
+                }
+
+                assert(borders[bId] == corners[cId]);
+                assert(side[side.size() - 1] != corners[cId]);
+
+                if (side.size() != l(sId)) {
+                    foundSolution = false;
+                    break;
+                }
+
+                side.push_back(corners[cId]);
+
+                sides[sId] = side;
+                sId++;
+            } while (startCornerId != cId);
+
+            startCornerId++;
+
+        } while (!foundSolution);
+    }
+
+    assert(foundSolution);
 
     return sides;
 }

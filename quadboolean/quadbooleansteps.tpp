@@ -13,7 +13,6 @@
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
 
-
 namespace QuadBoolean {
 namespace internal {
 
@@ -201,7 +200,7 @@ void quadrangulate(
             continue;
 
         const std::vector<ChartSide>& chartSides = chart.chartSides;
-        if (chartSides.size() < 3 || chartSides.size() >= 6) {
+        if (chartSides.size() < 3 || chartSides.size() > 6) {
             std::cout << "Chart " << cId << " with corners less than 3 or greater than 6!" << std::endl;
             continue;
         }
@@ -219,7 +218,6 @@ void quadrangulate(
         }
         std::vector<int> vMap, fMap;
         VCGToEigenSelected(newSurface, chartV, chartF, vMap, fMap, 3);
-
 
         //Input subdivisions
         Eigen::VectorXi l(chartSides.size());
@@ -255,7 +253,7 @@ void quadrangulate(
         std::vector<size_t> patchCorners;
         QuadBoolean::internal::computePattern(l, patchV, patchF, patchBorders, patchCorners);
 
-        std::vector<std::vector<size_t>> patchEigenSides = getPatchSides(patchBorders, patchCorners, l);
+        std::vector<std::vector<size_t>> patchEigenSides = getPatchSides(patchV, patchF, patchBorders, patchCorners, l);
 
         assert(chartSides.size() == patchCorners.size());
         assert(chartSides.size() == patchEigenSides.size());
@@ -395,16 +393,16 @@ void quadrangulate(
         }
     }
 
+//NOT NEEDED?
+//    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
+//    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
+//    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
+
     vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedNewSurface);
     for (const size_t& borderVertexId : finalMeshBorders) {
         quadrangulatedNewSurface.vert[borderVertexId].ClearS();
     }
     vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedNewSurface, meshSmoothingIterations, 0.5, true);
-
-    //NOT NEEDED?
-//    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
-//    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
-//    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
 }
 
 template<class TriangleMeshType>

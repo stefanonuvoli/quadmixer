@@ -22,7 +22,7 @@ QuadBooleanWindow::QuadBooleanWindow(QWidget* parent) : QMainWindow(parent)
     ui.setupUi (this);
 
     loadMesh(mesh1, "mesh1.obj");
-    loadMesh(mesh2, "mesh2.obj");
+    loadMesh(mesh2, "mesh4.obj");
 
     ui.glArea->setMesh1(&mesh1);
     ui.glArea->setMesh2(&mesh2);
@@ -418,6 +418,8 @@ void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
         if(!filename2.empty()) {
             ui.glArea->setMesh1(nullptr);
             ui.glArea->setMesh2(nullptr);
+            ui.glArea->setQuadLayout1(nullptr);
+            ui.glArea->setQuadLayout2(nullptr);
             mesh1.Clear();
             mesh2.Clear();
             loadMesh(mesh1, filename1);

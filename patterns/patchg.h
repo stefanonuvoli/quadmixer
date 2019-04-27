@@ -115,10 +115,6 @@ public:
         }while(start.V()!=frontiers[0]);
         frontiers.pop_back();
 
-        for (VertexPointer vp : frontiers) {
-            this->borders.push_back(vcg::tri::Index(mesh,vp));
-        }
-
         Eigen::VectorXi current(numberSides);
         for(int i=0;i<numberSides;i++)
             current[i]=get_SideK(mesh,i).size()-1;
@@ -196,16 +192,52 @@ public:
                 }
             }
         }
-        UpdateTopology<MeshType>::FaceFace(mesh);
-        UpdateNormal<MeshType>::PerPolygonalFaceNormalized(mesh);
-        //restore corners
 
-            UpdateFlags<MeshType>::VertexClearS(mesh);
-            for(int i=0;i<corners.size();i++)
-                mesh.vert[corners[i]].SetS();
+        UpdateTopology<MeshType>::FaceFace(mesh);
+        UpdateFlags<MeshType>::FaceBorderFromFF(mesh);
+
+        //restore corners
+        UpdateFlags<MeshType>::VertexClearS(mesh);
+        for(int i=0;i<corners.size();i++)
+            mesh.vert[corners[i]].SetS();
+
+        start.SetNull();
+        for(typename MeshType::FaceIterator fi=mesh.face.begin();fi!=mesh.face.end();fi++){
+            if(!fi->IsD()){
+                for(int k=0;k<fi->VN();k++){
+                    if(vcg::face::IsBorder(*fi,k)){
+                         start.Set(&*fi,k,fi->V(k));
+                         break;
+                    }
+                }
+            }
+        }
+
+        vector<VertexPointer> bordersPointers;
+        bordersPointers.push_back(start.V());
+        do{
+            do{
+                start.FlipE();
+                start.FlipF();
+            }while(!start.IsBorder());
+            start.FlipV();
+            bordersPointers.push_back(start.V());
+        }while(start.V()!=bordersPointers[0]);
+        bordersPointers.pop_back();
+
+        this->corners.clear();
+        this->borders.clear();
+        for (VertexPointer vp : bordersPointers) {
+            if (vp->IsS()) {
+                this->corners.push_back(vcg::tri::Index(mesh,vp));
+            }
+            this->borders.push_back(vcg::tri::Index(mesh,vp));
+        }
 
         //Clean<MeshType>::OrientCoherentlyMesh(mesh,isoriented,isorientable);
         //Clean<MeshType>::FlipMesh(mesh);
+
+//        vcg::tri::io::ExporterOBJ<MeshType>::Save(mesh, "results/patch.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 
     }
     void determine_geometry(const vector<vector<typename MeshType::CoordType>> &l) {
