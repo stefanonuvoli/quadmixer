@@ -1103,7 +1103,6 @@ private:
 
     void FindPartitioningPaths()
     {
-
         InitCandidatesPathLenghts();
         std::reverse(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
         HasBeenChoosen.resize(TraceVertCandidates.size(),true);
@@ -1911,7 +1910,7 @@ public:
             MinAreaPerimeterRatio=-1;//0.5;
             MinSides=3;
             MaxSides=6;
-            MaxAngleDeviation=0;//-90;
+            MaxAngleDeviation=-1;//-90;
             MaxEdgeLenghtVariance=-1;
             MaxGeodesicToEuclideanRatio=-1;//0.5;
             MaxDistortion=-1;//0.5;
@@ -2000,6 +1999,8 @@ public:
            GetPartitionMesh(Partitions[i],TempMesh);
            std::vector<size_t> IndexC;
            GetCorners(TempMesh,IndexC);
+//           std::cout<<"Partition: "<<i<<std::endl;
+//           std::cout<<"Corners: "<<IndexC.size()<<std::endl;
            for (size_t j=0;j<IndexC.size();j++)
            {
                IndexC[j]=TempMesh.vert[IndexC[j]].Q();
