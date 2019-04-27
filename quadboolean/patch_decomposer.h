@@ -224,6 +224,12 @@ class PatchDecomposer
             //CandidatesPathLenghts.push_back(std::pair<ScalarType,size_t>(CandidatePathLenght(i),i));
         }
         std::sort(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
+
+//        for (size_t i=0;i<CandidatesPathLenghts.size();i++)
+//        {
+////            std::cout<<"Test"<<CandidatesPathLenghts[i].first<<
+////                       ","<<CandidatesPathLenghts[i].second<<std::endl;
+//        }
     }
 
 
@@ -245,12 +251,13 @@ class PatchDecomposer
                 std::vector<size_t > TraceD1=TraceDirSwap[i];
 
                 collide|=FieldTracer->CollideTraces(TraceV0,TraceD0,TraceV1,TraceD1);
-                if (collide)break;
+                if (collide){/*std::cout<<"Pruned "<<TraceIndex0<<std::endl;*/break;}
             }
             if (!collide)
             {
                 TraceVertSwap.push_back(TraceV0);
                 TraceDirSwap.push_back(TraceD0);
+                //std::cout<<"Added "<<TraceIndex0<<std::endl;
             }
         }
         TraceVertCandidates=TraceVertSwap;
@@ -1105,6 +1112,7 @@ private:
     {
         InitCandidatesPathLenghts();
         std::reverse(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
+        HasBeenChoosen.clear();
         HasBeenChoosen.resize(TraceVertCandidates.size(),true);
         bool removed=false;
         do
@@ -1208,7 +1216,7 @@ private:
         }
 
         UpdateMeshAttributes(mesh);
-        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testMesh.ply");
+        //vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"testMesh.ply");
         for (size_t i=0;i<mesh.face.size();i++)
         {
             vcg::Matrix33<ScalarType> Rot;
@@ -1961,6 +1969,8 @@ public:
     void BatchProcess(std::vector<std::vector<size_t> > &Partitions,
                       std::vector<std::vector<size_t> > &Corners)
     {
+        UpdateMeshAttributes(mesh);
+
 //        if (Param.InitialRemesh)
 //            RemeshStep();
 
