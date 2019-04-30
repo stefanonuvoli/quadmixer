@@ -13,6 +13,10 @@
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
 
+#ifndef NDEBUG
+#include <igl/writeOBJ.h>
+#endif
+
 namespace QuadBoolean {
 namespace internal {
 
@@ -217,7 +221,7 @@ void quadrangulate(
             }
         }
         std::vector<int> vMap, fMap;
-        VCGToEigenSelected(newSurface, chartV, chartF, vMap, fMap, 3);
+        VCGToEigen(newSurface, chartV, chartF, vMap, fMap, true, 3);
 
         //Input subdivisions
         Eigen::VectorXi l(chartSides.size());
@@ -258,17 +262,42 @@ void quadrangulate(
         assert(chartSides.size() == patchCorners.size());
         assert(chartSides.size() == patchEigenSides.size());
 
+#ifndef NDEBUG
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_chart.obj"), chartV, chartF);
+#endif
+
+#ifndef NDEBUG
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_patch.obj"), patchV, patchF);
+#endif
+
         //Compute quadrangulation
-        Eigen::MatrixXd uvMap;
+        Eigen::MatrixXd uvMapV;
+        Eigen::MatrixXi uvMapF;
         Eigen::MatrixXd quadrangulationV;
         Eigen::MatrixXi quadrangulationF;
-        QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartEigenSides, chartSideLength, patchEigenSides, uvMap, quadrangulationV, quadrangulationF);
+        QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartEigenSides, chartSideLength, patchEigenSides, uvMapV, uvMapF, quadrangulationV, quadrangulationF);
 
-        assert(chartV.rows() == uvMap.rows());
+        assert(chartV.rows() == uvMapV.rows());
+
+#ifndef NDEBUG
+    Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
+    for (int i = 0; i < uvMapV.rows(); i++) {
+        uvMesh(i, 0) = uvMapV(i, 0);
+        uvMesh(i, 1) = uvMapV(i, 1);
+        uvMesh(i, 2) = 0;
+    }
+
+    std::string uvFile = std::string("res/") + std::to_string(cId) + std::string("_uv.obj");
+    igl::writeOBJ(uvFile, uvMesh, uvMapF);
+#endif
 
         //Get polymesh
         PolyMeshType quadrangulatedChartMesh;
         eigenToVCG(quadrangulationV, quadrangulationF, quadrangulatedChartMesh, 4);
+
+#ifndef NDEBUG
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_quadrangulation.obj"), quadrangulationV, quadrangulationF);
+#endif
 
         //Smoothing
         vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedChartMesh);
@@ -289,12 +318,13 @@ void quadrangulate(
             for (size_t j = 0; j < side.subsides.size(); j++) {
                 const size_t& subSideId = side.subsides[j];
                 const bool& reversed = side.reversedSubside[j];
+                const ChartSubSide& subside = chartData.subSides[subSideId];
 
                 //Create new vertices of the subsides
                 if (vertexSubsideMap[subSideId].empty()) {
-                    //Get fixed corners of the subside
-                    const ChartSubSide& subside = chartData.subSides[subSideId];
+                    assert(!subside.isOnBorder);
 
+                    //Get fixed corners of the subside
                     size_t vStart = subside.vertices[0];
                     size_t vEnd = subside.vertices[subside.vertices.size() - 1];
                     assert(cornerVertices[vStart] >= 0 && cornerVertices[vEnd] >= 0);
@@ -345,7 +375,8 @@ void quadrangulate(
 
                         size_t existingVertexId = currentVertexMap[patchSideVId];
 
-                        if (k > 0 && k < ilpResult[subSideId]) {
+                        //If it is not a corner or if it is not on border
+                        if (!subside.isOnBorder && k > 0 && k < ilpResult[subSideId]) {
                             //Average
                             const typename PolyMeshType::CoordType& coord = quadrangulatedChartMesh.vert[patchSideVId].P();
                             quadrangulatedNewSurface.vert.at(existingVertexId).P() =
@@ -393,10 +424,6 @@ void quadrangulate(
         }
     }
 
-//NOT NEEDED?
-//    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
-//    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulatedNewSurface);
-//    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulatedNewSurface);
 
     vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedNewSurface);
     for (const size_t& borderVertexId : finalMeshBorders) {
@@ -429,6 +456,22 @@ std::vector<int> getPatchDecomposition(
     return newSurfaceLabel;
 }
 
+
+template<class PolyMeshType>
+void getResult(
+        PolyMeshType& preservedSurface,
+        PolyMeshType& quadrangulatedNewSurface,
+        PolyMeshType& result)
+{
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, preservedSurface);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, quadrangulatedNewSurface);
+
+    //NOT NEEDED?
+    //vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(result);
+    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
+
+}
 
 }
 }

@@ -106,8 +106,8 @@ private:
     vcg::Point3f sceneCenter;
     float sceneRadius;
 
-    template<class MeshType>
-    void initMeshWrapper(GLPolyWrap<MeshType>& glWrap, MeshType* mesh);
+    void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
+    void initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh);
     template<class MeshType>
     void initQuadLayoutWrapper(GLQuadLayoutWrap<MeshType>& glWrap, QuadLayoutData* quadLayoutData);
     template<class MeshType>

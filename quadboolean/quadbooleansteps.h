@@ -83,6 +83,13 @@ std::vector<int> getPatchDecomposition(
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners);
 
+
+template<class PolyMeshType>
+void getResult(
+        PolyMeshType& preservedSurface,
+        PolyMeshType& quadrangulatedNewSurface,
+        PolyMeshType& result);
+
 }
 }
 

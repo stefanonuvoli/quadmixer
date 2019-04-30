@@ -6,8 +6,6 @@
 
 #include <iostream>
 
-#include <igl/readOBJ.h>
-
 #include "quadconvert.h"
 
 namespace QuadBoolean {
@@ -40,10 +38,16 @@ void computePattern(
     patch.generate_topology(l, param);
     patch.determine_geometry(l);
 
-    VCGToEigen(patch.mesh, patchV, patchF, 4);
+    std::vector<int> vMap;
+    std::vector<int> fMap;
+    VCGToEigen(patch.mesh, patchV, patchF, vMap, fMap, false, 4);
 
-    std::copy(patch.borders.begin(), patch.borders.end(), std::back_inserter(borders));
-    std::copy(patch.corners.begin(), patch.corners.end(), std::back_inserter(corners));
+    for (int& borderId : patch.borders) {
+        borders.push_back(vMap[borderId]);
+    }
+    for (int& cornerId : patch.corners) {
+        corners.push_back(vMap[cornerId]);
+    }
 }
 
 }

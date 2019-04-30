@@ -195,6 +195,7 @@ public:
 
         UpdateTopology<MeshType>::FaceFace(mesh);
         UpdateFlags<MeshType>::FaceBorderFromFF(mesh);
+        UpdateNormal<MeshType>::PerPolygonalFaceNormalized(mesh);
 
         //restore corners
         UpdateFlags<MeshType>::VertexClearS(mesh);
@@ -204,6 +205,7 @@ public:
         start.SetNull();
         for(typename MeshType::FaceIterator fi=mesh.face.begin();fi!=mesh.face.end();fi++){
             if(!fi->IsD()){
+                assert(fi->N().Z() > 0);
                 for(int k=0;k<fi->VN();k++){
                     if(vcg::face::IsBorder(*fi,k)){
                          start.Set(&*fi,k,fi->V(k));
@@ -236,10 +238,8 @@ public:
 
         //Clean<MeshType>::OrientCoherentlyMesh(mesh,isoriented,isorientable);
         //Clean<MeshType>::FlipMesh(mesh);
-
-//        vcg::tri::io::ExporterOBJ<MeshType>::Save(mesh, "results/patch.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-
     }
+
     void determine_geometry(const vector<vector<typename MeshType::CoordType>> &l) {
         assert(numberSides==l.size());
         // fix boundary vertices

@@ -23,7 +23,8 @@ void computeQuadrangulation(
         const std::vector<std::vector<size_t>>& chartSides,
         const std::vector<double>& chartSideLengths,
         const std::vector<std::vector<size_t>>& patchSides,
-        Eigen::MatrixXd& V_uv,
+        Eigen::MatrixXd& uvMapV,
+        Eigen::MatrixXi& uvMapF,
         Eigen::MatrixXd& quadrangulationV,
         Eigen::MatrixXi& quadrangulationF);
 

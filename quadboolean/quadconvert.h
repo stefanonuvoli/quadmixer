@@ -12,17 +12,10 @@ void VCGToEigen(
         PolyMeshType& vcgMesh,
         Eigen::MatrixXd& V,
         Eigen::MatrixXi& F,
-        int numVertices = 3,
-        int dim = 3);
-
-template<class PolyMeshType>
-void VCGToEigenSelected(
-        PolyMeshType& vcgMesh,
-        Eigen::MatrixXd& V,
-        Eigen::MatrixXi& F,
         std::vector<int>& vMap,
         std::vector<int>& fMap,
-        int numVertices = 3,
+        bool selectedOnly = false,
+        int numVerticesPerFace = 3,
         int dim = 3);
 
 template<class PolyMeshType>

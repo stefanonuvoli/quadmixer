@@ -5,7 +5,6 @@
 #include <igl/AABB.h>
 #include <igl/in_element.h>
 
-
 namespace QuadBoolean {
 namespace internal {
 
@@ -30,7 +29,8 @@ void computeQuadrangulation(
         const std::vector<std::vector<size_t>>& chartSides,
         const std::vector<double>& chartSideLength,
         const std::vector<std::vector<size_t>>& patchSides,
-        Eigen::MatrixXd& uvMap,
+        Eigen::MatrixXd& uvMapV,
+        Eigen::MatrixXi& uvMapF,
         Eigen::MatrixXd& quadrangulationV,
         Eigen::MatrixXi& quadrangulationF)
 {
@@ -82,16 +82,42 @@ void computeQuadrangulation(
 
     if (b.size() < chartV.rows()) {
         //Apply Least Square Conformal Maps
-        igl::lscm(chartV, chartF, b, bc, uvMap);
+        igl::lscm(chartV, chartF, b, bc, uvMapV);
     }
     else {
         //Get the UV map with all fixed border
-        uvMap = bc;
+        uvMapV = bc;
+
+#ifndef NDEBUG
+        std::cout << "No fixed border! UVMap setted as bc." << std::endl;
+#endif
     }
+
+    uvMapF = chartF;
+
+//    const Eigen::Vector2d& v1 = uvMapV.row(uvMapF(0,0));
+//    const Eigen::Vector2d& v2 = uvMapV.row(uvMapF(0,1));
+//    const Eigen::Vector2d& v3 = uvMapV.row(uvMapF(0,2));
+
+//    Eigen::Vector3d e1(v2.x() - v1.x(), v2.y() - v1.y(), 0);
+//    Eigen::Vector3d e2(v3.x() - v2.x(), v3.y() - v2.y(), 0);
+
+//    Eigen::Vector3d normal = e1.cross(e2);
+
+//    //Flip uv map faces
+//    assert(normal.z() != 0);
+//    if (normal.z() < 0) {
+//        for (int i = 0; i < uvMapF.rows(); i++) {
+//            assert(uvMapF.cols() == 3);
+//            for (int j = 0; j < uvMapV.cols()/2; j++) {
+//                std::swap(uvMapF(i,j), uvMapF(i, uvMapF.cols() - 1 - j));
+//            }
+//        }
+//    }
 
     //AABB tree for point location
     igl::AABB<Eigen::MatrixXd, 2> tree;
-    tree.init(uvMap, chartF);
+    tree.init(uvMapV, uvMapF);
 
     quadrangulationV.resize(patchV.rows(), 3);
     for (int i = 0; i < patchV.rows(); i++) {
@@ -102,14 +128,14 @@ void computeQuadrangulation(
         Q2D(0,1) = Q.y();
 
         Eigen::VectorXi I;
-        igl::in_element(uvMap, chartF, Q2D, tree, I);
+        igl::in_element(uvMapV, uvMapF, Q2D, tree, I);
 
         int triIndex = I(0);
 
         if (triIndex < 0) {
             Eigen::VectorXi sqrD;
             Eigen::MatrixXd C;
-            tree.squared_distance(uvMap, chartF, Q2D, sqrD, I, C);
+            tree.squared_distance(uvMapV, uvMapF, Q2D, sqrD, I, C);
 
             triIndex = I(0);
 
@@ -119,9 +145,9 @@ void computeQuadrangulation(
         const Eigen::VectorXi& tri = chartF.row(triIndex);
 
         Eigen::VectorXd baryc = pointToBarycentric(
-                    uvMap.row(tri(0)),
-                    uvMap.row(tri(1)),
-                    uvMap.row(tri(2)),
+                    uvMapV.row(tri(0)),
+                    uvMapV.row(tri(1)),
+                    uvMapV.row(tri(2)),
                     Q2D.row(0));
 
         Eigen::VectorXd mappedPoint = barycentricToPoint(
@@ -135,7 +161,7 @@ void computeQuadrangulation(
 
     quadrangulationF = patchF;
 
-    //Flip of faces
+    //Flip faces
     for (int i = 0; i < quadrangulationF.rows(); i++) {
         assert(quadrangulationF.cols() == 4);
         for (int j = 0; j < quadrangulationF.cols()/2; j++) {
@@ -151,18 +177,37 @@ Eigen::VectorXd pointToBarycentric(
         const Eigen::VectorXd& t2,
         const Eigen::VectorXd& t3,
         const Eigen::VectorXd& p)
-{
+{       
+    const double eps = 0.0001;
     double det = (t2.y() - t3.y()) * (t1.x() - t3.x()) + (t3.x() - t2.x()) * (t1.y() - t3.y());
 
     Eigen::VectorXd baryc(3);
 
     baryc(0) = ((t2.y() - t3.y()) * (p.x() - t3.x()) + (t3.x() - t2.x()) * (p.y() - t3.y())) / det;
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
-    baryc(2) = 1 - baryc(0) - baryc(1);
+
+    if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps || baryc(2) > 1.0 + eps) {
+        baryc(0) = baryc(1) = baryc(2) = 1.0/3.0;
+#ifndef NDEBUG
+        std::cout << "Degenerate triangle" << std::endl;
+#endif
+    }
+    else {
+        baryc(2) = 1.0 - baryc(0) - baryc(1);
+    }
+
+
+
+    assert(baryc(0) + baryc(1) + baryc(2) >= 1.0 - eps && baryc(0) + baryc(1) + baryc(2) <= 1.0 + eps);
 
     baryc(0) = std::max(std::min(baryc(0), 1.0), 0.0);
     baryc(1) = std::max(std::min(baryc(1), 1.0), 0.0);
     baryc(2) = std::max(std::min(baryc(2), 1.0), 0.0);
+
+    assert(baryc(0) >= 0 && baryc(0) <= 1);
+    assert(baryc(1) >= 0 && baryc(1) <= 1);
+    assert(baryc(2) >= 0 && baryc(2) <= 1);
+
 
     return baryc;
 }
@@ -234,16 +279,12 @@ std::vector<std::vector<size_t>> getPatchSides(
     } while (!foundSolution && startCornerId < corners.size());
 
     if (!foundSolution) {
+#ifndef NDEBUG
+      std::cout << "Found a no counter-clockwise path, it should not happen. Reversed patch." << std::endl;
+#endif
         for (int i = 0; i < patchV.rows(); i++) {
             for (int j = 0; j < patchV.cols(); j++) {
                 patchV(i,j) = 0 - patchV(i,j);
-            }
-        }
-
-        for (int i = 0; i < patchF.rows(); i++) {
-            assert(patchF.cols() == 4);
-            for (int j = 0; j < patchF.cols()/2; j++) {
-                std::swap(patchF(i,j), patchF(i, patchF.cols() - 1 - j));
             }
         }
 

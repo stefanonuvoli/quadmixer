@@ -10,61 +10,35 @@ void VCGToEigen(
         PolyMeshType& vcgMesh,
         Eigen::MatrixXd& V,
         Eigen::MatrixXi& F,
-        int numVertices,
-        int dim)
-{
-    assert(dim >= 2);
-    assert(numVertices > 2);
-
-    V.resize(static_cast<int>(vcgMesh.vert.size()), dim);
-    F.resize(static_cast<int>(vcgMesh.face.size()), numVertices);
-
-    for (size_t i = 0; i < vcgMesh.vert.size(); i++){
-        for (int j = 0; j < dim; j++) {
-            V(static_cast<int>(i), j) = vcgMesh.vert[i].P()[j];
-        }
-    }
-    for (size_t i = 0; i < vcgMesh.face.size(); i++){
-        for (int j = 0; j < vcgMesh.face[i].VN(); j++) {
-            F(static_cast<int>(i), j) = static_cast<int>(vcg::tri::Index(vcgMesh, vcgMesh.face[i].V(j)));
-        }
-    }
-}
-
-template<class PolyMeshType>
-void VCGToEigenSelected(
-        PolyMeshType& vcgMesh,
-        Eigen::MatrixXd& V,
-        Eigen::MatrixXi& F,
         std::vector<int>& vMap,
         std::vector<int>& fMap,
-        int numVertices,
+        bool selectedOnly,
+        int numVerticesPerFace,
         int dim)
 {
     assert(dim >= 2);
-    assert(numVertices > 2);
-
+    assert(numVerticesPerFace > 2);
 
     int nSelectedVertices = 0;
     for (size_t i = 0; i < vcgMesh.vert.size(); i++){
-        if (vcgMesh.vert[i].IsS()) {
+        if ((!selectedOnly || vcgMesh.vert[i].IsS()) && !vcgMesh.vert[i].IsD()) {
             nSelectedVertices++;
         }
     }
     int nSelectedFaces = 0;
     for (size_t i = 0; i < vcgMesh.face.size(); i++){
-        if (vcgMesh.face[i].IsS()) {
+        if ((!selectedOnly || vcgMesh.face[i].IsS()) && !vcgMesh.face[i].IsD()) {
             nSelectedFaces++;
         }
     }
 
     V.resize(nSelectedVertices, dim);
-    F.resize(nSelectedFaces, numVertices);
+    F.resize(nSelectedFaces, numVerticesPerFace);
 
     vMap.resize(vcgMesh.vert.size(), -1);
     int vId = 0;
     for (size_t i = 0; i < vcgMesh.vert.size(); i++){
-        if (vcgMesh.vert[i].IsS()) {
+        if ((!selectedOnly || vcgMesh.vert[i].IsS()) && !vcgMesh.vert[i].IsD()) {
             vMap[i] = vId;
             for (int j = 0; j < dim; j++) {
                 V(vId, j) = vcgMesh.vert[i].P()[j];
@@ -76,7 +50,7 @@ void VCGToEigenSelected(
     fMap.resize(vcgMesh.face.size(), -1);
     int fId = 0;
     for (size_t i = 0; i < vcgMesh.face.size(); i++){
-        if (vcgMesh.face[i].IsS()) {
+        if ((!selectedOnly || vcgMesh.face[i].IsS()) && !vcgMesh.face[i].IsD()) {
             fMap[i] = fId;
             for (int j = 0; j < vcgMesh.face[i].VN(); j++) {
                 F(fId, j) = vMap[vcg::tri::Index(vcgMesh, vcgMesh.face[i].V(j))];

@@ -225,13 +225,13 @@ ChartData getPatchDecompositionChartData(
                         else if (firstIteration) {
                             subSideId = findIt->second;
                         }
-                        firstIteration = false;
+                        firstIteration = false;                        
+
+                        remainingVertices.erase(vCurrentId);
 
                         //Next border edge
                         vCurrentId = vertexNextMap.at(vCurrentId);
                         vNextId = vertexNextMap.at(vCurrentId);
-
-                        remainingVertices.erase(vCurrentId);
 
                         lastEdgeVec = currentEdgeVec;
                     }
@@ -243,7 +243,7 @@ ChartData getPatchDecompositionChartData(
                 }
 #endif
 
-                //Subside appears reversed
+                //True if the subside is reversed (from the last to the first vertex)
                 bool reversed;
 
                 if (newSubSide) {

@@ -48,7 +48,6 @@ void GLArea::setBoolean(TriangleMesh* boolean)
 void GLArea::setPreservedSurface(PolyMesh* preservedSurface)
 {
     initMeshWrapper(this->glWrapPreservedSurface, preservedSurface);
-//    this->glWrapQuadLayoutDataPreserved.mesh = preservedSurface;
 }
 
 void GLArea::setQuadLayoutPreserved1(QuadLayoutData* quadLayoutDataPreserved1)
@@ -90,6 +89,7 @@ void GLArea::setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangu
 void GLArea::setResult(PolyMesh* result)
 {
     initMeshWrapper(this->glWrapResult, result);
+    this->glWrapQuadLayoutResult.mesh = result;
 }
 
 void GLArea::setQuadLayoutResult(QuadLayoutData* quadLayoutDataResult)
@@ -203,16 +203,27 @@ void GLArea::setSceneCenter(const vcg::Point3f &value)
 
 
 
-template<class MeshType>
-void GLArea::initMeshWrapper(GLPolyWrap<MeshType>& glWrap, MeshType* mesh) {
+void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
     if (mesh != nullptr) {
-        //PolygonalAlgorithm<MeshType>::UpdateFaceNormals(*this);
-        vcg::PolygonalAlgorithm<MeshType>::UpdateFaceNormalByFitting(*mesh);
-        vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(*mesh);
+//        vcg::PolygonalAlgorithm<MeshType>::UpdateFaceNormalByFitting(*mesh);
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
+        vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*mesh);
 
-        vcg::tri::UpdateBounding<MeshType>::Box(*mesh);
-        vcg::tri::UpdateNormal<MeshType>::PerVertexNormalizedPerFace(*mesh);
-        vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(*mesh);
+        vcg::tri::UpdateBounding<PolyMesh>::Box(*mesh);
+        vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(*mesh);
+        vcg::tri::UpdateNormal<PolyMesh>::PerFaceNormalized(*mesh);
+    }
+    glWrap.mesh = mesh;
+}
+
+void GLArea::initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh) {
+    if (mesh != nullptr) {
+        vcg::tri::UpdateNormal<TriangleMesh>::PerFaceNormalized(*mesh);
+        vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalized(*mesh);
+
+        vcg::tri::UpdateBounding<TriangleMesh>::Box(*mesh);
+        vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalizedPerFace(*mesh);
+        vcg::tri::UpdateNormal<TriangleMesh>::PerFaceNormalized(*mesh);
     }
     glWrap.mesh = mesh;
 }

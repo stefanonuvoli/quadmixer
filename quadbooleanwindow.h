@@ -113,6 +113,7 @@ private:
     QuadLayoutData quadLayoutDataQuadrangulatedNewSurface;
 
     PolyMesh result;
+    std::vector<int> quadTracerLabelResult;
     QuadLayoutData quadLayoutDataResult;
 
 
