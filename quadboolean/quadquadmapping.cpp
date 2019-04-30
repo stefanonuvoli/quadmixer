@@ -287,6 +287,12 @@ std::vector<std::vector<size_t>> getPatchSides(
                 patchV(i,j) = 0 - patchV(i,j);
             }
         }
+        for (int i = 0; i < patchF.rows(); i++) {
+            assert(patchF.cols() == 4);
+            for (int j = 0; j < patchF.cols()/2; j++) {
+                std::swap(patchF(i,j), patchF(i, patchF.cols() - 1 - j));
+            }
+        }
 
         std::reverse(corners.begin(), corners.end());
         std::reverse(borders.begin(), borders.end());
