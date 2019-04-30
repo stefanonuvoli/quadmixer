@@ -186,7 +186,7 @@ Eigen::VectorXd pointToBarycentric(
     baryc(0) = ((t2.y() - t3.y()) * (p.x() - t3.x()) + (t3.x() - t2.x()) * (p.y() - t3.y())) / det;
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
 
-    if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps || baryc(2) > 1.0 + eps) {
+    if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps) {
         baryc(0) = baryc(1) = baryc(2) = 1.0/3.0;
 #ifndef NDEBUG
         std::cout << "Degenerate triangle" << std::endl;
