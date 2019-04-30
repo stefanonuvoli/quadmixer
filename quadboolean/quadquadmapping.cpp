@@ -186,17 +186,15 @@ Eigen::VectorXd pointToBarycentric(
     baryc(0) = ((t2.y() - t3.y()) * (p.x() - t3.x()) + (t3.x() - t2.x()) * (p.y() - t3.y())) / det;
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
 
-    if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps) {
+    if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps || baryc(0) < 0.0 - eps || baryc(1) < 0.0 - eps) {
         baryc(0) = baryc(1) = baryc(2) = 1.0/3.0;
 #ifndef NDEBUG
-        std::cout << "Degenerate triangle" << std::endl;
+        std::cout << "Degenerate triangle." << std::endl;
 #endif
     }
     else {
         baryc(2) = 1.0 - baryc(0) - baryc(1);
     }
-
-
 
     assert(baryc(0) + baryc(1) + baryc(2) >= 1.0 - eps && baryc(0) + baryc(1) + baryc(2) <= 1.0 + eps);
 
@@ -266,7 +264,9 @@ std::vector<std::vector<size_t>> getPatchSides(
 
             if (side.size() != l(sId)) {
                 foundSolution = false;
-                break;
+#ifdef NDEBUG
+                    break;
+#endif
             }
 
             side.push_back(corners[cId]);
@@ -280,8 +280,9 @@ std::vector<std::vector<size_t>> getPatchSides(
 
     if (!foundSolution) {
 #ifndef NDEBUG
-      std::cout << "Found a no counter-clockwise path, it should not happen. Reversed patch." << std::endl;
+      std::cout << "Found a no counter-clockwise path in patch. Reversed patch." << std::endl;
 #endif
+
         for (int i = 0; i < patchV.rows(); i++) {
             for (int j = 0; j < patchV.cols(); j++) {
                 patchV(i,j) = 0 - patchV(i,j);
@@ -326,7 +327,9 @@ std::vector<std::vector<size_t>> getPatchSides(
 
                 if (side.size() != l(sId)) {
                     foundSolution = false;
+#ifdef NDEBUG
                     break;
+#endif
                 }
 
                 side.push_back(corners[cId]);

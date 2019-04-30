@@ -255,7 +255,11 @@ void quadrangulate(
         Eigen::MatrixXi patchF;
         std::vector<size_t> patchBorders;
         std::vector<size_t> patchCorners;
-        QuadBoolean::internal::computePattern(l, patchV, patchF, patchBorders, patchCorners);
+        QuadBoolean::internal::computePattern(l, patchV, patchF, patchBorders, patchCorners);    
+
+#ifndef NDEBUG
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_patch.obj"), patchV, patchF);
+#endif
 
         std::vector<std::vector<size_t>> patchEigenSides = getPatchSides(patchV, patchF, patchBorders, patchCorners, l);
 
@@ -264,10 +268,6 @@ void quadrangulate(
 
 #ifndef NDEBUG
         igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_chart.obj"), chartV, chartF);
-#endif
-
-#ifndef NDEBUG
-        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_patch.obj"), patchV, patchF);
 #endif
 
         //Compute quadrangulation
