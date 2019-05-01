@@ -137,7 +137,7 @@ namespace patchgen {
 
             auto side_indexL=vcg::tri::Allocator<PatchT>::template GetPerVertexAttribute<int>(patch,std::string("LeftSide"));
             auto side_indexR=vcg::tri::Allocator<PatchT>::template GetPerVertexAttribute<int>(patch,std::string("RightSide"));
-            vcg::tri::Allocator<PatchT>::AddVertices(patch,10);
+            vcg::tri::Allocator<PatchT>::AddVertices(patch,14);
             patch.vert[0].SetS(); //C0
             patch.vert[1].SetS(); //C1
             patch.vert[2].SetS(); //C2
@@ -160,46 +160,63 @@ namespace patchgen {
             side_indexR[6]=0;
             side_indexL[7]=0;   //V2
             side_indexR[7]=0;
-            side_indexL[8]=-1;   //V3
-            side_indexR[8]=-1;
-            side_indexL[9]=-1;   //V4
-            side_indexR[9]=-1;
+            side_indexL[8]=0;   //V3
+            side_indexR[8]=0;
+            side_indexL[9]=1;   //V4
+            side_indexR[9]=1;
+            side_indexL[10]=-1;   //V5
+            side_indexR[10]=-1;
+            side_indexL[11]=-1;   //V6
+            side_indexR[11]=-1;
+            side_indexL[12]=-1;   //V7
+            side_indexR[12]=-1;
+            side_indexL[13]=-1;   //V8
+            side_indexR[13]=-1;
 
-            typename PatchT::FaceIterator pfi=vcg::tri::Allocator<PatchT>::AddFaces(patch,5);
-            (*pfi).Alloc(4); //C[0], V[0], V[3], V[4]
-            (*pfi).V(0)=&patch.vert[0];(*pfi).V(1)=&patch.vert[5];(*pfi).V(2)=&patch.vert[8];(*pfi).V(3)=&patch.vert[9];
+            typename PatchT::FaceIterator pfi=vcg::tri::Allocator<PatchT>::AddFaces(patch,8);
+            (*pfi).Alloc(4); //C[0], V[0], V[5], C[4]
+            (*pfi).V(0)=&patch.vert[0];(*pfi).V(1)=&patch.vert[5];(*pfi).V(2)=&patch.vert[10];(*pfi).V(3)=&patch.vert[4];
             pfi++;
-            (*pfi).Alloc(4);  //C[1], V[4], V[3], V[2]
-            (*pfi).V(0)=&patch.vert[1];(*pfi).V(1)=&patch.vert[9];(*pfi).V(2)=&patch.vert[8];(*pfi).V(3)=&patch.vert[7];
+            (*pfi).Alloc(4);  //V[0], V[1], V[6], V[5]
+            (*pfi).V(0)=&patch.vert[5];(*pfi).V(1)=&patch.vert[6];(*pfi).V(2)=&patch.vert[11];(*pfi).V(3)=&patch.vert[10];
             pfi++;
-            (*pfi).Alloc(4);  //V[0], V[1], V[2], V[3]
-            (*pfi).V(0)=&patch.vert[5];(*pfi).V(1)=&patch.vert[6];(*pfi).V(2)=&patch.vert[7];(*pfi).V(3)=&patch.vert[8];
+            (*pfi).Alloc(4);  //V[1], V[2], V[7], V[6]
+            (*pfi).V(0)=&patch.vert[6];(*pfi).V(1)=&patch.vert[7];(*pfi).V(2)=&patch.vert[12];(*pfi).V(3)=&patch.vert[11];
             pfi++;
-            (*pfi).Alloc(4);  //V[4], C[3], C[4], C[0]
-            (*pfi).V(0)=&patch.vert[9];(*pfi).V(1)=&patch.vert[3];(*pfi).V(2)=&patch.vert[4];(*pfi).V(3)=&patch.vert[0];
+            (*pfi).Alloc(4);  //V[2], V[3], V[8], V[7]
+            (*pfi).V(0)=&patch.vert[7];(*pfi).V(1)=&patch.vert[8];(*pfi).V(2)=&patch.vert[13];(*pfi).V(3)=&patch.vert[12];
             pfi++;
-            (*pfi).Alloc(4);  //V[4], C[1], C[2], C[3]
-            (*pfi).V(0)=&patch.vert[9];(*pfi).V(1)=&patch.vert[1];(*pfi).V(2)=&patch.vert[2];(*pfi).V(3)=&patch.vert[3];
+            (*pfi).Alloc(4);  //V[3], C[1], V[4], V[8]
+            (*pfi).V(0)=&patch.vert[8];(*pfi).V(1)=&patch.vert[1];(*pfi).V(2)=&patch.vert[9];(*pfi).V(3)=&patch.vert[13];
+            pfi++;
+            (*pfi).Alloc(4);  //V[4], C[2], V[7], V[8]
+            (*pfi).V(0)=&patch.vert[9];(*pfi).V(1)=&patch.vert[2];(*pfi).V(2)=&patch.vert[12];(*pfi).V(3)=&patch.vert[13];
+            pfi++;
+            (*pfi).Alloc(4);  //C[2], C[3], V[6], V[7]
+            (*pfi).V(0)=&patch.vert[2];(*pfi).V(1)=&patch.vert[3];(*pfi).V(2)=&patch.vert[11];(*pfi).V(3)=&patch.vert[12];
+            pfi++;
+            (*pfi).Alloc(4);  //C[3], C[4], V[5], V[6]
+            (*pfi).V(0)=&patch.vert[3];(*pfi).V(1)=&patch.vert[4];(*pfi).V(2)=&patch.vert[10];(*pfi).V(3)=&patch.vert[11];
 
 
             vcg::face::Pos<typename PatchT::FaceType> startPos=getPosFromIndex(patch,0,5);
             for (int i = 0; i < param.x; ++i)
                insert_edgeloop<PatchT>(patch,startPos);
 
-            startPos=getPosFromIndex(patch,4,0);
-            for (int i = 0; i < param.q[0]; ++i)
+            startPos=getPosFromIndex(patch,2,9);
+            for (int i = 0; i < param.y; ++i)
+               insert_edgeloop<PatchT>(patch,startPos);
+
+            startPos=getPosFromIndex(patch,4,3);
+            for (int i = 0; i < param.q[4]; ++i)
                insert_edgeloop<PatchT>(patch,startPos);
 
             startPos=getPosFromIndex(patch,2,3);
             for (int i = 0; i < param.q[1]; ++i)
                insert_edgeloop<PatchT>(patch,startPos);
 
-            startPos=getPosFromIndex(patch,3,4);
-            for (int i = 0; i < param.q[4]; ++i)
-               insert_edgeloop<PatchT>(patch,startPos);
 
-
-//            cout<<"patch 5 -- 3"<<endl;
+            cout<<"patch 5 -- 3"<<endl;
         }
         /*static VariableIndicators& get_variable_indicators() {
             static VariableIndicators variable_indicators;

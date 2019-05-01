@@ -9,28 +9,6 @@
 namespace QuadBoolean {
 namespace internal {
 
-template<class PolyMeshType>
-void getPreservedSurfaceMesh(
-        PolyMeshType& mesh1,
-        PolyMeshType& mesh2,
-        const std::vector<bool>& preservedQuad1,
-        const std::vector<bool>& preservedQuad2,
-        const std::vector<int>& faceLabel1,
-        const std::vector<int>& faceLabel2,
-        PolyMeshType& preservedSurface,
-        std::vector<int>& newFaceLabel);
-
-template<class TriangleMeshType>
-void getNewSurfaceMesh(
-        TriangleMeshType& triResult,
-        const size_t& nFirstFaces,
-        const std::vector<int>& birthQuad1,
-        const std::vector<int>& birthQuad2,
-        const std::vector<bool>& preservedQuad1,
-        const std::vector<bool>& preservedQuad2,
-        const Eigen::VectorXi& J,
-        TriangleMeshType& newSurface);
-
 
 template<class PolyMeshType>
 void computePreservedQuadForMesh(

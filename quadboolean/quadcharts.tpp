@@ -129,16 +129,18 @@ ChartData getPatchDecompositionChartData(
             lastEdgeVec = mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P();
             lastEdgeVec.Normalize();
 
-            std::pair<size_t, size_t> startEdge(vCurrentId, vNextId);
-            if (startEdge.first > startEdge.second) {
-                std::swap(startEdge.first, startEdge.second);
-            }
+//            std::pair<size_t, size_t> startEdge(vCurrentId, vNextId);
+//            if (startEdge.first > startEdge.second) {
+//                std::swap(startEdge.first, startEdge.second);
+//            }
 
             int currentLabel;
 
             //Iterate in the borders to get the first corner
             vStartId = vCurrentId;
-            do {
+            do {                
+                remainingVertices.erase(vCurrentId);
+
                 //Next border edge
                 vCurrentId = vertexNextMap.at(vCurrentId);
                 vNextId = vertexNextMap.at(vCurrentId);
@@ -169,7 +171,6 @@ ChartData getPatchDecompositionChartData(
             }
 #endif
 
-            //Get all the sub sides
             vStartId = vCurrentId;
             vNextId = vertexNextMap.at(vCurrentId);
 

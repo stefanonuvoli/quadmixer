@@ -95,6 +95,11 @@ void QuadBooleanWindow::doTraceQuads() {
 
     colorizeMesh(mesh1, quadTracerLabel1);
     colorizeMesh(mesh2, quadTracerLabel2);
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh1, "res/mesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, "res/mesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 }
 
 void QuadBooleanWindow::doComputeBooleans() {
@@ -149,6 +154,13 @@ void QuadBooleanWindow::doComputeBooleans() {
 
 
     ui.glArea->setBoolean(&boolean);
+
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/trimesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/trimesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/boolean.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 }
 
 
@@ -286,6 +298,11 @@ void QuadBooleanWindow::doGetSurfaces() {
     ui.glArea->setQuadLayoutPreserved2(&quadLayoutDataPreserved2);
 
     colorizeMesh(preservedSurface, preservedSurfaceLabel);
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 }
 
 void QuadBooleanWindow::doPatchDecomposition() {
@@ -324,6 +341,11 @@ void QuadBooleanWindow::doPatchDecomposition() {
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
+    colorizeMesh(newSurface, newSurfaceLabel);
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 
     start = chrono::steady_clock::now();
 
@@ -336,8 +358,6 @@ void QuadBooleanWindow::doPatchDecomposition() {
               << " ms" << std::endl;
 
     ui.glArea->setChartSides(&chartData);
-
-    colorizeMesh(newSurface, newSurfaceLabel);
 }
 
 
@@ -366,10 +386,10 @@ void QuadBooleanWindow::doQuadrangulate()
     quadrangulatedNewSurface.Clear();
     quadrangulatedNewSurfaceLabel.clear();
 
-    start = chrono::steady_clock::now();
-
     int chartSmoothingIterations = ui.chartSmoothingSpinBox->value();
     int meshSmoothingIterations = ui.meshSmoothingSpinBox->value();
+
+    start = chrono::steady_clock::now();
 
     QuadBoolean::internal::quadrangulate(
                 newSurface,
@@ -388,6 +408,10 @@ void QuadBooleanWindow::doQuadrangulate()
     colorizeMesh(quadrangulatedNewSurface, quadrangulatedNewSurfaceLabel);
 
     ui.glArea->setQuadrangulated(&quadrangulatedNewSurface);
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(quadrangulatedNewSurface, "res/quadrangulatedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 }
 
 void QuadBooleanWindow::doGetResult()
@@ -397,9 +421,11 @@ void QuadBooleanWindow::doGetResult()
     //Clear data
     result.Clear();
 
+    int resultSmoothingIterations = ui.resultSmoothingSpinBox->value();
+
     start = chrono::steady_clock::now();
 
-    QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result);
+    QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, resultSmoothingIterations);
 
     std::cout << std::endl << " >> "
               << "Get result: "
@@ -425,6 +451,10 @@ void QuadBooleanWindow::doGetResult()
     ui.glArea->setQuadLayoutResult(&quadLayoutDataResult);
 
     colorizeMesh(result, quadTracerLabelResult);
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 }
 
 
@@ -490,21 +520,11 @@ void QuadBooleanWindow::on_quadTracerPushButton_clicked()
 
     updateVisibility();
     ui.glArea->updateGL();
-
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh1, "res/mesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, "res/mesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
-
 }
 
 void QuadBooleanWindow::on_computeBooleanPushButton_clicked()
 {
     doComputeBooleans();
-
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/boolean.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 
     ui.showMesh1CheckBox->setChecked(false);
     ui.showMesh2CheckBox->setChecked(false);
@@ -546,11 +566,6 @@ void QuadBooleanWindow::on_getSurfacesPushButton_clicked()
 
     updateVisibility();
     ui.glArea->updateGL();
-
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 }
 
 void QuadBooleanWindow::on_decompositionPushButton_clicked()
@@ -575,9 +590,6 @@ void QuadBooleanWindow::on_decompositionPushButton_clicked()
     updateVisibility();
     ui.glArea->updateGL();
 
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 }
 
 
@@ -625,10 +637,6 @@ void QuadBooleanWindow::on_quadrangulatePushButton_clicked()
 
     updateVisibility();
     ui.glArea->updateGL();
-
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(quadrangulatedNewSurface, "res/quadrangulatedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 }
 
 void QuadBooleanWindow::on_getResultPushButton_clicked()
@@ -653,9 +661,6 @@ void QuadBooleanWindow::on_getResultPushButton_clicked()
     updateVisibility();
     ui.glArea->updateGL();
 
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 
 }
 

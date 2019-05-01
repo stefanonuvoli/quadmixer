@@ -63,6 +63,34 @@ void findAffectedPatches(
         const std::vector<int>& faceLabel,
         std::unordered_set<int>& affectedPatches);
 
+template<class PolyMeshType>
+void getPreservedSurfaceMesh(
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
+        const std::vector<bool>& preservedQuad1,
+        const std::vector<bool>& preservedQuad2,
+        const std::vector<int>& faceLabel1,
+        const std::vector<int>& faceLabel2,
+        PolyMeshType& preservedSurface,
+        std::vector<int>& newFaceLabel);
+
+template<class TriangleMeshType>
+void getNewSurfaceMesh(
+        TriangleMeshType& triResult,
+        const size_t& nFirstFaces,
+        const std::vector<int>& birthQuad1,
+        const std::vector<int>& birthQuad2,
+        const std::vector<bool>& preservedQuad1,
+        const std::vector<bool>& preservedQuad2,
+        const Eigen::VectorXi& J,
+        TriangleMeshType& newSurface);
+
+template<class TriangleMeshType>
+std::vector<int> getPatchDecomposition(
+        TriangleMeshType& newSurface,
+        std::vector<std::vector<size_t>>& partitions,
+        std::vector<std::vector<size_t>>& corners);
+
 std::vector<int> findBestSideSize(
         const ChartData& chartData,
         const double& alpha);
@@ -77,18 +105,13 @@ void quadrangulate(
         PolyMeshType& quadrangulatedNewSurface,
         std::vector<int>& quadrangulatedNewSurfaceLabel);
 
-template<class TriangleMeshType>
-std::vector<int> getPatchDecomposition(
-        TriangleMeshType& newSurface,
-        std::vector<std::vector<size_t>>& partitions,
-        std::vector<std::vector<size_t>>& corners);
-
 
 template<class PolyMeshType>
 void getResult(
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
-        PolyMeshType& result);
+        PolyMeshType& result,
+        const double meshSmoothingIterations);
 
 }
 }

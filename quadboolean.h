@@ -9,8 +9,9 @@
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED true
 #define DEFAULTALPHA 0.01
-#define DEFAULTCHARTSMOOTHINGITERATION 5
-#define DEFAULTMESHSMOOTHINGITERATION 15
+#define DEFAULTCHARTSMOOTHINGITERATIONS 5
+#define DEFAULTMESHSMOOTHINGITERATIONS 5
+#define DEFAULTRESULTSMOOTHINGITERATIONS 3
 
 namespace QuadBoolean {
 
@@ -33,8 +34,9 @@ void quadBoolean(
         const bool deleteSmall,
         const bool deleteNonConnected,
         const double alpha,
-        int chartSmoothingIterations,
-        int meshSmoothingIterations);
+        const int chartSmoothingIterations,
+        const int meshSmoothingIterations,
+        const int resultSmoothingIterations);
 
 }
 

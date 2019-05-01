@@ -21,8 +21,9 @@ void quadBoolean(
                 DEFAULTDELETESMALL,
                 DEFAULTDELETENONCONNECTED,
                 DEFAULTALPHA,
-                DEFAULTCHARTSMOOTHINGITERATION,
-                DEFAULTMESHSMOOTHINGITERATION);
+                DEFAULTCHARTSMOOTHINGITERATIONS,
+                DEFAULTMESHSMOOTHINGITERATIONS,
+                DEFAULTRESULTSMOOTHINGITERATIONS);
 }
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -37,8 +38,9 @@ void quadBoolean(
         const bool deleteSmall,
         const bool deleteNonConnected,
         const double alpha,
-        int chartSmoothingIterations,
-        int meshSmoothingIterations)
+        const int chartSmoothingIterations,
+        const int meshSmoothingIterations,
+        const int resultSmoothingIterations)
 {
      std::vector<int> quadTracerLabel1;
      std::vector<int> quadTracerLabel2;
@@ -167,6 +169,10 @@ void quadBoolean(
                  meshSmoothingIterations,
                  quadrangulatedNewSurface,
                  quadrangulatedNewSurfaceLabel);
+
+     //Get the result
+     result.Clear();
+     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, resultSmoothingIterations);
 }
 
 }

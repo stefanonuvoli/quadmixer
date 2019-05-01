@@ -260,7 +260,7 @@
        <item>
         <widget class="QLabel" name="chartSmoothingLabel">
          <property name="text">
-          <string>Chart smoothing</string>
+          <string>Quad chart sm</string>
          </property>
         </widget>
        </item>
@@ -277,12 +277,29 @@
        <item>
         <widget class="QLabel" name="meshSmoothingLabel">
          <property name="text">
-          <string>Mesh smoothing</string>
+          <string>Quad mesh sm</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QSpinBox" name="meshSmoothingSpinBox">
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>15</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="resultSmoothingLabel">
+         <property name="text">
+          <string>Result sm</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="resultSmoothingSpinBox">
          <property name="maximum">
           <number>200</number>
          </property>

@@ -123,6 +123,121 @@ void findAffectedPatches(
     }
 }
 
+
+template<class PolyMeshType>
+void getPreservedSurfaceMesh(
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
+        const std::vector<bool>& preservedQuad1,
+        const std::vector<bool>& preservedQuad2,
+        const std::vector<int>& faceLabel1,
+        const std::vector<int>& faceLabel2,
+        PolyMeshType& preservedSurface,
+        std::vector<int>& newFaceLabel)
+{
+    int maxLabel1 = 0;
+    for (const int& l : faceLabel1) {
+        maxLabel1 = std::max(maxLabel1, l);
+    }
+
+    //Select the face which are remaining
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh1);
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh2);
+    for (size_t i = 0; i < mesh1.face.size(); i++) {
+        if (preservedQuad1[i]) {
+            mesh1.face[i].SetS();
+            mesh1.face[i].Q() = faceLabel1[i];
+        }
+    }
+    for (size_t i = 0; i < mesh2.face.size(); i++) {
+        if (preservedQuad2[i]) {
+            mesh2.face[i].SetS();
+            mesh2.face[i].Q() = maxLabel1 + faceLabel2[i];
+        }
+    }
+
+    //Create result
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(preservedSurface, mesh1, true);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(preservedSurface, mesh2, true);
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(preservedSurface);
+    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(preservedSurface);
+
+    newFaceLabel.resize(preservedSurface.face.size(), -1);
+    for (size_t i = 0; i < preservedSurface.face.size(); i++) {
+        newFaceLabel[i] = static_cast<int>(preservedSurface.face[i].Q());
+    }
+}
+
+
+template<class TriangleMeshType>
+void getNewSurfaceMesh(
+        TriangleMeshType& triResult,
+        const size_t& nFirstFaces,
+        const std::vector<int>& birthQuad1,
+        const std::vector<int>& birthQuad2,
+        const std::vector<bool>& preservedQuad1,
+        const std::vector<bool>& preservedQuad2,
+        const Eigen::VectorXi& J,
+        TriangleMeshType& newSurface)
+{
+    //Selected the new surface triangle faces
+    std::vector<bool> isNewSurface(triResult.face.size(), false);
+
+    for (int i = 0; i < J.rows(); i++) {
+        int birthFace = J[i];
+
+        //If the birth face is in the first mesh
+        if (birthFace < nFirstFaces) {
+            int firstMeshIndex = birthFace;
+            if (!preservedQuad1[birthQuad1[firstMeshIndex]]) {
+                isNewSurface[i] = true;
+            }
+        }
+        //The birth face is in the second mesh
+        else {
+            int secondMeshIndex = birthFace - nFirstFaces;
+            if (!preservedQuad2[birthQuad2[secondMeshIndex]]) {
+                isNewSurface[i] = true;
+            }
+        }
+    }
+
+    vcg::tri::UpdateFlags<TriangleMeshType>::FaceClearS(triResult);
+    for (size_t i = 0; i < triResult.face.size(); i++) {
+        if (isNewSurface[i]) {
+            triResult.face[i].SetS();
+        }
+    }
+    vcg::tri::Append<TriangleMeshType, TriangleMeshType>::Mesh(newSurface, triResult, true);
+    vcg::tri::Clean<TriangleMeshType>::RemoveDuplicateVertex(newSurface);
+    vcg::tri::Clean<TriangleMeshType>::RemoveUnreferencedVertex(newSurface);
+}
+
+template<class TriangleMeshType>
+std::vector<int> getPatchDecomposition(
+        TriangleMeshType& newSurface,
+        std::vector<std::vector<size_t>>& partitions,
+        std::vector<std::vector<size_t>>& corners)
+{
+
+    PatchDecomposer<TriangleMeshType> decomposer(newSurface);
+    typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
+    parameters.Reproject=false;
+
+    decomposer.SetParam(parameters);
+    decomposer.BatchProcess(partitions, corners);
+
+    std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
+    for (size_t pId = 0; pId < partitions.size(); pId++) {
+        for (const size_t& fId : partitions[pId]) {
+            assert(newSurfaceLabel[fId] == -1);
+            newSurfaceLabel[fId] = static_cast<int>(pId);
+        }
+    }
+
+    return newSurfaceLabel;
+}
+
 std::vector<int> findBestSideSize(
         const ChartData& chartData,
         const double& alpha)
@@ -300,11 +415,14 @@ void quadrangulate(
 #endif
 
         //Smoothing
-        vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedChartMesh);
-        for (size_t vId : patchBorders) {
-            quadrangulatedChartMesh.vert[vId].ClearS();
+
+        if (chartSmoothingIterations > 0) {
+            vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedChartMesh);
+            for (size_t vId : patchBorders) {
+                quadrangulatedChartMesh.vert[vId].ClearS();
+            }
+            vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedChartMesh, chartSmoothingIterations, 0.5, true);
         }
-        vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedChartMesh, chartSmoothingIterations, 0.5, true);
 
         std::vector<int> currentVertexMap(quadrangulatedChartMesh.vert.size(), -1);
 
@@ -424,36 +542,13 @@ void quadrangulate(
         }
     }
 
-
-    vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedNewSurface);
-    for (const size_t& borderVertexId : finalMeshBorders) {
-        quadrangulatedNewSurface.vert[borderVertexId].ClearS();
-    }
-    vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedNewSurface, meshSmoothingIterations, 0.5, true);
-}
-
-template<class TriangleMeshType>
-std::vector<int> getPatchDecomposition(
-        TriangleMeshType& newSurface,
-        std::vector<std::vector<size_t>>& partitions,
-        std::vector<std::vector<size_t>>& corners)
-{
-
-    PatchDecomposer<TriangleMeshType> decomposer(newSurface);
-    typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
-
-    decomposer.SetParam(parameters);
-    decomposer.BatchProcess(partitions, corners);
-
-    std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
-    for (size_t pId = 0; pId < partitions.size(); pId++) {
-        for (const size_t& fId : partitions[pId]) {
-            assert(newSurfaceLabel[fId] == -1);
-            newSurfaceLabel[fId] = static_cast<int>(pId);
+    if (meshSmoothingIterations > 0) {
+        vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedNewSurface);
+        for (const size_t& borderVertexId : finalMeshBorders) {
+            quadrangulatedNewSurface.vert[borderVertexId].ClearS();
         }
+        vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedNewSurface, meshSmoothingIterations, 0.5, true);
     }
-
-    return newSurfaceLabel;
 }
 
 
@@ -461,8 +556,43 @@ template<class PolyMeshType>
 void getResult(
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
-        PolyMeshType& result)
+        PolyMeshType& result,
+        const int resultSmoothingIterations)
 {
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(quadrangulatedNewSurface);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(quadrangulatedNewSurface);
+    for (typename PolyMeshType::FaceIterator fIt = quadrangulatedNewSurface.face.begin(); fIt != quadrangulatedNewSurface.face.end(); fIt++) {
+        bool borderFace = false;
+        for (int k = 0; k < fIt->VN(); k++) {
+            if (vcg::face::IsBorder(*fIt, k)) {
+                borderFace = true;
+            }
+        }
+        if (borderFace) {
+            for (int k = 0; k < fIt->VN(); k++) {
+                fIt->V(k)->SetV();
+            }
+        }
+    }
+
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(preservedSurface);
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(preservedSurface);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(preservedSurface);
+    for (typename PolyMeshType::FaceIterator fIt = preservedSurface.face.begin(); fIt != preservedSurface.face.end(); fIt++) {
+        bool borderFace = false;
+        for (int k = 0; k < fIt->VN(); k++) {
+            if (vcg::face::IsBorder(*fIt, k)) {
+                borderFace = true;
+            }
+        }
+        if (borderFace) {
+            for (int k = 0; k < fIt->VN(); k++) {
+                fIt->V(k)->SetV();
+            }
+        }
+    }
+
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, preservedSurface);
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, quadrangulatedNewSurface);
 
@@ -470,6 +600,25 @@ void getResult(
     //vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(quadrangulatedNewSurface, 0.00001);
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(result);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
+
+    if (resultSmoothingIterations > 0) {
+        vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(result);
+        for (typename PolyMeshType::VertexIterator vIt = result.vert.begin(); vIt != result.vert.end(); vIt++) {
+            if (vIt->IsV()) {
+                vIt->ClearS();
+            }
+        }
+        vcg::PolygonalAlgorithm<PolyMeshType>::Laplacian(result, true, resultSmoothingIterations);
+    }
+
+//    vcg::tri::UpdateSelection<PolyMeshType>::VertexClear(result);
+//    for (typename PolyMeshType::VertexIterator vIt = result.vert.begin(); vIt != result.vert.end(); vIt++) {
+//        if (vIt->IsV()) {
+//            vIt->SetS();
+//        }
+//    }
+//    vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(result, resultSmoothingIterations, 0.5, true);
+
 
 }
 

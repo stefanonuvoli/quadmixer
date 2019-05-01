@@ -5,6 +5,8 @@
 #include <igl/AABB.h>
 #include <igl/in_element.h>
 
+#include <vcg/space/distance3.h>
+
 namespace QuadBoolean {
 namespace internal {
 
@@ -171,13 +173,33 @@ void computeQuadrangulation(
 }
 
 
+bool findParametricValueInSegment(
+        const Eigen::VectorXd& s1,
+        const Eigen::VectorXd& s2,
+        const Eigen::VectorXd& p,
+        Eigen::VectorXd& t)
+{
+    const double eps = 0.0001;
+
+    t.x() = (p.x() - s1.x())/(s2.x() - s1.x());
+    t.y() = (p.y() - s1.y())/(s2.y() - s1.y());
+
+    //Return true if it is collinear and inside the segment
+    return  t.x() >= 0 - eps &&
+            t.x() <= 1 + eps &&
+            t.y() >= 0 - eps &&
+            t.y() <= 1 + eps &&
+            t.x() - eps <= t.y() + eps &&
+            t.x() + eps >= t.y() - eps;
+
+}
 
 Eigen::VectorXd pointToBarycentric(
         const Eigen::VectorXd& t1,
         const Eigen::VectorXd& t2,
         const Eigen::VectorXd& t3,
         const Eigen::VectorXd& p)
-{       
+{
     const double eps = 0.0001;
     double det = (t2.y() - t3.y()) * (t1.x() - t3.x()) + (t3.x() - t2.x()) * (t1.y() - t3.y());
 
@@ -187,10 +209,99 @@ Eigen::VectorXd pointToBarycentric(
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
 
     if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps || baryc(0) < 0.0 - eps || baryc(1) < 0.0 - eps) {
-        baryc(0) = baryc(1) = baryc(2) = 1.0/3.0;
 #ifndef NDEBUG
         std::cout << "Degenerate triangle." << std::endl;
 #endif
+        vcg::Point3d t1vcg(t1.x(), t1.y(), 0);
+        vcg::Point3d t2vcg(t2.x(), t2.y(), 0);
+        vcg::Point3d t3vcg(t3.x(), t3.y(), 0);
+        vcg::Point3d pvcg(p.x(), p.y(), 0);
+        vcg::Segment3d seg1(t1vcg, t2vcg);
+        vcg::Segment3d seg2(t2vcg, t3vcg);
+        vcg::Segment3d seg3(t3vcg, t1vcg);
+
+        vcg::Point3d vcgClosestPoint1;
+        vcg::Point3d vcgClosestPoint2;
+        vcg::Point3d vcgClosestPoint3;
+        double dist1;
+        double dist2;
+        double dist3;
+
+        vcg::SegmentPointDistance(seg1, pvcg, vcgClosestPoint1, dist1);
+        vcg::SegmentPointDistance(seg2, pvcg, vcgClosestPoint2, dist2);
+        vcg::SegmentPointDistance(seg3, pvcg, vcgClosestPoint3, dist3);
+
+        Eigen::VectorXd paramT(2);
+        Eigen::VectorXd closestPoint(2);
+        if (dist1 <= dist2 && dist1 <= dist3) {
+            closestPoint.x() = vcgClosestPoint1.X();
+            closestPoint.y() = vcgClosestPoint1.Y();
+
+            bool wasCollinear = findParametricValueInSegment(t1,t2,closestPoint,paramT);
+            assert(wasCollinear);
+
+            baryc(0) = 1 - paramT.x();
+            baryc(1) = paramT.x();
+            baryc(2) = 0;
+        }
+        else if (dist2 <= dist1 && dist2 <= dist3) {
+            closestPoint.x() = vcgClosestPoint2.X();
+            closestPoint.y() = vcgClosestPoint2.Y();
+
+            bool wasCollinear = findParametricValueInSegment(t2,t3,closestPoint,paramT);
+            assert(wasCollinear);
+
+            baryc(0) = 0;
+            baryc(1) = 1 - paramT.x();
+            baryc(2) = paramT.x();
+        }
+        else {
+            closestPoint.x() = vcgClosestPoint3.X();
+            closestPoint.y() = vcgClosestPoint3.Y();
+
+            bool wasCollinear = findParametricValueInSegment(t3,t1,closestPoint,paramT);
+            assert(wasCollinear);
+
+            baryc(0) = paramT.x();
+            baryc(1) = 0;
+            baryc(2) = 1 - paramT.x();
+        }
+
+//        Eigen::VectorXd paramT(2);
+
+//        if (findEquationInSegment(t1, t2, p, paramT)) {
+//            baryc(0) = 1 - paramT.x();
+//            baryc(1) = paramT.x();
+//            baryc(2) = 0;
+//#ifndef NDEBUG
+//            std::cout << "Segment interpolation done.";
+//#endif
+//        }
+//        else if (findEquationInSegment(t2, t3, p, paramT)) {
+//            baryc(0) = 0;
+//            baryc(1) = 1 - paramT.x();
+//            baryc(2) = paramT.x();
+//#ifndef NDEBUG
+//            std::cout << "Segment interpolation done.";
+//#endif
+//        }
+//        else if (findEquationInSegment(t3, t1, p, paramT)) {
+//            baryc(0) = paramT.x();
+//            baryc(1) = 0;
+//            baryc(2) = 1 - paramT.x();
+//#ifndef NDEBUG
+//            std::cout << "Segment interpolation done.";
+//#endif
+//        }
+//        else {
+//            baryc(0) = baryc(1) = baryc(2) = 1.0/3.0;
+//#ifndef NDEBUG
+//            std::cout << "Segment interpolation NOT done." ;
+//#endif
+//        }
+//#ifndef NDEBUG
+//        std::cout << std::endl;
+//#endif
     }
     else {
         baryc(2) = 1.0 - baryc(0) - baryc(1);
