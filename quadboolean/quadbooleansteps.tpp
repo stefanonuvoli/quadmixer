@@ -21,6 +21,104 @@ namespace QuadBoolean {
 namespace internal {
 
 template<class PolyMeshType>
+typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh) {
+    typename PolyMeshType::ScalarType length = 0;
+    size_t numEdges = 0;
+    for (size_t i=0;i<mesh.face.size();i++) {
+        for (size_t j=0;j<mesh.face[i].VN();j++)
+        {
+            size_t index0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+            size_t index1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+            typename PolyMeshType::CoordType p0=mesh.vert[index0].P();
+            typename PolyMeshType::CoordType p1=mesh.vert[index1].P();
+            length+=(p0-p1).Norm();
+            numEdges++;
+        }
+    }
+    length /= numEdges;
+}
+
+template<class PolyMeshType>
+void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert)
+{
+    //cumulate step
+    AvVert.clear();
+    AvVert.resize(poly_m.vert.size(),typename PolyMeshType::CoordType(0,0,0));
+    std::vector<typename PolyMeshType::ScalarType> AvSum(poly_m.vert.size(),0);
+    for (size_t i=0;i<poly_m.face.size();i++)
+        for (size_t j=0;j<(size_t)poly_m.face[i].VN();j++)
+        {
+            //get current vertex
+            typename PolyMeshType::VertexType *currV=poly_m.face[i].V(j);
+            //and its position
+            typename PolyMeshType::CoordType currP=currV->P();
+            //cumulate over other positions
+            typename PolyMeshType::ScalarType W=vcg::PolyArea(poly_m.face[i]);
+            //assert(W!=0);
+            for (size_t k=0;k<(size_t)poly_m.face[i].VN();k++)
+            {
+                if (k==j) continue;
+                int IndexV=vcg::tri::Index(poly_m,poly_m.face[i].V(k));
+                AvVert[IndexV]+=currP*W;
+                AvSum[IndexV]+=W;
+            }
+        }
+
+    //average step
+    for (size_t i=0;i<poly_m.vert.size();i++)
+    {
+        if (AvSum[i]==0)continue;
+        AvVert[i]/=AvSum[i];
+    }
+}
+
+template <class PolyMeshType>
+void LaplacianGeodesic(
+        PolyMeshType &poly_m,
+        int nstep,
+        const double maxDistance,
+        const double minDumpS = 0.5)
+{
+    std::vector<typename PolyMeshType::VertexPointer> seedVec;
+    for (int i = 0; i < poly_m.vert.size(); i++) {
+        if (poly_m.vert[i].IsS()) {
+            seedVec.push_back(&poly_m.vert[i]);
+        }
+    }
+    vcg::tri::EuclideanDistance<PolyMeshType> ed;
+    vcg::tri::UpdateTopology<PolyMeshType>::VertexFace(poly_m);
+    vcg::tri::Geodesic<PolyMeshType>::Compute(poly_m,seedVec, ed);
+
+    std::vector<double> DampS(poly_m.vert.size());
+    for (int i = 0; i < poly_m.vert.size(); i++) {
+        if (poly_m.vert[i].Q() < maxDistance) {
+            DampS[i] = poly_m.vert[i].Q() / maxDistance;
+            assert(DampS[i] >= 0 && DampS[i] <= 1);
+            DampS[i] = minDumpS + DampS[i]*(1-minDumpS);
+        }
+        else {
+            DampS[i] = std::numeric_limits<double>::max();
+        }
+    }
+
+    for (int s=0;s<nstep;s++)
+    {
+        std::vector< typename PolyMesh::CoordType> AvVert;
+        LaplacianPos(poly_m,AvVert);
+
+        for (size_t i=0;i<poly_m.vert.size();i++)
+        {
+            if (DampS[i] > 1)
+                continue;
+
+            poly_m.vert[i].P()=poly_m.vert[i].P()*DampS[i]+
+                    AvVert[i]*(1-DampS[i]);
+        }
+    }
+
+}
+
+template<class PolyMeshType>
 void traceQuads(
         PolyMeshType& mesh,
         std::vector<int>& faceLabel,
@@ -207,10 +305,27 @@ std::vector<std::vector<size_t>> getIntersectionCurves(
 template<class TriangleMeshType>
 void smoothAlongIntersectionCurves(
         TriangleMeshType& boolean,
+        Eigen::MatrixXd& VR,
+        Eigen::MatrixXi& FR,
         const std::vector<std::vector<size_t>>& intersectionCurves,
-        const int intersectionSmoothingInterations)
+        const int intersectionSmoothingInterations,
+        const int avgNRing)
 {
+    typename TriangleMeshType::ScalarType maxDistance = averageEdgeLength(boolean) * avgNRing;
 
+    vcg::tri::UpdateSelection<TriangleMeshType>::VertexClear(boolean);
+
+    for (const std::vector<size_t>& intersectionCurve : intersectionCurves) {
+        for (const size_t& vId : intersectionCurve) {
+            boolean.vert[vId].SetS();
+        }
+    }
+
+    LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.6);
+
+    std::vector<int> vMap;
+    std::vector<int> fMap;
+    QuadBoolean::internal::VCGToEigen(boolean, VR, FR, vMap, fMap);
 }
 
 template<class TriangleMeshType>
@@ -352,7 +467,6 @@ std::vector<int> getPatchDecomposition(
 
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
-    parameters.Reproject=false;
 
     decomposer.SetParam(parameters);
     decomposer.BatchProcess(partitions, corners);
@@ -694,7 +808,8 @@ void getResult(
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
         PolyMeshType& result,
-        const int resultSmoothingIterations)
+        const int resultSmoothingIterations,
+        const int avgNRing)
 {
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(quadrangulatedNewSurface);
@@ -739,22 +854,17 @@ void getResult(
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
     if (resultSmoothingIterations > 0) {
-        vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(result);
+        typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * avgNRing;
+
+        vcg::tri::UpdateSelection<PolyMeshType>::VertexClear(result);
         for (typename PolyMeshType::VertexIterator vIt = result.vert.begin(); vIt != result.vert.end(); vIt++) {
             if (vIt->IsV()) {
-                vIt->ClearS();
+                vIt->SetS();
             }
         }
-        vcg::PolygonalAlgorithm<PolyMeshType>::Laplacian(result, true, resultSmoothingIterations);
-    }
 
-//    vcg::tri::UpdateSelection<PolyMeshType>::VertexClear(result);
-//    for (typename PolyMeshType::VertexIterator vIt = result.vert.begin(); vIt != result.vert.end(); vIt++) {
-//        if (vIt->IsV()) {
-//            vIt->SetS();
-//        }
-//    }
-//    vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(result, resultSmoothingIterations, 0.5, true);
+        LaplacianGeodesic(result, resultSmoothingIterations, maxDistance, 0.6);
+    }
 
 
 }

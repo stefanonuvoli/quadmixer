@@ -7,6 +7,7 @@ Parameters::Parameters()
 {
     motorcycle = DEFAULTMOTORCYCLE;
     intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
+    intersectionSmoothingAVGNRing = DEFAULTINTERSECTIONSMOOTHINGAVGNRING;
     minRectangleSide = DEFAULTMINRECTANGLESIDE;
     mergeQuads = DEFAULTMERGEQUADS;
     deleteSmall = DEFAULTDELETESMALL;
@@ -15,6 +16,7 @@ Parameters::Parameters()
     chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
     meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
+    resultSmoothingAVGNRing = DEFAULTRESULTSMOOTHINGAVGNRING;
 }
 
 
@@ -104,11 +106,15 @@ void quadBoolean(
                  FA, FB, FR,
                  J);
 
+
      //Smooth along intersection curves
      QuadBoolean::internal::smoothAlongIntersectionCurves(
                  boolean,
+                 VR,
+                 FR,
                  intersectionCurves,
-                 parameters.intersectionSmoothingIterations);
+                 parameters.intersectionSmoothingIterations,
+                 parameters.intersectionSmoothingAVGNRing);
 
      //Face labels
      preservedFaceLabel1 = quadTracerLabel1;
@@ -190,7 +196,7 @@ void quadBoolean(
 
      //Get the result
      result.Clear();
-     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, parameters.resultSmoothingIterations);
+     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, parameters.resultSmoothingIterations, parameters.resultSmoothingAVGNRing);
 }
 
 }

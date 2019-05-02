@@ -117,9 +117,9 @@ private:
 
     std::vector<int> ilpResult;
 
-    PolyMesh quadrangulatedNewSurface;
-    std::vector<int> quadrangulatedNewSurfaceLabel;
-    QuadLayoutData quadLayoutDataQuadrangulatedNewSurface;
+    PolyMesh quadrangulatedSurface;
+    std::vector<int> quadrangulatedSurfaceLabel;
+    QuadLayoutData quadLayoutDataQuadrangulatedSurface;
 
     PolyMesh result;
     std::vector<int> quadTracerLabelResult;

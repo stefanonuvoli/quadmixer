@@ -22,6 +22,7 @@ class PolyVertex : public vcg::Vertex<MyPolyTypes,
         vcg::vertex::Color4b,
         vcg::vertex::Qualityd,
         vcg::vertex::BitFlags,
+        vcg::vertex::VFAdj,
         vcg::vertex::CurvatureDird>{};
 
 class PolyFace : public vcg::Face<
@@ -34,6 +35,7 @@ class PolyFace : public vcg::Face<
         vcg::face::BitFlags,
         vcg::face::PFVAdj,
         vcg::face::PFFAdj,
+        vcg::face::PVFAdj,
         vcg::face::CurvatureDird,
         vcg::face::Mark> {};
 

@@ -186,12 +186,16 @@ void QuadBooleanWindow::doSmooth()
     start = chrono::steady_clock::now();
 
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
+    int intersectionAVGNRing = ui.intersectionSmoothingNRingSpinBox->value();
 
     //Smooth along intersection curves
     QuadBoolean::internal::smoothAlongIntersectionCurves(
                 boolean,
+                VR,
+                FR,
                 intersectionCurves,
-                intersectionSmoothingIterations);
+                intersectionSmoothingIterations,
+                intersectionAVGNRing);
 
     std::cout << std::endl << " >> "
               << "Smooth along intersection curves: "
@@ -419,8 +423,8 @@ void QuadBooleanWindow::doQuadrangulate()
 {
     chrono::steady_clock::time_point start;
 
-    quadrangulatedNewSurface.Clear();
-    quadrangulatedNewSurfaceLabel.clear();
+    quadrangulatedSurface.Clear();
+    quadrangulatedSurfaceLabel.clear();
 
     int chartSmoothingIterations = ui.chartSmoothingSpinBox->value();
     int meshSmoothingIterations = ui.meshSmoothingSpinBox->value();
@@ -433,20 +437,20 @@ void QuadBooleanWindow::doQuadrangulate()
                 ilpResult,
                 chartSmoothingIterations,
                 meshSmoothingIterations,
-                quadrangulatedNewSurface,
-                quadrangulatedNewSurfaceLabel);
+                quadrangulatedSurface,
+                quadrangulatedSurfaceLabel);
 
     std::cout << std::endl << " >> "
               << "Quadrangulate new surface: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
-    colorizeMesh(quadrangulatedNewSurface, quadrangulatedNewSurfaceLabel);
+    colorizeMesh(quadrangulatedSurface, quadrangulatedSurfaceLabel);
 
-    ui.glArea->setQuadrangulated(&quadrangulatedNewSurface);
+    ui.glArea->setQuadrangulated(&quadrangulatedSurface);
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(quadrangulatedNewSurface, "res/quadrangulatedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(quadrangulatedSurface, "res/quadrangulatedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 }
 
@@ -454,14 +458,26 @@ void QuadBooleanWindow::doGetResult()
 {
     chrono::steady_clock::time_point start;
 
+    PolyMesh coloredPreservedSurface;
+    PolyMesh coloredquadrangulatedSurface;
+    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredPreservedSurface, preservedSurface);
+    for (size_t i = 0; i < coloredPreservedSurface.face.size(); i++) {
+        coloredPreservedSurface.face[i].C() = vcg::Color4b(100,200,100,255);
+    }
+    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredquadrangulatedSurface, quadrangulatedSurface);
+    for (size_t i = 0; i < coloredquadrangulatedSurface.face.size(); i++) {
+        coloredquadrangulatedSurface.face[i].C() = vcg::Color4b(128,128,128,255);
+    }
+
     //Clear data
     result.Clear();
 
     int resultSmoothingIterations = ui.resultSmoothingSpinBox->value();
+    int resultAVGNRing = ui.resultSmoothingNRingSpinBox->value();
 
     start = chrono::steady_clock::now();
 
-    QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, resultSmoothingIterations);
+    QuadBoolean::internal::getResult(coloredPreservedSurface, coloredquadrangulatedSurface, result, resultSmoothingIterations, resultAVGNRing);
 
     std::cout << std::endl << " >> "
               << "Get result: "
@@ -486,7 +502,7 @@ void QuadBooleanWindow::doGetResult()
     ui.glArea->setResult(&result);
     ui.glArea->setQuadLayoutResult(&quadLayoutDataResult);
 
-    colorizeMesh(result, quadTracerLabelResult);
+//    colorizeMesh(result, quadTracerLabelResult);
 
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
@@ -505,6 +521,19 @@ void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
             ui.glArea->setMesh2(nullptr);
             ui.glArea->setQuadLayout1(nullptr);
             ui.glArea->setQuadLayout2(nullptr);
+            ui.glArea->setBoolean(nullptr);
+            ui.glArea->setIntersectionCurves(nullptr);
+            ui.glArea->setPreservedSurface(nullptr);
+            ui.glArea->setQuadLayoutPreserved1(nullptr);
+            ui.glArea->setQuadLayoutPreserved2(nullptr);
+            ui.glArea->setNewSurface(nullptr);
+            ui.glArea->setChartSides(nullptr);
+            ui.glArea->setIlpResult(nullptr);
+            ui.glArea->setQuadrangulated(nullptr);
+            ui.glArea->setQuadLayoutQuadrangulated(nullptr);
+            ui.glArea->setResult(nullptr);
+            ui.glArea->setQuadLayoutResult(nullptr);
+
             mesh1.Clear();
             mesh2.Clear();
             loadMesh(mesh1, filename1);

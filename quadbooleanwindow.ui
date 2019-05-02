@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1693</width>
+    <width>1780</width>
     <height>567</height>
    </rect>
   </property>
@@ -207,7 +207,27 @@
           <number>200</number>
          </property>
          <property name="value">
-          <number>3</number>
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="intersectionSmoothingNRingLabel">
+         <property name="text">
+          <string>NRing</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="intersectionSmoothingNRingSpinBox">
+         <property name="minimum">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <number>20</number>
+         </property>
+         <property name="value">
+          <number>5</number>
          </property>
         </widget>
        </item>
@@ -328,7 +348,27 @@
           <number>200</number>
          </property>
          <property name="value">
-          <number>3</number>
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="resultSmoothingNRingLabel">
+         <property name="text">
+          <string>NRing</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="resultSmoothingNRingSpinBox">
+         <property name="minimum">
+          <number>2</number>
+         </property>
+         <property name="maximum">
+          <number>20</number>
+         </property>
+         <property name="value">
+          <number>5</number>
          </property>
         </widget>
        </item>
@@ -562,7 +602,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1693</width>
+     <width>1780</width>
      <height>22</height>
     </rect>
    </property>
