@@ -30,6 +30,7 @@ public:
 
     void doTraceQuads();
     void doComputeBooleans();
+    void doSmooth();
     void doGetSurfaces();
     void doPatchDecomposition();
     void doSolveILP();
@@ -40,7 +41,8 @@ private slots:
 
     void on_loadMeshesPushButton_clicked();
     void on_quadTracerPushButton_clicked();
-    void on_computeBooleanPushButton_clicked();
+    void on_computeBooleanPushButton_clicked();    
+    void on_smoothPushButton_clicked();
     void on_getSurfacesPushButton_clicked();
     void on_decompositionPushButton_clicked();
     void on_ilpPushButton_clicked();
@@ -51,6 +53,7 @@ private slots:
     void on_showMesh1CheckBox_stateChanged(int arg1);
     void on_showMesh2CheckBox_stateChanged(int arg1);
     void on_showBooleanCheckBox_stateChanged(int arg1);
+    void on_showIntersectionCurvesCheckBox_stateChanged(int arg1);
     void on_showPreservedSurfaceCheckBox_stateChanged(int arg1);
     void on_showNewSurfaceCheckBox_stateChanged(int arg1);
     void on_showQuadLayoutPreserved1CheckBox_stateChanged(int arg1);
@@ -64,6 +67,8 @@ private slots:
     void on_showResultLayoutCheckBox_stateChanged(int arg1);
 
     void on_resetTrackballButton_clicked();
+
+    void on_showILPCheckBox_stateChanged(int arg1);
 
 private:
 
@@ -80,6 +85,8 @@ private:
     Eigen::VectorXi J;
     std::vector<int> birthQuad1;
     std::vector<int> birthQuad2;
+
+    std::vector<std::vector<size_t>> intersectionCurves;
 
     QuadLayoutData quadLayoutData1;
     QuadLayoutData quadLayoutData2;

@@ -80,9 +80,137 @@ void computeBooleanOperation(
     else
         return;
 
-
     //Result on VCG
     eigenToVCG(VR, FR, result);
+}
+
+template<class TriangleMeshType>
+std::vector<std::vector<size_t>> getIntersectionCurves(
+        TriangleMeshType& triMesh1,
+        TriangleMeshType& triMesh2,
+        const Eigen::MatrixXd& VA,
+        const Eigen::MatrixXd& VB,
+        const Eigen::MatrixXd& VR,
+        const Eigen::MatrixXi& FA,
+        const Eigen::MatrixXi& FB,
+        const Eigen::MatrixXi& FR,
+        const Eigen::VectorXi& J)
+{
+    std::vector<std::vector<size_t>> intersectionCurves;
+
+    int nFirstFaces = triMesh1.face.size();
+
+    std::set<int> vertexSet1;
+    std::set<int> vertexSet2;
+    std::unordered_map<int, int> vertexMap;
+
+
+    for (int i = 0; i < J.rows(); i++) {
+        int birthFace = J[i];
+
+        //If the birth face is in the first mesh
+        if (birthFace < nFirstFaces) {
+            bool isNew = false;
+
+            for (int j = 0; j < 3; j++) {
+                if (VA(FA(birthFace, j)) != VR(FR(i, j))) {
+                    isNew = true;
+                }
+            }
+
+            if (isNew) {
+                for (int j = 0; j < 3; j++) {
+                    vertexSet1.insert(FR(i, j));
+                }
+            }
+        }
+        else {
+            birthFace -= nFirstFaces;
+            bool isNew = false;
+
+            for (int j = 0; j < 3; j++) {
+                if (VB(FB(birthFace, j)) != VR(FR(i, j))) {
+                    isNew = true;
+                }
+            }
+
+            if (isNew) {
+                for (int j = 0; j < 3; j++) {
+                    vertexSet2.insert(FR(i, j));
+                }
+            }
+        }
+    }
+
+    std::set<int> vertexSet;
+    std::set_intersection(vertexSet1.begin(), vertexSet1.end(), vertexSet2.begin(), vertexSet2.end(), std::inserter(vertexSet, vertexSet.begin()));
+
+    //Create the next map
+    for (int i = 0; i < J.rows(); i++) {
+        int birthFace = J[i];
+
+        //If the birth face is in the first mesh
+        if (birthFace < nFirstFaces) {
+            for (int j = 0; j < 3; j++) {
+                if (vertexSet.find(FR(i, j)) != vertexSet.end() &&
+                    vertexSet.find(FR(i,(j+1)%3)) != vertexSet.end() &&
+                    vertexSet.find(FR(i,(j+2)%3)) == vertexSet.end())
+                {
+                    vertexMap.insert(
+                                std::make_pair(
+                                    FR(i, j),
+                                    FR(i, (j+1)%3))
+                                );
+                }
+            }
+        }
+    }
+
+
+
+    while (!vertexSet.empty()) {
+        std::vector<size_t> intersectionCurve;
+
+        int vStart = *(vertexSet.begin());
+
+        int vCurrent = vStart;
+
+        bool done = false;
+        do {
+            vertexSet.erase(vCurrent);
+            intersectionCurve.push_back(vCurrent);
+
+            std::unordered_map<int, int>::iterator vNextIt = vertexMap.find(vCurrent);
+
+            if (vNextIt == vertexMap.end()) {
+                done = true;
+            }
+            else {
+                vCurrent = vNextIt->second;
+
+                if (vertexSet.find(vCurrent) == vertexSet.end()) {
+                    done = true;
+                }
+            }
+        } while (!done);
+
+        assert(vCurrent == vStart);
+
+        intersectionCurve.push_back(vCurrent);
+
+        intersectionCurves.push_back(intersectionCurve);
+    }
+
+    return intersectionCurves;
+}
+
+template<class TriangleMeshType>
+void smoothAlongIntersectionCurves(
+        TriangleMeshType& boolean,
+        const std::vector<std::vector<size_t>>& intersectionCurves,
+        const int intersectionSmoothingInterations)
+{
+
 }
 
 template<class TriangleMeshType>
@@ -219,6 +347,8 @@ std::vector<int> getPatchDecomposition(
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners)
 {
+    if (newSurface.face.size() <= 0)
+        return std::vector<int>();
 
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
@@ -242,6 +372,10 @@ std::vector<int> findBestSideSize(
         const ChartData& chartData,
         const double& alpha)
 {
+    if (chartData.charts.size() <= 0)
+        return std::vector<int>();
+
+
     //Solve ILP to find the best patches
     return solveChartSideILP(chartData, alpha);
 }
@@ -257,6 +391,9 @@ void quadrangulate(
         PolyMeshType& quadrangulatedNewSurface,
         std::vector<int>& quadrangulatedNewSurfaceLabel)
 {
+    if (newSurface.face.size() <= 0)
+        return;
+
     std::vector<std::vector<size_t>> vertexSubsideMap(chartData.subSides.size());
     std::vector<int> cornerVertices(newSurface.vert.size(), -1);
 

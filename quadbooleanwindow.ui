@@ -89,6 +89,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="smoothPushButton">
+         <property name="text">
+          <string>Smooth</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="getSurfacesPushButton">
          <property name="text">
           <string>Get surfaces</string>
@@ -185,6 +192,23 @@
            </widget>
           </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="intersectionSmoothingLabel">
+         <property name="text">
+          <string>Intersection sm</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="intersectionSmoothingSpinBox">
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>3</number>
+         </property>
         </widget>
        </item>
        <item>
@@ -287,7 +311,7 @@
           <number>200</number>
          </property>
          <property name="value">
-          <number>15</number>
+          <number>5</number>
          </property>
         </widget>
        </item>
@@ -304,7 +328,7 @@
           <number>200</number>
          </property>
          <property name="value">
-          <number>15</number>
+          <number>3</number>
          </property>
         </widget>
        </item>
@@ -393,6 +417,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="showIntersectionCurvesCheckBox">
+         <property name="text">
+          <string>Intersection curves</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="showPreservedSurfaceCheckBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -436,6 +467,13 @@
         <widget class="QCheckBox" name="showChartSidesCheckBox">
          <property name="text">
           <string>Sides</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="showILPCheckBox">
+         <property name="text">
+          <string>ILP </string>
          </property>
         </widget>
        </item>

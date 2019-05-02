@@ -55,7 +55,8 @@ SOURCES += \
     globjects/glquadlayoutwrap.tpp \
     globjects/glchartsideswrap.tpp \
     globjects/gldrawtext.cpp \
-    quadboolean/quadutils.tpp
+    quadboolean/quadutils.tpp \
+    globjects/gledgeswrap.tpp
 
 HEADERS += \
     quadboolean.h \
@@ -79,7 +80,8 @@ HEADERS += \
     globjects/glquadlayoutwrap.h \
     globjects/glchartsideswrap.h \
     globjects/gldrawtext.h \
-    meshtypes.h
+    meshtypes.h \
+    globjects/gledgeswrap.h
 
 FORMS += \
     quadbooleanwindow.ui

@@ -16,6 +16,7 @@ public:
     std::vector<int>* ilpResult;
 
     bool visible;
+    bool ilpVisible;
 };
 
 #include "glchartsideswrap.tpp"

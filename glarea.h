@@ -17,6 +17,8 @@
 #include "globjects/glpolywrap.h"
 #include "globjects/glquadlayoutwrap.h"
 #include "globjects/glchartsideswrap.h"
+#include "globjects/gledgeswrap.h"
+
 
 class GLArea : public QGLWidget
 {
@@ -36,6 +38,7 @@ public:
     void setQuadLayout1(QuadLayoutData* quadLayoutData1);
     void setQuadLayout2(QuadLayoutData* quadLayoutData2);
     void setBoolean(TriangleMesh* boolean);
+    void setIntersectionCurves(std::vector<std::vector<size_t>>* intersectionCurves);
     void setPreservedSurface(PolyMesh* boolean);
     void setQuadLayoutPreserved1(QuadLayoutData* quadLayoutData2);
     void setQuadLayoutPreserved2(QuadLayoutData* quadLayoutData2);
@@ -54,9 +57,11 @@ public:
     void setQuadLayoutPreserved1Visibility(bool visible);
     void setQuadLayoutPreserved2Visibility(bool visible);
     void setBooleanVisibility(bool visible);
+    void setIntersectionCurvesVisibility(bool visible);
     void setPreservedSurfaceVisibility(bool visible);
     void setNewSurfaceVisibility(bool visible);
     void setChartSidesVisibility(bool visible);
+    void setILPVisibility(bool visible);
     void setQuadrangulatedVisibility(bool visible);
     void setQuadLayoutQuadrangulatedVisibility(bool visible);
     void setResultVisibility(bool visible);
@@ -90,6 +95,7 @@ private:
     GLPolyWrap<PolyMesh> glWrapMesh1;
     GLPolyWrap<PolyMesh> glWrapMesh2;
     GLPolyWrap<TriangleMesh> glWrapBoolean;
+    GLEdgesWrap<TriangleMesh> glWrapIntersectionCurves;
     GLPolyWrap<PolyMesh> glWrapPreservedSurface;
     GLPolyWrap<TriangleMesh> glWrapNewSurface;
     GLPolyWrap<PolyMesh> glWrapQuadrangulated;

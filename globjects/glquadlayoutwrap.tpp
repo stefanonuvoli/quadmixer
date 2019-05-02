@@ -20,7 +20,8 @@ void GLQuadLayoutWrap<MeshType>::GLDraw()
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
         glDepthRange(0.0,0.999999);
-        glLineWidth(4);
+        glLineWidth(3);
+        glDisable(GL_LIGHTING);
 
         for (const int& pId : quadLayoutData->labels) {
             const QuadBoolean::internal::QuadLayoutPatch<MeshType>& patch = quadLayoutData->quadPatches[pId];
@@ -36,7 +37,7 @@ void GLQuadLayoutWrap<MeshType>::GLDraw()
             pos.Set(startPos.F(), startPos.E(), startPos.V());
             for (size_t i = 0; i < 4; i++) {
                 for (size_t j = 0; j < (i%2 == 0 ? sizeX : sizeY); j++) {
-                    vcg::glColor(vcg::Color4b(20,20,20,255));
+                    vcg::glColor(vcg::Color4b(80,80,80,255));
 
                     glBegin(GL_LINES);
                     pos.FlipV();

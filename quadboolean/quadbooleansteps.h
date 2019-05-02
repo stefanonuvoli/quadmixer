@@ -41,6 +41,24 @@ void computeBooleanOperation(
         Eigen::VectorXi& J);
 
 template<class TriangleMeshType>
+std::vector<std::vector<size_t>> getIntersectionCurves(
+        TriangleMeshType& triMesh1,
+        TriangleMeshType& triMesh2,
+        const Eigen::MatrixXd& VA,
+        const Eigen::MatrixXd& VB,
+        const Eigen::MatrixXd& VR,
+        const Eigen::MatrixXi& FA,
+        const Eigen::MatrixXi& FB,
+        const Eigen::MatrixXi& FR,
+        const Eigen::VectorXi& J);
+
+template<class TriangleMeshType>
+void smoothAlongIntersectionCurves(
+        TriangleMeshType& boolean,
+        const std::vector<std::vector<size_t>>& intersectionCurves,
+        const int intersectionSmoothingInterations);
+
+template<class TriangleMeshType>
 void findPreservedQuads(
         TriangleMeshType& triMesh1,
         TriangleMeshType& triMesh2,

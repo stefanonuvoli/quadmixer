@@ -14,6 +14,7 @@ GLChartSidesWrap<MeshType>::GLChartSidesWrap()
     this->chartData = nullptr;
     this->ilpResult = nullptr;
     this->visible = true;
+    this->ilpVisible = true;
 }
 
 template<class MeshType>
@@ -23,12 +24,13 @@ void GLChartSidesWrap<MeshType>::GLDraw()
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
         glDepthRange(0.0,0.999999);
-        glLineWidth(4);
+        glLineWidth(3);
+        glDisable(GL_LIGHTING);
 
         for (int sId = 0; sId < chartData->subSides.size(); sId++) {
             const QuadBoolean::internal::ChartSubSide& side = chartData->subSides[sId];
             for (int i = 0; i < side.vertices.size()-1; i++) {
-                vcg::glColor(vcg::Color4b(100,100,100,255));
+                vcg::glColor(vcg::Color4b(128,128,128,255));
                 glBegin(GL_LINES);
                 vcg::glVertex(mesh->vert[side.vertices[i]].P());
                 vcg::glVertex(mesh->vert[side.vertices[i+1]].P());
@@ -42,11 +44,11 @@ void GLChartSidesWrap<MeshType>::GLDraw()
             typename MeshType::CoordType centerV = (endV.P() + firstV.P())/2;
 
             std::string sideInfo = std::to_string(side.size);
-            if (this->ilpResult != nullptr) {
+            if (this->ilpResult != nullptr && this->ilpVisible) {
                 sideInfo += " -> " + std::to_string((*ilpResult)[sId]);
             }
 
-            vcg::glColor(vcg::Color4b(0,0,0,255));
+            vcg::glColor(vcg::Color4b(128,128,128,255));
             drawTextGL(centerV.X(),
                        centerV.Y(),
                        centerV.Z(),

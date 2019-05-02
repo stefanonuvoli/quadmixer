@@ -163,6 +163,34 @@ void QuadBooleanWindow::doComputeBooleans() {
 #endif
 }
 
+void QuadBooleanWindow::doSmooth()
+{
+    chrono::steady_clock::time_point start;
+
+    start = chrono::steady_clock::now();
+
+    intersectionCurves = QuadBoolean::internal::getIntersectionCurves(
+                triMesh1, triMesh2,
+                VA, VB, VR,
+                FA, FB, FR,
+                J);
+
+    int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
+
+    //Smooth along intersection curves
+    QuadBoolean::internal::smoothAlongIntersectionCurves(
+                boolean,
+                intersectionCurves,
+                intersectionSmoothingIterations);
+
+    std::cout << std::endl << " >> "
+              << "Smooth along intersection curves: "
+              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
+              << " ms" << std::endl;
+
+    ui.glArea->setIntersectionCurves(&intersectionCurves);
+}
+
 
 void QuadBooleanWindow::doGetSurfaces() {
     preservedSurface.Clear();
@@ -481,6 +509,8 @@ void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
             ui.showQuadLayout1CheckBox->setChecked(true);
             ui.showQuadLayout2CheckBox->setChecked(true);
             ui.showBooleanCheckBox->setChecked(false);
+            ui.showIntersectionCurvesCheckBox->setChecked(false);
+            ui.showIntersectionCurvesCheckBox->setChecked(false);
             ui.showPreservedSurfaceCheckBox->setChecked(false);
             ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
             ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -508,11 +538,13 @@ void QuadBooleanWindow::on_quadTracerPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(true);
     ui.showQuadLayout2CheckBox->setChecked(true);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
     ui.showNewSurfaceCheckBox->setChecked(false);
     ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
@@ -531,11 +563,38 @@ void QuadBooleanWindow::on_computeBooleanPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(true);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
     ui.showNewSurfaceCheckBox->setChecked(false);
     ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
+    ui.showQuadrangulatedCheckBox->setChecked(false);
+    ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
+    ui.showResultCheckBox->setChecked(false);
+    ui.showResultLayoutCheckBox->setChecked(false);
+
+    updateVisibility();
+    ui.glArea->updateGL();
+}
+
+void QuadBooleanWindow::on_smoothPushButton_clicked()
+{
+    doSmooth();
+
+    ui.showMesh1CheckBox->setChecked(false);
+    ui.showMesh2CheckBox->setChecked(false);
+    ui.showQuadLayout1CheckBox->setChecked(false);
+    ui.showQuadLayout2CheckBox->setChecked(false);
+    ui.showBooleanCheckBox->setChecked(true);
+    ui.showIntersectionCurvesCheckBox->setChecked(true);
+    ui.showPreservedSurfaceCheckBox->setChecked(false);
+    ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
+    ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
+    ui.showNewSurfaceCheckBox->setChecked(false);
+    ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
@@ -554,11 +613,13 @@ void QuadBooleanWindow::on_getSurfacesPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(true);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(true);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(true);
     ui.showNewSurfaceCheckBox->setChecked(true);
     ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
@@ -577,11 +638,13 @@ void QuadBooleanWindow::on_decompositionPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(true);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(true);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(true);
     ui.showNewSurfaceCheckBox->setChecked(true);
     ui.showChartSidesCheckBox->setChecked(true);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
@@ -602,11 +665,13 @@ void QuadBooleanWindow::on_ilpPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(true);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(true);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(true);
     ui.showNewSurfaceCheckBox->setChecked(true);
     ui.showChartSidesCheckBox->setChecked(true);
+    ui.showILPCheckBox->setChecked(true);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
@@ -625,11 +690,13 @@ void QuadBooleanWindow::on_quadrangulatePushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
     ui.showNewSurfaceCheckBox->setChecked(false);
     ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(true);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(true);
     ui.showResultCheckBox->setChecked(false);
@@ -648,11 +715,13 @@ void QuadBooleanWindow::on_getResultPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
     ui.showNewSurfaceCheckBox->setChecked(false);
     ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(true);
@@ -668,6 +737,7 @@ void QuadBooleanWindow::on_computeAllPushButton_clicked()
 {
     doTraceQuads();
     doComputeBooleans();
+    doSmooth();
     doGetSurfaces();
     doPatchDecomposition();
     doSolveILP();
@@ -679,11 +749,13 @@ void QuadBooleanWindow::on_computeAllPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
     ui.showNewSurfaceCheckBox->setChecked(false);
     ui.showChartSidesCheckBox->setChecked(false);
+    ui.showILPCheckBox->setChecked(false);
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(true);
@@ -710,6 +782,12 @@ void QuadBooleanWindow::on_showMesh2CheckBox_stateChanged(int arg1)
 void QuadBooleanWindow::on_showBooleanCheckBox_stateChanged(int arg1)
 {
     ui.glArea->setBooleanVisibility(arg1 == Qt::Checked);
+    ui.glArea->updateGL();
+}
+
+void QuadBooleanWindow::on_showIntersectionCurvesCheckBox_stateChanged(int arg1)
+{
+    ui.glArea->setIntersectionCurvesVisibility(arg1 == Qt::Checked);
     ui.glArea->updateGL();
 }
 
@@ -758,6 +836,12 @@ void QuadBooleanWindow::on_showChartSidesCheckBox_stateChanged(int arg1)
     ui.glArea->updateGL();
 }
 
+void QuadBooleanWindow::on_showILPCheckBox_stateChanged(int arg1)
+{
+    ui.glArea->setILPVisibility(arg1 == Qt::Checked);
+    ui.glArea->updateGL();
+}
+
 void QuadBooleanWindow::on_showQuadrangulatedCheckBox_stateChanged(int arg1)
 {
     ui.glArea->setQuadrangulatedVisibility(arg1 == Qt::Checked);
@@ -794,13 +878,15 @@ void QuadBooleanWindow::updateVisibility()
     ui.glArea->setMesh1Visibility(ui.showMesh1CheckBox->isChecked());
     ui.glArea->setMesh2Visibility(ui.showMesh2CheckBox->isChecked());
     ui.glArea->setBooleanVisibility(ui.showBooleanCheckBox->isChecked());
+    ui.glArea->setIntersectionCurvesVisibility(ui.showIntersectionCurvesCheckBox->isChecked());
     ui.glArea->setPreservedSurfaceVisibility(ui.showPreservedSurfaceCheckBox->isChecked());
     ui.glArea->setNewSurfaceVisibility(ui.showNewSurfaceCheckBox->isChecked());
     ui.glArea->setQuadLayout1Visibility(ui.showQuadLayout1CheckBox->isChecked());
     ui.glArea->setQuadLayout2Visibility(ui.showQuadLayout2CheckBox->isChecked());
     ui.glArea->setQuadLayoutPreserved1Visibility(ui.showQuadLayoutPreserved1CheckBox->isChecked());
     ui.glArea->setQuadLayoutPreserved2Visibility(ui.showQuadLayoutPreserved2CheckBox->isChecked());
-    ui.glArea->setChartSidesVisibility(ui.showChartSidesCheckBox->isChecked());
+    ui.glArea->setChartSidesVisibility(ui.showChartSidesCheckBox->isChecked());    
+    ui.glArea->setILPVisibility(ui.showILPCheckBox->isChecked());
     ui.glArea->setQuadrangulatedVisibility(ui.showQuadrangulatedCheckBox->isChecked());
     ui.glArea->setQuadLayoutQuadrangulatedVisibility(ui.showQuadrangulatedLayoutCheckBox->isChecked());
     ui.glArea->setResultVisibility(ui.showResultCheckBox->isChecked());

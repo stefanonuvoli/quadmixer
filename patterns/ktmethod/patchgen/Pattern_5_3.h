@@ -27,7 +27,7 @@ namespace patchgen {
             }
             return constraint_matrix;
         }
-    
+
         static Eigen::VectorXd get_constraint_rhs(const Eigen::VectorXi& l) {
             return kt84::make_Vector5d(l[0] - 5,
                                        l[1] - 2,
@@ -35,7 +35,7 @@ namespace patchgen {
                                        l[3] - 1,
                                        l[4] - 1);
         }
-    
+
         static int& get_variable(PatchParam& param, int index) {
             if (index < 5) return param.p[index];
             if (index == 5) return param.q[1];
@@ -49,7 +49,7 @@ namespace patchgen {
             const int num_variables = constraint_matrix.cols();
             ILP ilp(num_variables);
             ilp.add_constraint(constraint_matrix, EQ, get_constraint_rhs(l));
-        
+
             // arbitrary constraints and objective
             // xmin
             ilp.set_objective(kt84::make_Vector9d(0, 0, 0, 0, 0, 0, 0, 1, 0), false);
@@ -72,11 +72,11 @@ namespace patchgen {
             // maximize p0+p1+p2+p3+p4
             ilp.set_objective(kt84::make_Vector9d(1, 1, 1, 1, 1, 0, 0, 0, 0), true);
             if (!ilp.solve()) return false;
-        
+
             auto variables = ilp.get_variables();
             for (int i = 0; i < num_variables; ++i)
                 get_variable(param, i) = variables[i];
-        
+
             param.pattern_id = 3;
             return true;
         }
@@ -104,7 +104,7 @@ namespace patchgen {
             typename PatchT::VHandle V[9];
             for (int i = 0; i < 5; ++i) C[i] = add_tagged_vertex(patch, i, true );
             for (int i = 0; i < 9; ++i) V[i] = add_tagged_vertex(patch, i, false);
-        
+
             patch.add_face(C[0], V[0], V[5], C[4]);
             patch.add_face(V[0], V[1], V[6], V[5]);
             patch.add_face(V[1], V[2], V[7], V[6]);
@@ -113,7 +113,7 @@ namespace patchgen {
             patch.add_face(V[4], C[2], V[7], V[8]);
             patch.add_face(C[2], C[3], V[6], V[7]);
             patch.add_face(C[3], C[4], V[5], V[6]);
-        
+
             auto h_insert_x = patch.halfedge_handle(V[0]);  // corresponds to V0-C0
             for (int i = 0; i < param.x; ++i)
                 insert_edgeloop(patch, h_insert_x);
@@ -162,8 +162,8 @@ namespace patchgen {
             side_indexR[7]=0;
             side_indexL[8]=0;   //V3
             side_indexR[8]=0;
-            side_indexL[9]=1;   //V4
-            side_indexR[9]=1;
+            side_indexL[9]=4;   //V4
+            side_indexR[9]=4;
             side_indexL[10]=-1;   //V5
             side_indexR[10]=-1;
             side_indexL[11]=-1;   //V6

@@ -3,6 +3,21 @@
 
 namespace QuadBoolean {
 
+Parameters::Parameters()
+{
+    motorcycle = DEFAULTMOTORCYCLE;
+    intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
+    minRectangleSide = DEFAULTMINRECTANGLESIDE;
+    mergeQuads = DEFAULTMERGEQUADS;
+    deleteSmall = DEFAULTDELETESMALL;
+    deleteNonConnected = DEFAULTDELETENONCONNECTED;
+    alpha = DEFAULTALPHA;
+    chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
+    meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
+    resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
+}
+
+
 template<class PolyMeshType, class TriangleMeshType>
 void quadBoolean(
         PolyMeshType& mesh1,
@@ -10,20 +25,14 @@ void quadBoolean(
         const Operation& operation,
         PolyMeshType& result)
 {
+    Parameters defaultParam;
+
     return quadBoolean(
                 mesh1,
                 mesh2,
                 operation,
                 result,
-                DEFAULTMOTORCYCLE,
-                DEFAULTMINRECTANGLESIDE,
-                DEFAULTMERGEQUADS,
-                DEFAULTDELETESMALL,
-                DEFAULTDELETENONCONNECTED,
-                DEFAULTALPHA,
-                DEFAULTCHARTSMOOTHINGITERATIONS,
-                DEFAULTMESHSMOOTHINGITERATIONS,
-                DEFAULTRESULTSMOOTHINGITERATIONS);
+                defaultParam);
 }
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -32,15 +41,7 @@ void quadBoolean(
         PolyMeshType& mesh2,
         const Operation& operation,
         PolyMeshType& result,
-        const bool motorcycle,
-        const size_t minRectangleSide,
-        const bool mergeQuads,
-        const bool deleteSmall,
-        const bool deleteNonConnected,
-        const double alpha,
-        const int chartSmoothingIterations,
-        const int meshSmoothingIterations,
-        const int resultSmoothingIterations)
+        const Parameters& parameters)
 {
      std::vector<int> quadTracerLabel1;
      std::vector<int> quadTracerLabel2;
@@ -49,6 +50,8 @@ void quadBoolean(
      Eigen::MatrixXd VA, VB, VR;
      Eigen::MatrixXi FA, FB, FR;
      Eigen::VectorXi J;
+
+     std::vector<std::vector<size_t>> intersectionCurves;
 
      std::vector<int> birthQuad1;
      std::vector<int> birthQuad2;
@@ -76,8 +79,8 @@ void quadBoolean(
      std::vector<int> quadrangulatedNewSurfaceLabel;
 
      //Trace quads
-     internal::traceQuads(mesh1, quadTracerLabel1, motorcycle);
-     internal::traceQuads(mesh2, quadTracerLabel2, motorcycle);
+     internal::traceQuads(mesh1, quadTracerLabel1, parameters.motorcycle);
+     internal::traceQuads(mesh2, quadTracerLabel2, parameters.motorcycle);
 
      //Triangulate
      internal::triangulateQuadMesh(mesh1, triMesh1, birthQuad1);
@@ -93,6 +96,21 @@ void quadBoolean(
                  FA, FB, FR,
                  J);
 
+     //Get intersection curves
+     intersectionCurves =
+             QuadBoolean::internal::getIntersectionCurves(
+                 triMesh1, triMesh2,
+                 VA, VB, VR,
+                 FA, FB, FR,
+                 J);
+
+     //Smooth along intersection curves
+     QuadBoolean::internal::smoothAlongIntersectionCurves(
+                 boolean,
+                 intersectionCurves,
+                 parameters.intersectionSmoothingIterations);
+
+     //Face labels
      preservedFaceLabel1 = quadTracerLabel1;
      preservedFaceLabel2 = quadTracerLabel2;
 
@@ -110,20 +128,20 @@ void quadBoolean(
      internal::findAffectedPatches(mesh2, preservedQuad2, preservedFaceLabel2, affectedPatches2);
 
      //Maximum rectangles in the patches
-     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, minRectangleSide, true);
-     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, minRectangleSide, true);
+     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, parameters.minRectangleSide, true);
+     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, parameters.minRectangleSide, true);
 
      //Merge rectangular patches
-     if (mergeQuads) {
+     if (parameters.mergeQuads) {
          int nMerged1 = internal::mergeQuadPatches(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
          int nMerged2 = internal::mergeQuadPatches(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
      }
-     if (deleteSmall) {
+     if (parameters.deleteSmall) {
          //Delete small patches
          int nSmall1 = internal::deleteSmallQuadPatches(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
          int nSmall2 = internal::deleteSmallQuadPatches(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
      }
-     if (deleteNonConnected) {
+     if (parameters.deleteNonConnected) {
          //Delete non-connected patches
          int nNonConnected1 = internal::deleteNonConnectedQuadPatches(mesh1, preservedFaceLabel1, preservedQuad1);
          int nNonConnected2 = internal::deleteNonConnectedQuadPatches(mesh2, preservedFaceLabel2, preservedQuad2);
@@ -158,21 +176,21 @@ void quadBoolean(
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
      //Solve ILP to find best side size
-     ilpResult = internal::findBestSideSize(chartData, alpha);
+     ilpResult = internal::findBestSideSize(chartData, parameters.alpha);
 
      //Quadrangulate
      internal::quadrangulate(
                  newSurface,
                  chartData,
                  ilpResult,
-                 chartSmoothingIterations,
-                 meshSmoothingIterations,
+                 parameters.chartSmoothingIterations,
+                 parameters.meshSmoothingIterations,
                  quadrangulatedNewSurface,
                  quadrangulatedNewSurfaceLabel);
 
      //Get the result
      result.Clear();
-     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, resultSmoothingIterations);
+     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, parameters.resultSmoothingIterations);
 }
 
 }

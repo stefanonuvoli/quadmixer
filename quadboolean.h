@@ -5,6 +5,7 @@
 
 #define DEFAULTMOTORCYCLE true
 #define DEFAULTMINRECTANGLESIDE 2
+#define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 3
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED true
@@ -14,6 +15,21 @@
 #define DEFAULTRESULTSMOOTHINGITERATIONS 3
 
 namespace QuadBoolean {
+
+struct Parameters {
+    bool motorcycle;
+    int intersectionSmoothingIterations;
+    size_t minRectangleSide;
+    bool mergeQuads;
+    bool deleteSmall;
+    bool deleteNonConnected;
+    double alpha;
+    int chartSmoothingIterations;
+    int meshSmoothingIterations;
+    int resultSmoothingIterations;
+
+    Parameters();
+};
 
 template<class PolyMeshType, class TriangleMeshType = PolyMeshType>
 void quadBoolean(
@@ -28,15 +44,7 @@ void quadBoolean(
         PolyMeshType& mesh2,
         const Operation& operation,
         PolyMeshType& result,
-        const bool motorcycle,
-        const size_t minRectangleSide,
-        const bool mergeQuads,
-        const bool deleteSmall,
-        const bool deleteNonConnected,
-        const double alpha,
-        const int chartSmoothingIterations,
-        const int meshSmoothingIterations,
-        const int resultSmoothingIterations);
+        const Parameters& parameters);
 
 }
 

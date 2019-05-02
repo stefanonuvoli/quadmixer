@@ -39,15 +39,15 @@ void computePreservedQuadForMesh(
 
         //If the birth face is in the current mesh
         if (birthFace < triMesh.face.size()) {
-            bool isNew = true;
+            bool isNew = false;
 
             for (int j = 0; j < 3; j++) {
                 if (V(F(birthFace, j)) != VR(FR(i, j))) {
-                    isNew = false;
+                    isNew = true;
                 }
             }
 
-            if (!isNew) {
+            if (isNew) {
                 preservedQuad[birthQuad[birthFace]] = false;
             }
         }

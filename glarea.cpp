@@ -43,6 +43,12 @@ void GLArea::setQuadLayout2(QuadLayoutData* quadLayoutData2)
 void GLArea::setBoolean(TriangleMesh* boolean)
 {
     initMeshWrapper(this->glWrapBoolean, boolean);
+    glWrapIntersectionCurves.mesh = boolean;
+}
+
+void GLArea::setIntersectionCurves(std::vector<std::vector<size_t>>* intersectionCurves)
+{
+    glWrapIntersectionCurves.edges = intersectionCurves;
 }
 
 void GLArea::setPreservedSurface(PolyMesh* preservedSurface)
@@ -125,6 +131,11 @@ void GLArea::setBooleanVisibility(bool visible)
     glWrapBoolean.visible = visible;
 }
 
+void GLArea::setIntersectionCurvesVisibility(bool visible)
+{
+    glWrapIntersectionCurves.visible = visible;
+}
+
 void GLArea::setPreservedSurfaceVisibility(bool visible)
 {
     glWrapPreservedSurface.visible = visible;
@@ -149,6 +160,11 @@ void GLArea::setNewSurfaceVisibility(bool visible)
 void GLArea::setChartSidesVisibility(bool visible)
 {
     glWrapChartSides.visible = visible;
+}
+
+void GLArea::setILPVisibility(bool visible)
+{
+    glWrapChartSides.ilpVisible = visible;
 }
 
 void GLArea::setQuadrangulatedVisibility(bool visible)
@@ -288,6 +304,7 @@ void GLArea::paintGL()
     glWrapMesh1.GLDraw();
     glWrapMesh2.GLDraw();
     glWrapBoolean.GLDraw();
+    glWrapIntersectionCurves.GLDraw();
     glWrapPreservedSurface.GLDraw();
     glWrapNewSurface.GLDraw();
     glWrapQuadLayout1.GLDraw();
