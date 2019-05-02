@@ -12,6 +12,8 @@ public:
 
     MeshType* mesh;
     bool visible;
+
+    bool wireframe;
 };
 
 #include "glpolywrap.tpp"

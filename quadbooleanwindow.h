@@ -70,6 +70,8 @@ private slots:
 
     void on_showILPCheckBox_stateChanged(int arg1);
 
+    void on_showWireframe_stateChanged(int arg1);
+
 private:
 
     Ui::mainWindow ui;

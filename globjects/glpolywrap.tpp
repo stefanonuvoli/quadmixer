@@ -10,6 +10,7 @@ GLPolyWrap<MeshType>::GLPolyWrap()
 {
     this->mesh = nullptr;
     this->visible = true;
+    this->wireframe = true;
 }
 
 template<class MeshType>
@@ -44,23 +45,26 @@ void GLPolyWrap<MeshType>::GLDraw()
             glEnd();
         }
 
-        glDepthRange(0.0,0.999999);
-        glLineWidth(1);
-        glDisable(GL_LIGHTING);
-        for(unsigned int i=0; i<face.size(); i++)
-        {
-            if(face[i].IsD())  continue;
-            int size=face[i].VN();
-            for(int j=0; j<face[i].VN(); j++)
+        if (wireframe) {
+            glDepthRange(0.0,0.999999);
+            glLineWidth(1);
+            glDisable(GL_LIGHTING);
+            for(unsigned int i=0; i<face.size(); i++)
             {
-                vcg::glColor(vcg::Color4b(100,100,100,255));
+                if(face[i].IsD())  continue;
+                int size=face[i].VN();
+                for(int j=0; j<face[i].VN(); j++)
+                {
+                    vcg::glColor(vcg::Color4b(100,100,100,255));
 
-                glBegin(GL_LINES);
-                vcg::glVertex( face[i].V(j)->P() );
-                vcg::glVertex( face[i].V((j+1)%size)->P() );
-                glEnd();
+                    glBegin(GL_LINES);
+                    vcg::glVertex( face[i].V(j)->P() );
+                    vcg::glVertex( face[i].V((j+1)%size)->P() );
+                    glEnd();
+                }
             }
         }
+
         //glEnd();
         glPopAttrib();
     }

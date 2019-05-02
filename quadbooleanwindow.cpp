@@ -153,7 +153,23 @@ void QuadBooleanWindow::doComputeBooleans() {
               << " ms" << std::endl;
 
 
+    start = chrono::steady_clock::now();
+
+    intersectionCurves = QuadBoolean::internal::getIntersectionCurves(
+                triMesh1, triMesh2,
+                VA, VB, VR,
+                FA, FB, FR,
+                J);
+
+
+    std::cout << std::endl << " >> "
+              << "Intersection curves: "
+              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
+              << " ms" << std::endl;
+
     ui.glArea->setBoolean(&boolean);
+
+    ui.glArea->setIntersectionCurves(&intersectionCurves);
 
 
 #ifdef SAVEMESHES
@@ -169,12 +185,6 @@ void QuadBooleanWindow::doSmooth()
 
     start = chrono::steady_clock::now();
 
-    intersectionCurves = QuadBoolean::internal::getIntersectionCurves(
-                triMesh1, triMesh2,
-                VA, VB, VR,
-                FA, FB, FR,
-                J);
-
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
 
     //Smooth along intersection curves
@@ -187,8 +197,6 @@ void QuadBooleanWindow::doSmooth()
               << "Smooth along intersection curves: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
-
-    ui.glArea->setIntersectionCurves(&intersectionCurves);
 }
 
 
@@ -563,7 +571,7 @@ void QuadBooleanWindow::on_computeBooleanPushButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(true);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionCurvesCheckBox->setChecked(true);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -891,6 +899,14 @@ void QuadBooleanWindow::updateVisibility()
     ui.glArea->setQuadLayoutQuadrangulatedVisibility(ui.showQuadrangulatedLayoutCheckBox->isChecked());
     ui.glArea->setResultVisibility(ui.showResultCheckBox->isChecked());
     ui.glArea->setQuadLayoutResultVisibility(ui.showResultLayoutCheckBox->isChecked());
+
+    ui.glArea->setMesh1Wireframe(ui.showWireframe->isChecked());
+    ui.glArea->setMesh2Wireframe(ui.showWireframe->isChecked());
+    ui.glArea->setBooleanWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setPreservedSurfaceWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setNewSurfaceWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setQuadrangulatedWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setResultWireframe(ui.showWireframe->isChecked());
 }
 
 template<class MeshType>
@@ -914,4 +930,17 @@ void QuadBooleanWindow::colorizeMesh(
             mesh.face[i].C() = color;
         }
     }
+}
+
+void QuadBooleanWindow::on_showWireframe_stateChanged(int arg1)
+{
+    ui.glArea->setMesh1Wireframe(ui.showWireframe->isChecked());
+    ui.glArea->setMesh2Wireframe(ui.showWireframe->isChecked());
+    ui.glArea->setBooleanWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setPreservedSurfaceWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setNewSurfaceWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setQuadrangulatedWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setResultWireframe(ui.showWireframe->isChecked());
+
+    ui.glArea->updateGL();
 }

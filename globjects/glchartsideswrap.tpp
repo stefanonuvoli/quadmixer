@@ -30,7 +30,7 @@ void GLChartSidesWrap<MeshType>::GLDraw()
         for (int sId = 0; sId < chartData->subSides.size(); sId++) {
             const QuadBoolean::internal::ChartSubSide& side = chartData->subSides[sId];
             for (int i = 0; i < side.vertices.size()-1; i++) {
-                vcg::glColor(vcg::Color4b(128,128,128,255));
+                vcg::glColor(vcg::Color4b(80,80,80,255));
                 glBegin(GL_LINES);
                 vcg::glVertex(mesh->vert[side.vertices[i]].P());
                 vcg::glVertex(mesh->vert[side.vertices[i+1]].P());

@@ -67,6 +67,14 @@ public:
     void setResultVisibility(bool visible);
     void setQuadLayoutResultVisibility(bool visible);
 
+    void setMesh1Wireframe(bool wireframe);
+    void setMesh2Wireframe(bool wireframe);
+    void setBooleanWireframe(bool wireframe);
+    void setPreservedSurfaceWireframe(bool wireframe);
+    void setNewSurfaceWireframe(bool wireframe);
+    void setQuadrangulatedWireframe(bool wireframe);
+    void setResultWireframe(bool wireframe);
+
     void resetTrackball();
 
     vcg::Point3f getSceneCenter() const;

@@ -189,6 +189,40 @@ void GLArea::setQuadLayoutResultVisibility(bool visible)
 
 
 
+void GLArea::setMesh1Wireframe(bool wireframe)
+{
+    glWrapMesh1.wireframe = wireframe;
+}
+
+void GLArea::setMesh2Wireframe(bool wireframe)
+{
+    glWrapMesh2.wireframe = wireframe;
+}
+
+void GLArea::setBooleanWireframe(bool wireframe)
+{
+    glWrapBoolean.wireframe = wireframe;
+}
+
+void GLArea::setPreservedSurfaceWireframe(bool wireframe)
+{
+    glWrapPreservedSurface.wireframe = wireframe;
+}
+
+void GLArea::setNewSurfaceWireframe(bool wireframe)
+{
+    glWrapNewSurface.wireframe = wireframe;
+}
+
+void GLArea::setQuadrangulatedWireframe(bool wireframe)
+{
+    glWrapQuadrangulated.wireframe = wireframe;
+}
+
+void GLArea::setResultWireframe(bool wireframe)
+{
+    glWrapResult.wireframe = wireframe;
+}
 
 
 void GLArea::resetTrackball()

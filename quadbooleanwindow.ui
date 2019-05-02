@@ -358,6 +358,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="showWireframe">
+         <property name="text">
+          <string>Wireframes</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="showMesh1CheckBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
