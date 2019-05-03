@@ -2039,6 +2039,7 @@ public:
 
 
         //return the patches
+        Partitions.clear();
         for (size_t i=0;i<Patches.size();i++)
         {
             if (!Patches[i].Active)continue;
@@ -2053,6 +2054,10 @@ public:
             {
                 std::cout<<"WARNING - Not good subdivision - FIXED!";
             }
+            Partitions.push_back(Patches[i].IndexF);
+            std::vector<size_t> PatchCorner(Patches[i].ConvexVertIndex.begin(),
+                                            Patches[i].ConvexVertIndex.end());
+            Corner.push_back(PatchCorner);
         }
     }
 
