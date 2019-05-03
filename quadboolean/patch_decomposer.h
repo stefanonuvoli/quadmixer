@@ -1419,7 +1419,7 @@ private:
     {
         typename vcg::tri::FieldSmoother<MeshType>::SmoothParam SParam;
         SParam.align_borders=true;
-        SParam.curvRing=1;
+        SParam.curvRing=2;
         SParam.alpha_curv=0;
         SParam.Ndir=4;
         SParam.sharp_thr=0;
@@ -1938,12 +1938,13 @@ public:
         std::cout<<"***                       ***"<<std::endl;
         std::cout<<"*****************************"<<std::endl;
         //initial check
+        UpdateAttributes(mesh);
         int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
         int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
         std::cout<<"non manuf V:"<<nonManifV<<std::endl;
         std::cout<<"non manuf E:"<<nonManifE<<std::endl;
 
-        UpdateAttributes(mesh);
+
         size_t num_split=vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
         if (num_split>0)
             UpdateAttributes(mesh);
