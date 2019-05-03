@@ -1,0 +1,2066 @@
+#ifndef PATCH_DECOMPOSER
+#define PATCH_DECOMPOSER
+
+#include <vcg/math/matrix33.h>
+#include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
+#include <vcg/complex/algorithms/isotropic_remeshing.h>
+#include <vcg/complex/algorithms/geodesic.h>
+#include <wrap/io_trimesh/export.h>
+#include <vcg/complex/algorithms/polygonal_algorithms.h>
+#include <wrap/igl/smooth_field.h>
+#include <vcg/complex/algorithms/hole.h>
+
+#include "field_tracer.h"
+
+#define CONVEX 8.0
+#define CONCAVE 8.0
+
+namespace QuadBoolean {
+namespace internal {
+
+template <class MeshType>
+void UpdateAttributes(MeshType &curr_mesh)
+{
+    vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(curr_mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(curr_mesh);
+    vcg::tri::UpdateBounding<MeshType>::Box(curr_mesh);
+    vcg::tri::UpdateTopology<MeshType>::FaceFace(curr_mesh);
+    vcg::tri::UpdateTopology<MeshType>::VertexFace(curr_mesh);
+    vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(curr_mesh);
+    vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(curr_mesh);
+}
+
+template <class MeshType>
+class PatchSplitter
+{
+    typedef typename MeshType::CoordType CoordType;
+    typedef typename MeshType::ScalarType ScalarType;
+    typedef typename MeshType::FaceType FaceType;
+    typedef typename MeshType::VertexType VertexType;
+
+    MeshType &patchMesh;
+    bool printMsg;
+    VertexFieldTracer<MeshType> &VFTracer;
+    std::vector<std::vector<size_t> > TraceVertCandidates,TraceDirCandidates;
+    std::vector<std::pair<ScalarType,size_t> > CandidatesPathLenghts;
+
+    void GetConvexVertices(const std::set<size_t> &ConvexOriginal,
+                           std::set<size_t> &ConvexMesh)
+    {
+        for (size_t  i=0;i<patchMesh.vert.size();i++)
+        {
+            size_t IndexOriginal=patchMesh.vert[i].Q();
+            if(ConvexOriginal.count(IndexOriginal)==0)continue;
+            ConvexMesh.insert(i);
+        }
+    }
+
+    void GetConcaveVertices(const std::set<size_t> &ConcaveOriginal,
+                            std::set<size_t> &ConcaveMesh)
+    {
+        for (size_t  i=0;i<patchMesh.vert.size();i++)
+        {
+            size_t IndexOriginal=patchMesh.vert[i].Q();
+            if(ConcaveOriginal.count(IndexOriginal)==0)continue;
+            ConcaveMesh.insert(i);
+        }
+    }
+
+    void InitTracerConnections(const std::set<size_t> &ConvexOriginal)
+    {
+        std::set<size_t> ConvexMesh;
+        GetConvexVertices(ConvexOriginal,ConvexMesh);
+        VFTracer.InitConnections(ConvexMesh);
+    }
+
+    void InitCandidatesPathLenghts()
+    {
+        CandidatesPathLenghts.clear();
+        for (size_t i=0;i<TraceVertCandidates.size();i++)
+        {
+            ScalarType currL=VFTracer.TraceLenght(TraceVertCandidates[i],TraceDirCandidates[i]);
+            CandidatesPathLenghts.push_back(std::pair<ScalarType,size_t>(currL,i));
+        }
+        std::sort(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
+    }
+
+    void PruneConcaveCandidates(bool addAll=false)
+    {
+        std::vector<std::vector<size_t > > TraceVertSwap;
+        std::vector<std::vector<size_t > > TraceDirSwap;
+
+        //count how many traces has been done for each concave
+        std::vector<size_t> VertAllocator(patchMesh.vert.size(),1);
+        InitCandidatesPathLenghts();
+
+        //first round
+        int Num0=TraceVertCandidates.size();
+        for (size_t i=0;i<CandidatesPathLenghts.size();i++)
+        {
+            //get the current trace from the sorted ones
+            size_t TraceIndex0=CandidatesPathLenghts[i].second;
+            std::vector<size_t > TraceV0=TraceVertCandidates[TraceIndex0];
+            std::vector<size_t > TraceD0=TraceDirCandidates[TraceIndex0];
+
+            //get the first vertex to check if it has been already traced or not
+            size_t IndexV0=TraceV0[0];
+
+            //if it has already a trace then go on
+            if (VertAllocator[IndexV0]==0)continue;
+
+            bool collide=false;
+            for (size_t i=0;i<TraceVertSwap.size();i++)
+            {
+                std::vector<size_t > TraceV1=TraceVertSwap[i];
+                std::vector<size_t > TraceD1=TraceDirSwap[i];
+
+                collide|=VFTracer.CollideTraces(TraceV0,TraceD0,TraceV1,TraceD1);
+                if (collide)break;
+            }
+            if (!collide)
+            {
+                TraceVertSwap.push_back(TraceV0);
+                TraceDirSwap.push_back(TraceD0);
+                VertAllocator[IndexV0]--;
+            }
+        }
+
+        //second round
+        if (addAll)
+        {
+            VertAllocator.clear();
+            VertAllocator.resize(patchMesh.vert.size(),1);
+            for (size_t i=0;i<TraceVertCandidates.size();i++)
+            {
+                size_t TraceIndex0=CandidatesPathLenghts[i].second;
+                std::vector<size_t > TraceV0=TraceVertCandidates[TraceIndex0];
+                std::vector<size_t > TraceD0=TraceDirCandidates[TraceIndex0];
+                size_t IndexV0=TraceV0[0];
+                if (VertAllocator[IndexV0]==0)continue;
+
+                bool collide=false;
+                for (size_t i=0;i<TraceVertSwap.size();i++)
+                {
+                    std::vector<size_t > TraceV1=TraceVertSwap[i];
+                    std::vector<size_t > TraceD1=TraceDirSwap[i];
+
+                    collide|=VFTracer.CollideTraces(TraceV0,TraceD0,TraceV1,TraceD1);
+                    if (collide)break;
+                }
+                if (!collide)
+                {
+                    TraceVertSwap.push_back(TraceV0);
+                    TraceDirSwap.push_back(TraceD0);
+                    VertAllocator[IndexV0]--;
+                }
+            }
+        }
+        TraceVertCandidates=TraceVertSwap;
+        TraceDirCandidates=TraceDirSwap;
+        int Num1=TraceVertCandidates.size();
+        std::cout<<"Pruned "<<Num0-Num1<<" out ouf "<<Num0<<std::endl;
+        //InitPathPriority();
+    }
+
+    void TraceConcaveCandidates(const std::set<size_t> &ConvexOriginal,
+                                const std::set<size_t> &ConcaveOriginal,
+                                const std::vector<size_t> &TracingVert,
+                                const std::vector<std::vector<size_t> > &TracingDir)
+    {
+        if (printMsg)
+            std::cout<<"Tracing Concave Corners"<<std::endl;
+
+        assert(TracingVert.size()==TracingDir.size());
+        InitTracerConnections(ConvexOriginal);
+
+        std::set<size_t> ConcaveMesh;
+        GetConcaveVertices(ConcaveOriginal,ConcaveMesh);
+
+        size_t tested=0;
+        size_t non_expanded=0;
+        size_t non_traced=0;
+
+        TraceVertCandidates.clear();
+        TraceDirCandidates.clear();
+        //vcg::tri::UpdateSelection<MeshType>::VertexClear(patchMesh);
+        for (size_t i=0;i<TracingVert.size();i++)
+        {
+            size_t TraceV=TracingVert[i];
+            if (ConcaveMesh.count(TraceV)==0)continue;
+            //std::cout<<"*** Size Start "<<TracingDir[i].size()<<std::endl;
+
+            //patchMesh.vert[TraceV].SetS();
+            for (size_t j=0;j<TracingDir[i].size();j++)
+            {
+                tested++;
+                std::vector<size_t> IndexV,IndexDir;
+                bool traced=VFTracer.TraceFrom(TraceV,
+                                               TracingDir[i][j],
+                                               IndexV,IndexDir);
+                if (!traced)
+                {
+                    non_traced++;
+                    std::cout<<"WARNING: Non Traced "<<TraceV<<" "<<TracingDir[i][j]<<std::endl;
+                    continue;
+                }
+
+                bool expanded=VFTracer.ExpandPath(IndexV,IndexDir);
+                if (!expanded)
+                {
+                    non_expanded++;
+                    std::cout<<"WARNING: Non Expanded "<<TraceV<<" "<<TracingDir[i][j]<<std::endl;
+                    continue;
+                }
+
+                TraceVertCandidates.push_back(IndexV);
+                TraceDirCandidates.push_back(IndexDir);
+            }
+        }
+        if (printMsg)
+        {
+            std::cout<<"Non Traced "<<non_traced<<std::endl;
+            std::cout<<"Non Expanded "<<non_expanded<<std::endl;
+            std::cout<<"Tested "<<tested<<std::endl;
+        }
+        //vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh_trace.ply",vcg::tri::io::Mask::IOM_VERTFLAGS);
+    }
+
+    void TraceAllBordersCandidates(const std::set<size_t> &ConvexOriginal,
+                                   const std::vector<size_t> &TracingVert,
+                                   const std::vector<std::vector<size_t> > &TracingDir)
+    {
+        std::cout<<"Tracing Regular Paths"<<std::endl;
+
+        assert(TracingVert.size()==TracingDir.size());
+        InitTracerConnections(ConvexOriginal);
+
+        size_t tested=0;
+        size_t non_expanded=0;
+        size_t non_traced=0;
+
+        TraceVertCandidates.clear();
+        TraceDirCandidates.clear();
+        //vcg::tri::UpdateSelection<MeshType>::VertexClear(patchMesh);
+        for (size_t i=0;i<TracingVert.size();i++)
+        {
+            //std::cout<<"Tracing From Vertex "<<TracingVert[i]<<std::endl;
+
+            size_t TraceV=TracingVert[i];
+            if (TracingDir[i].size()==0)continue;
+            //if it is flat only one direction is feasible
+            assert(TracingDir[i].size()<2);
+
+            tested++;
+            std::vector<size_t> IndexV,IndexDir;
+
+            //std::cout<<"Test Trace "<<TracingVert[i]<<std::endl;
+
+            bool traced=VFTracer.TraceFrom(TraceV,TracingDir[i][0],
+                    IndexV,IndexDir);
+            //std::cout<<"End Trace "<<TracingVert[i]<<std::endl;
+
+            if (!traced)
+            {
+                non_traced++;
+                std::cout<<"WARNING: Non Traced "<<TraceV<<" "<<TracingDir[i][0]<<std::endl;
+                continue;
+            }
+
+            bool expanded=VFTracer.ExpandPath(IndexV,IndexDir);
+            if (!expanded)
+            {
+                non_expanded++;
+                std::cout<<"WARNING: Non Expanded "<<TraceV<<" "<<TracingDir[i][0]<<std::endl;
+                continue;
+            }
+
+            TraceVertCandidates.push_back(IndexV);
+            TraceDirCandidates.push_back(IndexDir);
+        }
+        if (printMsg)
+        {
+            std::cout<<"Non Traced "<<non_traced<<std::endl;
+            std::cout<<"Non Expanded "<<non_expanded<<std::endl;
+            std::cout<<"Tested "<<tested<<std::endl;
+        }
+    }
+
+    void RetrievePartitioningFrom(const std::set<std::pair<CoordType,CoordType> > BorderEdges,
+                                  const size_t &IndexF,std::vector<size_t> &partition)
+    {
+        partition.clear();
+
+        std::vector<size_t> stack;
+        std::set<size_t> explored;
+
+        stack.push_back(IndexF);
+        explored.insert(IndexF);
+        do
+        {
+            size_t currF=stack.back();
+            stack.pop_back();
+
+            partition.push_back(currF);
+            for (size_t i=0;i<patchMesh.face[currF].VN();i++)
+            {
+                if (vcg::face::IsBorder(patchMesh.face[currF],i))continue;
+
+                CoordType Pos0=patchMesh.face[currF].P0(i);
+                CoordType Pos1=patchMesh.face[currF].P1(i);
+
+                std::pair<CoordType,CoordType> key(std::min(Pos0,Pos1),
+                                                   std::max(Pos0,Pos1));
+
+                if (BorderEdges.count(key)==1)continue;
+
+                int NextFIndex=vcg::tri::Index(patchMesh,patchMesh.face[currF].FFp(i));
+
+                if (explored.count(NextFIndex)>0)continue;
+
+                explored.insert(NextFIndex);
+                stack.push_back(NextFIndex);
+            }
+        }while (!stack.empty());
+    }
+
+    void GetBorderSet(std::set<std::pair<CoordType,CoordType> > &BorderEdges)
+    {
+        BorderEdges.clear();
+        for (size_t i=0;i<TraceVertCandidates.size();i++)
+        {
+            if (TraceVertCandidates[i].size()==0)continue;
+            for (size_t j=0;j<TraceVertCandidates[i].size()-1;j++)
+            {
+                size_t IndexV0=TraceVertCandidates[i][j];
+                size_t IndexV1=TraceVertCandidates[i][j+1];
+
+                CoordType PosV0=patchMesh.vert[IndexV0].P();
+                CoordType PosV1=patchMesh.vert[IndexV1].P();
+
+                std::pair<CoordType,CoordType> Key(std::min(PosV0,PosV1),
+                                                   std::max(PosV0,PosV1));
+                BorderEdges.insert(Key);
+            }
+        }
+    }
+
+    void RetrievePatchesFromPaths(std::vector<std::vector<size_t> > &Partitions)
+    {
+        std::set<std::pair<CoordType,CoordType> > BorderEdges;
+        GetBorderSet(BorderEdges);
+
+        Partitions.clear();
+        vcg::tri::UpdateFlags<MeshType>::FaceClearV(patchMesh);
+        for (size_t i=0;i<patchMesh.face.size();i++)
+        {
+            if (patchMesh.face[i].IsV())continue;
+
+            //std::cout<<"test"<<std::endl;
+            std::vector<size_t> partition;
+            RetrievePartitioningFrom(BorderEdges,i,partition);
+
+            for (size_t j=0;j<partition.size();j++)
+                patchMesh.face[partition[j]].SetV();
+
+            Partitions.push_back(partition);
+        }
+    }
+
+    void SavePatchMesh(std::vector<std::vector<size_t> > &FacePatches,std::set<size_t> &SelV)
+    {
+        for (size_t i=0;i<FacePatches.size();i++)
+        {
+            for (size_t j=0;j<FacePatches[i].size();j++)
+            {
+                size_t IndexF=FacePatches[i][j];
+                vcg::Color4b PatchCol=vcg::Color4b::Scatter(FacePatches.size(),i);
+                patchMesh.face[IndexF].C()=PatchCol;
+            }
+        }
+
+        vcg::tri::UpdateSelection<MeshType>::VertexClear(patchMesh);
+        for (size_t i=0;i<patchMesh.vert.size();i++)
+        {
+            if (SelV.count(i)==0)continue;
+            patchMesh.vert[i].SetS();
+        }
+        vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh.ply",
+                                                  vcg::tri::io::Mask::IOM_FACECOLOR|
+                                                  vcg::tri::io::Mask::IOM_VERTFLAGS);
+    }
+
+    void SavePatchMeshConcaveQ(const std::set<size_t> &ConcaveOriginal)
+    {
+        vcg::tri::UpdateSelection<MeshType>::VertexClear(patchMesh);
+        for (size_t i=0;i<patchMesh.vert.size();i++)
+        {
+            size_t OriginalQ=patchMesh.vert[i].Q();
+            if (ConcaveOriginal.count(OriginalQ)==0)continue;
+            patchMesh.vert[i].SetS();
+        }
+        vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh_flag.ply",vcg::tri::io::Mask::IOM_VERTFLAGS);
+    }
+
+    void SavePatchMeshConcave(const std::set<size_t> &ConcaveOriginal)
+    {
+        std::set<size_t> ConcaveMesh;
+        GetConcaveVertices(ConcaveOriginal,ConcaveMesh);
+
+        vcg::tri::UpdateSelection<MeshType>::VertexClear(patchMesh);
+        for (size_t i=0;i<patchMesh.vert.size();i++)
+        {
+            if (ConcaveMesh.count(i)==0)continue;
+            patchMesh.vert[i].SetS();
+        }
+        vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh_flag.ply",vcg::tri::io::Mask::IOM_VERTFLAGS);
+    }
+
+    //    CoordType MakeOrthogonalTo(const CoordType &Dir,
+    //                               const CoordType &Norm)
+    //    {
+    //        CoordType TestDir=Dir;
+    //        //check if orthogonal
+    //        if(fabs(TestDir*Norm)<0.01)return Dir;
+
+    //        CoordType RotAxis=Norm^TestDir;
+    //        CoordType TargetN=TestDir^RotAxis;
+    //        TargetN.Normalize();
+    //        vcg::Matrix33<ScalarType> rot=vcg::RotationMatrix(TargetN,Norm);
+    //        TestDir=rot*TestDir;
+    //        TestDir.Normalize();
+    //        assert(fabs(TestDir*Norm)<0.01);
+    //        return TestDir;
+    //    }
+
+    void PruneCollidingCandidates()
+    {
+        std::vector<std::vector<size_t > > TraceVertSwap;
+        std::vector<std::vector<size_t > > TraceDirSwap;
+
+        InitCandidatesPathLenghts();
+        for (size_t i=0;i<TraceVertCandidates.size();i++)
+        {
+            size_t TraceIndex0=CandidatesPathLenghts[i].second;
+            std::vector<size_t > TraceV0=TraceVertCandidates[TraceIndex0];
+            std::vector<size_t > TraceD0=TraceDirCandidates[TraceIndex0];
+            bool collide=false;
+            for (size_t i=0;i<TraceVertSwap.size();i++)
+            {
+                std::vector<size_t > TraceV1=TraceVertSwap[i];
+                std::vector<size_t > TraceD1=TraceDirSwap[i];
+
+                collide|=VFTracer.CollideTraces(TraceV0,TraceD0,TraceV1,TraceD1);
+                if (collide)break;
+            }
+            if (!collide)
+            {
+                TraceVertSwap.push_back(TraceV0);
+                TraceDirSwap.push_back(TraceD0);
+            }
+        }
+        TraceVertCandidates=TraceVertSwap;
+        TraceDirCandidates=TraceDirSwap;
+    }
+
+    bool IsOkPatchHoles(const std::vector<size_t> &FaceIndexes)
+    {
+        //get the mesh
+        MeshType testMesh;
+        vcg::tri::UpdateSelection<MeshType>::Clear(patchMesh);
+        for (size_t i=0;i<FaceIndexes.size();i++)
+            patchMesh.face[FaceIndexes[i]].SetS();
+        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(patchMesh);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(testMesh,patchMesh,true);
+        UpdateAttributes(testMesh);
+        vcg::tri::UpdateSelection<MeshType>::Clear(patchMesh);
+        vcg::tri::UpdateSelection<MeshType>::Clear(testMesh);
+
+        //        vcg::tri::io::ExporterPLY<MeshType>::Save(testMesh,"test_mesh.ply");
+        //        exit(0);
+        return (vcg::tri::Clean<MeshType>::CountHoles(testMesh)==1);
+    }
+
+    bool IsOkPatchCorner(const std::vector<size_t> &FaceIndexes,
+                         const std::set<size_t> &CurrVertices)
+    {
+        //retrieve the vertices
+        std::set<size_t> Vertices;
+        for (size_t i=0;i<FaceIndexes.size();i++)
+        {
+            size_t IndexF=FaceIndexes[i];
+            for (size_t j=0;j<3;j++)
+            {
+                size_t IndexV=vcg::tri::Index(patchMesh,patchMesh.face[IndexF].V(j));
+                Vertices.insert(IndexV);
+            }
+        }
+        std::set<int> intersect;
+        std::set_intersection(Vertices.begin(),Vertices.end(),CurrVertices.begin(),CurrVertices.end(),
+                              std::inserter(intersect,intersect.begin()));
+
+        //std::cout<<"Num Sides "<<intersect.size()<<std::endl;
+
+        return ((intersect.size()>=3)&&(intersect.size()<=6));
+    }
+
+    void CornersFromCurrentPaths(std::set<size_t> &CurrV)
+    {
+        std::vector<size_t> NumTraces(patchMesh.vert.size(),0);
+        for (size_t i=0;i<TraceVertCandidates.size();i++)
+            for (size_t j=0;j<TraceVertCandidates[i].size();j++)
+            {
+                size_t IndexV=TraceVertCandidates[i][j];
+                NumTraces[IndexV]++;
+            }
+        CurrV.clear();
+        for (size_t i=0;i<NumTraces.size();i++)
+        {
+            if (patchMesh.vert[i].IsB() && NumTraces[i]>0)
+            {
+                CurrV.insert(i);
+                continue;
+            }
+            if (NumTraces[i]>=2)
+                CurrV.insert(i);
+        }
+        CurrV.insert(ConvexPatchMesh.begin(),ConvexPatchMesh.end());
+    }
+
+    bool CanRemove(size_t IndexCandidate)
+    {
+        assert(IndexCandidate<TraceVertCandidates.size());
+
+        std::vector<size_t > TraceVertSwap=TraceVertCandidates[IndexCandidate];
+        std::vector<size_t > TraceDirSwap=TraceDirCandidates[IndexCandidate];
+
+        //get current patches before removal
+        std::vector<std::vector<size_t> > CurrPatches;
+        RetrievePatchesFromPaths(CurrPatches);
+
+        //then update the new corners
+        std::set<size_t> CurrV;
+        CornersFromCurrentPaths(CurrV);
+        //std::cout<<"there are "<<CurrV.size()<<" vertices"<<std::endl;
+
+        //        SavePatchMesh(CurrPatches,CurrV);
+        //        exit(0);
+        //then count the ones non ok before the remove
+        size_t NonOkPatches=0;
+        for (size_t i=0;i<CurrPatches.size();i++)
+        {
+            if (!IsOkPatchCorner(CurrPatches[i],CurrV)){NonOkPatches+=CurrPatches[i].size();continue;}
+            if (!IsOkPatchHoles(CurrPatches[i])){NonOkPatches+=CurrPatches[i].size();continue;}
+        }
+
+        //remove the current path
+        TraceVertCandidates[IndexCandidate].clear();
+        TraceDirCandidates[IndexCandidate].clear();
+
+        //get new patches after removal
+        std::vector<std::vector<size_t> > NewPatches;
+        RetrievePatchesFromPaths(NewPatches);
+
+        //then update the new corners
+        std::set<size_t> CurrVNew;
+        CornersFromCurrentPaths(CurrVNew);
+
+        //then count the ones non ok before the remove
+        size_t NonOkPatchesNew=0;
+        for (size_t i=0;i<NewPatches.size();i++)
+        {
+            if (!IsOkPatchCorner(NewPatches[i],CurrVNew)){NonOkPatchesNew+=NewPatches[i].size();continue;}
+            if (!IsOkPatchHoles(NewPatches[i])){NonOkPatchesNew+=NewPatches[i].size();continue;}
+        }
+        TraceVertCandidates[IndexCandidate]=TraceVertSwap;
+        TraceDirCandidates[IndexCandidate]=TraceDirSwap;
+
+        //        std::cout<<"Before: "<<NonOkPatches<<std::endl;
+        //        std::cout<<"After: "<<NonOkPatchesNew<<std::endl;
+
+        //exit(0);
+
+        return (NonOkPatchesNew<=NonOkPatches);
+    }
+
+public:
+
+    void GetVertexTopology(const std::vector<std::vector<size_t> > &NewPatches,
+                           const std::set<size_t> &ConvexOriginal,
+                           const std::set<size_t> &ConcaveOriginal,
+                           std::vector<std::vector<size_t> > &ConvexPatchVert,
+                           std::vector<std::vector<size_t> > &ConcavePatchVert)
+    {
+        //count the number of pathes per edge
+        std::vector<std::vector<size_t> > VertPatchCount;
+        std::vector<std::vector<ScalarType> > VertPatchAngle;
+
+        VertPatchCount.resize(patchMesh.vert.size());
+        VertPatchAngle.resize(patchMesh.vert.size());
+        for (size_t i=0;i<NewPatches.size();i++)
+        {
+            for (size_t j=0;j<NewPatches[i].size();j++)
+            {
+                size_t IndexF=NewPatches[i][j];
+                assert(IndexF>=0);
+                assert(IndexF<patchMesh.face.size());
+                for (size_t k=0;k<patchMesh.face[IndexF].VN();k++)
+                {
+                    //compute the angle for the patch
+                    // VertexType *VCurr=patchMesh.face[IndexF].V(k);
+                    // VertexType *V0=patchMesh.face[IndexF].V1(k);
+                    // VertexType *V1=patchMesh.face[IndexF].V2(k);
+                    // CoordType Dir0=V0->P()-VCurr->P();
+                    // CoordType Dir1=V1->P()-VCurr->P();
+                    // Dir0.Normalize();
+                    // Dir1.Normalize();
+                    // Dir0=MakeOrthogonalTo(Dir0,VCurr->N());
+                    // Dir1=MakeOrthogonalTo(Dir1,VCurr->N());
+                    // ScalarType Angle=vcg::Angle(Dir0,Dir1);
+                    ScalarType Angle=vcg::face::WedgeAngleRad(patchMesh.face[IndexF],k);//vcg::Angle(Dir0,Dir1);
+                    //assert(Angle>0);
+
+                    //then add the angle per vert per patch
+                    size_t IndexV=vcg::tri::Index(patchMesh,patchMesh.face[IndexF].V(k));
+
+                    //see if there is the patch already
+                    std::vector<size_t>::iterator it;
+                    it = find (VertPatchCount[IndexV].begin(),VertPatchCount[IndexV].end(),i);
+                    if (it == VertPatchCount[IndexV].end())
+                    {
+                        VertPatchCount[IndexV].push_back(i);
+                        VertPatchAngle[IndexV].push_back(Angle);
+                    }
+                    else
+                    {
+                        size_t Index=std::distance(VertPatchCount[IndexV].begin(),it);
+                        assert(VertPatchCount[IndexV][Index]==i);
+                        VertPatchAngle[IndexV][Index]+=Angle;
+                    }
+                }
+            }
+        }
+
+
+        ConvexPatchVert=std::vector<std::vector<size_t> >(NewPatches.size(),std::vector<size_t>());
+        ConcavePatchVert=std::vector<std::vector<size_t> >(NewPatches.size(),std::vector<size_t>());
+
+        for (size_t i=0;i<VertPatchCount.size();i++)
+        {
+            //at least one patch per vertex
+            assert(VertPatchCount[i].size()>0);
+            //no more than 4
+            assert(VertPatchCount[i].size()<=4);
+
+            //retrieve the original vert
+            size_t IndexOriginal=patchMesh.vert[i].Q();
+
+            //if was already originally convex then it will remain convex
+            if (ConvexOriginal.count(IndexOriginal)>0)
+            {
+                //only one patch for the convex ones
+                assert(patchMesh.vert[i].IsB());
+                assert(VertPatchCount[i].size()==1);
+                size_t IndexPatch=VertPatchCount[i][0];
+                ConvexPatchVert[IndexPatch].push_back(IndexOriginal);
+                continue;
+            }
+            if (ConcaveOriginal.count(IndexOriginal)>0)
+            {
+                assert(patchMesh.vert[i].IsB());
+                assert(VertPatchCount[i].size()<=3);
+                //it remain concave
+                if (VertPatchCount[i].size()==1)
+                {
+                    size_t IndexPatch=VertPatchCount[i][0];
+                    ConcavePatchVert[IndexPatch].push_back(IndexOriginal);
+                    continue;
+                }
+                //the one with bigger angle becomes flat, the other convex
+                if (VertPatchCount[i].size()==2)
+                {
+                    size_t IndexPatch0=VertPatchCount[i][0];
+                    size_t IndexPatch1=VertPatchCount[i][1];
+                    ScalarType angle0=VertPatchAngle[i][0];
+                    ScalarType angle1=VertPatchAngle[i][1];
+                    if (angle0<angle1)
+                        ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
+                    else
+                        ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
+                    continue;
+                }
+                //all convex in this case
+                if (VertPatchCount[i].size()==3)
+                {
+                    size_t IndexPatch0=VertPatchCount[i][0];
+                    size_t IndexPatch1=VertPatchCount[i][1];
+                    size_t IndexPatch2=VertPatchCount[i][2];
+
+                    ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
+                    ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
+                    ConvexPatchVert[IndexPatch2].push_back(IndexOriginal);
+                }
+            }
+            //if valence >=2 and border it becomes convex in both pathces
+            if ((VertPatchCount[i].size()>=2)&&(patchMesh.vert[i].IsB()))
+            {
+                size_t IndexPatch0=VertPatchCount[i][0];
+                size_t IndexPatch1=VertPatchCount[i][1];
+                ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
+                ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
+                continue;
+            }
+            //cross-intersections, all convex
+            if (VertPatchCount[i].size()==4)
+            {
+
+                size_t IndexPatch0=VertPatchCount[i][0];
+                size_t IndexPatch1=VertPatchCount[i][1];
+                size_t IndexPatch2=VertPatchCount[i][2];
+                size_t IndexPatch3=VertPatchCount[i][3];
+                ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
+                ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
+                ConvexPatchVert[IndexPatch2].push_back(IndexOriginal);
+                ConvexPatchVert[IndexPatch3].push_back(IndexOriginal);
+                continue;
+            }
+        }
+        //std::cout<<"de2"<<std::endl;
+
+    }
+
+    void CopyPositionsFrom(const MeshType &Source)
+    {
+        for (size_t i=0;i<patchMesh.vert.size();i++)
+        {
+            size_t IndexOriginal=patchMesh.vert[i].Q();
+            patchMesh.vert[i].P()=Source.vert[IndexOriginal].cP();
+        }
+        UpdateAttributes(patchMesh);
+    }
+
+    bool SplitByConcave(const std::set<size_t> &ConvexOriginal,
+                        const std::set<size_t> &ConcaveOriginal,
+                        const std::vector<size_t> &TracingVert,
+                        const std::vector<std::vector<size_t> > &TracingDir,
+                        std::vector<std::vector<size_t> > &LocalPatches,
+                        std::vector<std::vector<size_t> > &NewPatches)
+    //                        std::vector<std::vector<size_t> > &NewConvexPatchOriginalVert,
+    //                        std::vector<std::vector<size_t> > &NewConcavePatchOriginalVert)
+    {
+        //SavePatchMeshConcaveQ(ConcaveOriginal);
+        //SavePatchMeshConcave(ConcaveOriginal);
+
+        TraceConcaveCandidates(ConvexOriginal,ConcaveOriginal,TracingVert,TracingDir);
+
+        PruneConcaveCandidates(false);
+
+        if (TraceVertCandidates.size()==0)return false;
+        RetrievePatchesFromPaths(LocalPatches);
+
+        //set the index of the original mesh
+        NewPatches=LocalPatches;
+        for (size_t i=0;i<NewPatches.size();i++)
+            for (size_t j=0;j<NewPatches[i].size();j++)
+            {
+                size_t IndexF=NewPatches[i][j];
+                IndexF=patchMesh.face[IndexF].Q();
+                NewPatches[i][j]=IndexF;
+            }
+        return true;
+    }
+
+    std::set<size_t> ConvexPatchMesh;
+
+    bool SplitByBorders(const std::set<size_t> &ConvexOriginal,
+                        const std::vector<size_t> &TracingVert,
+                        const std::vector<std::vector<size_t> > &TracingDir,
+                        std::vector<std::vector<size_t> > &LocalPatches,
+                        std::vector<std::vector<size_t> > &NewPatches)
+    {
+        //trace all
+        TraceAllBordersCandidates(ConvexOriginal,TracingVert,TracingDir);
+
+        //then prune the colliding ones
+        PruneCollidingCandidates();
+
+        if (TraceVertCandidates.size()==0)return false;
+
+        //remove one by one till the conditions are satisfied
+        InitCandidatesPathLenghts();
+        std::reverse(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
+        size_t num_removed=0;
+        std::cout<<"*** Initial "<<CandidatesPathLenghts.size()<<" Traces"<<std::endl;
+
+        GetConvexVertices(ConvexOriginal,ConvexPatchMesh);
+
+        for (size_t i=0;i<CandidatesPathLenghts.size();i++)
+        {
+            size_t CurrTrace=CandidatesPathLenghts[i].second;
+            if (!CanRemove(CurrTrace))continue;
+            num_removed++;
+            TraceVertCandidates[CurrTrace].clear();
+            TraceDirCandidates[CurrTrace].clear();
+        }
+        std::cout<<"*** Removed "<<num_removed<<" Traces"<<std::endl;
+        //exit(0);
+        //erase the empty ones
+        std::vector<std::vector<size_t > > TraceVertSwap;
+        std::vector<std::vector<size_t > > TraceDirSwap;
+        for (size_t i=0;i<TraceVertCandidates.size();i++)
+        {
+            if (TraceVertCandidates[i].size()==0)continue;
+            TraceVertSwap.push_back(TraceVertCandidates[i]);
+            TraceDirSwap.push_back(TraceDirCandidates[i]);
+        }
+        TraceVertCandidates=TraceVertSwap;
+        TraceDirCandidates=TraceDirSwap;
+        if (TraceVertCandidates.size()==0)return false;
+
+        //finally retrieve the patches
+        RetrievePatchesFromPaths(LocalPatches);
+        NewPatches=LocalPatches;
+
+        //set the index of the original mesh
+        for (size_t i=0;i<NewPatches.size();i++)
+            for (size_t j=0;j<NewPatches[i].size();j++)
+            {
+                size_t IndexF=NewPatches[i][j];
+                IndexF=patchMesh.face[IndexF].Q();
+                NewPatches[i][j]=IndexF;
+            }
+        return true;
+    }
+
+    PatchSplitter(MeshType &_patchMesh,
+                  VertexFieldTracer<MeshType> &_VFTracer,
+                  bool _printMsg):patchMesh(_patchMesh),VFTracer(_VFTracer)
+    {printMsg=_printMsg;}
+};
+
+template <class MeshType>
+class PatchAssembler
+{
+    typedef typename MeshType::CoordType CoordType;
+    typedef typename MeshType::ScalarType ScalarType;
+    typedef typename MeshType::FaceType FaceType;
+    typedef typename MeshType::VertexType VertexType;
+
+public:
+    struct Parameters
+    {
+        bool InitialRemesh;
+        bool PrintDebug;
+        //bool InitialSmooth;
+        //        bool TopologyChecks;
+        //        size_t MinSides,MaxSides;
+        //        ScalarType MinAreaPerimeterRatio;
+        //        ScalarType MaxAngleDeviation;
+        //        ScalarType MaxEdgeLenghtVariance;
+        //        ScalarType MaxGeodesicToEuclideanRatio;
+        //        ScalarType MaxDistortion;
+        //        size_t SmoothSteps;
+        bool Reproject;
+        //        bool InitialRemesh;
+        //        bool InitialSmooth;
+
+        Parameters()
+        {
+            //            TopologyChecks=true;
+            //            MinAreaPerimeterRatio=-1;//0.5;
+            //            MinSides=3;
+            //            MaxSides=6;
+            //            MaxAngleDeviation=-1;//-90;
+            //            MaxEdgeLenghtVariance=-1;
+            //            MaxGeodesicToEuclideanRatio=-1;//0.5;
+            //            MaxDistortion=-1;//0.5;
+            //            SmoothSteps=10;
+            PrintDebug=false;
+            Reproject=true;
+            InitialRemesh=true;
+            //InitialSmooth=false;
+        }
+    };
+
+private:
+
+    MeshType &mesh;
+
+    //the original mesh to reproject to
+    MeshType OriginalMesh;
+    vcg::GridStaticPtr<FaceType,typename FaceType::ScalarType> Grid;
+
+    Parameters Param;
+    //size_t currPatch=0;
+
+    struct PatchInfo
+    {
+        std::set<size_t> ConvexVertIndex;
+        std::set<size_t> ConcaveVertIndex;
+        std::set<size_t> FlatVertIndex;
+        std::vector<size_t> IndexF;
+        std::vector<size_t> TracingVert;
+        std::vector<std::vector<size_t> > TracingDir;
+        bool Active;
+        MeshType *PatchMesh;
+        VertexFieldTracer<MeshType> *PatchFieldTracer;
+
+        PatchInfo()
+        {
+            PatchMesh=NULL;
+            PatchFieldTracer=NULL;
+        }
+    };
+
+    std::vector<PatchInfo> Patches;
+
+    void GetBorderOrthoDirections(const MeshType &testMesh,
+                                  std::vector<std::vector<CoordType> > &OrthoDirs)
+    {
+        OrthoDirs.clear();
+        OrthoDirs.resize(testMesh.vert.size());
+
+        for (size_t i=0;i<testMesh.face.size();i++)
+            for (size_t j=0;j<testMesh.face[i].VN();j++)
+            {
+                if(!vcg::face::IsBorder(testMesh.face[i],j))continue;
+
+                size_t IndexV0=vcg::tri::Index(testMesh,testMesh.face[i].cV0(j));
+                size_t IndexV1=vcg::tri::Index(testMesh,testMesh.face[i].cV1(j));
+                CoordType P0=testMesh.vert[IndexV0].P();
+                CoordType P1=testMesh.vert[IndexV1].P();
+                CoordType Dir=P1-P0;
+                Dir.Normalize();
+
+                CoordType OrthoDir=Dir;
+                OrthoDir=testMesh.face[i].cN()^OrthoDir;
+
+                vcg::Matrix33<ScalarType> Rot0=vcg::RotationMatrix(testMesh.face[i].cN(),testMesh.vert[IndexV0].N());
+                vcg::Matrix33<ScalarType> Rot1=vcg::RotationMatrix(testMesh.face[i].cN(),testMesh.vert[IndexV1].N());
+
+                CoordType OrthoDir0=Rot0*OrthoDir;
+                CoordType OrthoDir1=Rot1*OrthoDir;
+
+                OrthoDir0.Normalize();
+                OrthoDir1.Normalize();
+
+
+                OrthoDirs[IndexV0].push_back(OrthoDir0);
+                OrthoDirs[IndexV1].push_back(OrthoDir1);
+            }
+    }
+
+
+
+    void GetPatchMesh(int IndexPatch,MeshType &partition_mesh)
+    {
+        partition_mesh.Clear();
+        assert(IndexPatch>=0);
+        assert(IndexPatch<Patches.size());
+        assert(Patches[IndexPatch].Active);
+
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(mesh);
+        for (size_t i=0;i<Patches[IndexPatch].IndexF.size();i++)
+        {
+            size_t IndexF=Patches[IndexPatch].IndexF[i];
+            mesh.face[IndexF].SetS();
+        }
+        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(partition_mesh,mesh,true);
+        UpdateAttributes(partition_mesh);
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(partition_mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(partition_mesh);
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(mesh);
+    }
+
+    void SetPatchInitialDirections(int IndexPatch)
+    {
+        MeshType *PatchMesh=Patches[IndexPatch].PatchMesh;
+        VertexFieldTracer<MeshType> *PatchFieldTracer=Patches[IndexPatch].PatchFieldTracer;
+
+        std::vector<std::vector<CoordType> > OrthoDirs;
+        GetBorderOrthoDirections(*PatchMesh,OrthoDirs);
+
+        //then go around the borders
+        //        for (size_t i=0;i<PatchMesh->face.size();i++)
+        //            for (size_t j=0;j<PatchMesh->face[i].VN();j++)
+        //            {
+        //                if (vcg::face::IsBorder(PatchMesh->face[i],j))
+        //                {
+        for (size_t i=0;i<PatchMesh->vert.size();i++)
+        {
+            if (!PatchMesh->vert[i].IsB())continue;
+            //TypeBorderVert TypeV=PatchBorderVertexType(IndexPatch,PatchMesh->face[i].V(j));
+            TypeBorderVert TypeV=PatchBorderVertexType(IndexPatch,&PatchMesh->vert[i]);
+            //int IndexOriginal=PatchMesh->face[i].V(j)->Q();
+            size_t IndexV=i;//vcg::tri::Index(*PatchMesh,PatchMesh->face[i].V(j));
+            if (TypeV==VBConvex)
+            {
+                //push an empty vector
+                Patches[IndexPatch].TracingVert.push_back(IndexV);
+                Patches[IndexPatch].TracingDir.push_back(std::vector<size_t>());
+                continue;
+            }
+            if (TypeV==VBConcave)
+            {
+                Patches[IndexPatch].TracingVert.push_back(IndexV);
+                CoordType Ortho0=OrthoDirs[IndexV][0];
+                CoordType Ortho1=OrthoDirs[IndexV][1];
+                size_t BestDir0=PatchFieldTracer->GetClosestDirTo(IndexV,Ortho0);
+                size_t BestDir1=PatchFieldTracer->GetClosestDirTo(IndexV,Ortho1);
+                Patches[IndexPatch].TracingDir.push_back(std::vector<size_t>());
+                Patches[IndexPatch].TracingDir.back().push_back(BestDir0);
+                if (BestDir1!=BestDir0)
+                    Patches[IndexPatch].TracingDir.back().push_back(BestDir1);
+                continue;
+            }
+            if (TypeV==VBFlat)
+            {
+                Patches[IndexPatch].TracingVert.push_back(IndexV);
+                CoordType Ortho0=OrthoDirs[IndexV][0];
+                CoordType Ortho1=OrthoDirs[IndexV][1];
+                CoordType TargetD=Ortho0+Ortho1;
+                TargetD.Normalize();
+                size_t BestDir=PatchFieldTracer->GetClosestDirTo(IndexV,TargetD);
+                Patches[IndexPatch].TracingDir.push_back(std::vector<size_t>(1,BestDir));
+                continue;
+            }
+        }
+        //       }
+    }
+
+    void SelectFacesWithBorderEdge()
+    {
+        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
+        for (size_t i=0;i<mesh.face.size();i++)
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                if (!vcg::face::IsBorder(mesh.face[i],j))continue;
+                mesh.face[i].SetS();
+            }
+    }
+
+    void SelectFacesWithBorderVertex()
+    {
+        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
+        for (size_t i=0;i<mesh.face.size();i++)
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                if (mesh.face[i].IsB(j))
+                    mesh.face[i].SetS();
+            }
+    }
+
+    void InvertFaceSelection()
+    {
+        for (size_t i=0;i<mesh.face.size();i++)
+        {
+            if (mesh.face[i].IsS())
+                mesh.face[i].ClearS();
+            else
+                mesh.face[i].SetS();
+        }
+    }
+
+    void InvertVertexSelection()
+    {
+        for (size_t i=0;i<mesh.vert.size();i++)
+        {
+            if (mesh.vert[i].IsS())
+                mesh.vert[i].ClearS();
+            else
+                mesh.vert[i].SetS();
+        }
+    }
+
+    ScalarType AverageEdgeSize()
+    {
+        ScalarType AVGEdge=0;
+        size_t Num=0;
+        for (size_t i=0;i<mesh.face.size();i++)
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                size_t IndexV0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+                size_t IndexV1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+                CoordType P0=mesh.vert[IndexV0].P();
+                CoordType P1=mesh.vert[IndexV1].P();
+                AVGEdge+=(P0-P1).Norm();
+                Num++;
+            }
+        AVGEdge/=Num;
+        return (AVGEdge);
+    }
+
+    //    void SmoothMesh()
+    //    {
+    //        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
+    //        vcg::tri::UpdateSelection<MeshType>::VertexFromBorderFlag(mesh);
+    //        if (Param.Reproject)
+    //        {
+    //            InvertVertexSelection();
+    //            vcg::PolygonalAlgorithm<MeshType>::LaplacianReproject(mesh,3,0.5,true);
+    //        }
+    //        else
+    //        {
+    //            vcg::PolygonalAlgorithm<MeshType>::Laplacian(mesh,true,3,0.5);
+    //        }
+    //        mesh.UpdateAttributes();
+    //        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
+    //    }
+
+    void RemeshMesh()
+    {
+
+        ScalarType EdgeStep=AverageEdgeSize();
+
+        typename vcg::tri::IsotropicRemeshing<MeshType>::Params Par;
+
+        Par.swapFlag     = true;
+        Par.collapseFlag = true;
+        Par.smoothFlag=true;
+        Par.projectFlag=Param.Reproject;
+        Par.SetFeatureAngleDeg(100);
+        Par.SetTargetLen(EdgeStep);
+        Par.selectedOnly=true;
+        Par.iter=20;
+
+        SelectFacesWithBorderEdge();
+        //SelectFacesWithBorderVertex();
+        InvertFaceSelection();
+        std::cout<<"Remeshing step"<<std::endl;
+        std::cout<<"Edge Size " <<EdgeStep<<std::endl;
+        MeshType Reproject;
+        vcg::tri::Append<MeshType,MeshType>::Mesh(Reproject,mesh);
+        UpdateAttributes(Reproject);
+
+        vcg::tri::IsotropicRemeshing<MeshType>::Do(mesh,Reproject,Par);
+        vcg::tri::UpdateColor<MeshType>::PerFaceConstant(mesh,vcg::Color4b::LightGray);
+
+        vcg::tri::UpdateFlags<MeshType>::Clear(mesh);
+        UpdateAttributes(mesh);
+
+        std::cout<<std::flush;
+    }
+
+    void GetGeometricCorners(std::vector<CoordType> &ConvexV,
+                             std::vector<CoordType> &ConcaveV)
+    {
+        ConvexV.clear();
+        ConcaveV.clear();
+        vcg::tri::UpdateSelection<MeshType>::VertexCornerBorder(mesh,M_PI-M_PI/CONVEX);
+        for (size_t i=0;i<mesh.vert.size();i++)
+        {
+            if (!mesh.vert[i].IsS())continue;
+            ConvexV.push_back(mesh.vert[i].P());
+        }
+
+        //        //add the non manifold ones
+        //        vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        //        for (size_t i=0;i<mesh.vert.size();i++)
+        //        {
+        //            if (!mesh.vert[i].IsS())continue;
+        //            ConvexV.push_back(mesh.vert[i].P());
+        //        }
+
+        //then add the concave
+        vcg::tri::UpdateSelection<MeshType>::VertexCornerBorder(mesh,M_PI+M_PI/CONVEX);
+        for (size_t i=0;i<mesh.vert.size();i++)
+        {
+            if (!mesh.vert[i].IsB())continue;
+            if (mesh.vert[i].IsS())continue;
+            //            typename std::vector<CoordType>::iterator It;
+            //            It=std::find(ConvexV.begin(),ConvexV.end(),mesh.vert[i].P());
+            //            if (It!=ConvexV.end())continue;
+            ConcaveV.push_back(mesh.vert[i].P());
+        }
+    }
+
+
+
+    void ColorPatch(const size_t &IndexPatch,
+                    const vcg::Color4b &PatchCol)
+    {
+        for (size_t j=0;j<Patches[IndexPatch].IndexF.size();j++)
+        {
+            int CurrF=Patches[IndexPatch].IndexF[j];
+            mesh.face[CurrF].C()=PatchCol;
+        }
+    }
+
+    void ColorPatches()
+    {
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            vcg::Color4b PatchCol=vcg::Color4b::Scatter(Patches.size(),i);
+            ColorPatch(i,PatchCol);
+        }
+    }
+
+    enum TypeBorderVert{VBConcave,VBConvex,VBFlat};
+
+    TypeBorderVert PatchBorderVertexType(const size_t &IndexPatch,
+                                         const size_t &IndexOriginal)
+    {
+        if (Patches[IndexPatch].FlatVertIndex.count(IndexOriginal)>0)return VBFlat;
+        if (Patches[IndexPatch].ConcaveVertIndex.count(IndexOriginal)>0)return VBConcave;
+        if (Patches[IndexPatch].ConvexVertIndex.count(IndexOriginal)>0)return VBConvex;
+        assert(0);
+    }
+
+    TypeBorderVert PatchBorderVertexType(const size_t &IndexPatch,
+                                         const VertexType *v)
+    {
+        size_t IndexOriginal=v->Q();
+        return  PatchBorderVertexType(IndexPatch,IndexOriginal);
+    }
+
+#ifdef DRAWTRACE
+
+    void GLDrawPatch(const size_t &IndexPatch)
+    {
+        MeshType *PatchMesh=Patches[IndexPatch].PatchMesh;
+
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDisable(GL_LIGHTING);
+        glDepthRange(0,0.99998);
+        glPointSize(10);
+
+        glBegin(GL_POINTS);
+        for (size_t i=0;i<PatchMesh->face.size();i++)
+        {
+            int CurrF=i;//Patches[IndexPatch].IndexF[i];
+            CoordType Bary=(PatchMesh->face[CurrF].P(0)+
+                            PatchMesh->face[CurrF].P(1)+
+                            PatchMesh->face[CurrF].P(2))/3;
+            for (size_t j=0;j<3;j++)
+            {
+                vcg::Color4b Col;
+                VertexType *currV=PatchMesh->face[CurrF].V(j);
+                if (!currV->IsB())continue;
+                TypeBorderVert TypeV=PatchBorderVertexType(IndexPatch,currV);
+                if (TypeV==VBConvex)
+                {
+                    Col=vcg::Color4b::Red;
+                }
+                if (TypeV==VBConcave)
+                {
+                    Col=vcg::Color4b::Blue;
+                }
+                if (TypeV==VBFlat)
+                {
+                    Col=vcg::Color4b::Green;
+                }
+                CoordType Pos=currV->P()*0.8+Bary*0.2;
+                vcg::glColor(Col);
+                vcg::glVertex(Pos);
+                //std::cout<<"Test 1"<<std::endl;
+            }
+        }
+        glEnd();
+        glPopAttrib();
+    }
+
+    void GLDrawPatchDir(const size_t &IndexPatch)
+    {
+        assert(IndexPatch>=0);
+        assert(IndexPatch<Patches.size());
+        assert(Patches[IndexPatch].Active);
+
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDisable(GL_LIGHTING);
+        glDepthRange(0,0.998);
+
+        MeshType *PatchMesh=Patches[IndexPatch].PatchMesh;
+        VertexFieldTracer<MeshType> *PatchFieldTracer=Patches[IndexPatch].PatchFieldTracer;
+
+        for (size_t i=0;i<Patches[IndexPatch].TracingVert.size();++i)
+        {
+            size_t IndexV=Patches[IndexPatch].TracingVert[i];
+            assert(IndexV>=0);
+            assert(IndexV<PatchMesh->vert.size());
+
+            CoordType Pos0=PatchMesh->vert[IndexV].P();
+
+            vcg::glColor(vcg::Color4b(0,255,0,255));
+            glLineWidth(5);
+            if (Patches[IndexPatch].TracingDir[i].size()>1)
+            {
+                vcg::glColor(vcg::Color4b(255,0,0,255));
+                glLineWidth(10);
+            }
+
+            for (size_t j=0;j<Patches[IndexPatch].TracingDir[i].size();++j)
+            {
+                size_t currDirection=Patches[IndexPatch].TracingDir[i][j];
+                CoordType Dir=PatchFieldTracer->GetDirection(IndexV,currDirection);
+
+                CoordType Pos1=Pos0+Dir*mesh.bbox.Diag()*0.01;
+
+                glBegin(GL_LINES);
+                vcg::glVertex(Pos0);
+                vcg::glVertex(Pos1);
+                glEnd();
+
+            }
+        }
+        glPopAttrib();
+    }
+#endif
+
+    void CopyPatchCornerByOriginalIndex(const size_t IndexPatch,
+                                        const std::vector<size_t> &ConvexOrigIndex,
+                                        const std::vector<size_t> &ConcaveOrigIndex)
+    {
+        std::set<size_t> ConvexVSet(ConvexOrigIndex.begin(),ConvexOrigIndex.end());
+        std::set<size_t> ConcaveVSet(ConcaveOrigIndex.begin(),ConcaveOrigIndex.end());
+
+        Patches[IndexPatch].ConvexVertIndex.clear();
+        Patches[IndexPatch].ConcaveVertIndex.clear();
+        Patches[IndexPatch].FlatVertIndex.clear();
+
+        for (size_t i=0;i<Patches[IndexPatch].PatchMesh->vert.size();i++)
+        {
+            size_t IndexOriginal=Patches[IndexPatch].PatchMesh->vert[i].Q();
+
+            if (ConvexVSet.count(IndexOriginal)>0)
+            {
+                Patches[IndexPatch].ConvexVertIndex.insert(IndexOriginal);
+                continue;
+            }
+            if (ConcaveVSet.count(IndexOriginal)>0)
+            {
+                Patches[IndexPatch].ConcaveVertIndex.insert(IndexOriginal);
+                continue;
+            }
+            if (Patches[IndexPatch].PatchMesh->vert[i].IsB())
+            {
+                Patches[IndexPatch].FlatVertIndex.insert(IndexOriginal);
+                continue;
+            }
+        }
+    }
+
+    void CopyPatchCornerByPos(size_t IndexPatch,
+                              const std::vector<CoordType> &ConvexV,
+                              const std::vector<CoordType> &ConcaveV)
+    {
+        std::set<CoordType> ConvexVSet(ConvexV.begin(),ConvexV.end());
+        std::set<CoordType> ConcaveVSet(ConcaveV.begin(),ConcaveV.end());
+
+        Patches[IndexPatch].ConvexVertIndex.clear();
+        Patches[IndexPatch].ConcaveVertIndex.clear();
+        Patches[IndexPatch].FlatVertIndex.clear();
+
+        for (size_t i=0;i<Patches[IndexPatch].PatchMesh->vert.size();i++)
+        {
+            CoordType Pos=Patches[IndexPatch].PatchMesh->vert[i].P();
+            size_t IndexOriginal=Patches[IndexPatch].PatchMesh->vert[i].Q();
+
+            if (ConvexVSet.count(Pos)>0)
+            {
+                Patches[IndexPatch].ConvexVertIndex.insert(IndexOriginal);
+                continue;
+            }
+            if (ConcaveVSet.count(Pos)>0)
+            {
+                Patches[IndexPatch].ConcaveVertIndex.insert(IndexOriginal);
+                continue;
+            }
+            if (Patches[IndexPatch].PatchMesh->vert[i].IsB())
+            {
+                Patches[IndexPatch].FlatVertIndex.insert(IndexOriginal);
+                continue;
+            }
+        }
+    }
+
+    void InitPatchMesh(size_t IndexPatch)
+    {
+        assert(IndexPatch>=0);
+        assert(IndexPatch<Patches.size());
+        assert(Patches[IndexPatch].Active);
+
+        //create the temporaty mesh
+        Patches[IndexPatch].PatchMesh=new MeshType();
+        GetPatchMesh(IndexPatch,*Patches[IndexPatch].PatchMesh);
+        //update the field
+        vcg::tri::CrossField<MeshType>::SetVertCrossVectorFromFace(*Patches[IndexPatch].PatchMesh);
+        //create the tracer
+        Patches[IndexPatch].PatchFieldTracer=new VertexFieldTracer<MeshType>(*Patches[IndexPatch].PatchMesh);
+    }
+
+    void SetInitialPatch(const std::vector<CoordType> &ConvexV,
+                         const std::vector<CoordType> &ConcaveV)
+    {
+        Patches.clear();
+
+        Patches.push_back(PatchInfo());
+
+        for (size_t i=0;i<mesh.face.size();i++)
+            Patches.back().IndexF.push_back(i);
+
+        Patches.back().Active=true;
+
+        InitPatchMesh(0);
+
+        //copy corners
+        CopyPatchCornerByPos(0,ConvexV,ConcaveV);
+
+        //then initialize the tracing directions
+        SetPatchInitialDirections(0);
+    }
+
+    void InitField()
+    {
+        typename vcg::tri::FieldSmoother<MeshType>::SmoothParam SParam;
+        SParam.align_borders=true;
+        SParam.curvRing=2;
+        SParam.alpha_curv=0;
+        SParam.Ndir=4;
+        SParam.sharp_thr=0;
+        SParam.curv_thr=0;
+        SParam.SmoothM=vcg::tri::SMNPoly;
+        //the number of faces of the ring used ot esteem the curvature
+        vcg::tri::FieldSmoother<MeshType>::SmoothDirections(mesh,SParam);
+        vcg::tri::CrossField<MeshType>::SetVertCrossVectorFromFace(mesh);
+        InitIndexOnQ();
+    }
+
+    void CheckIndexOnQ(int TestIndex)
+    {
+        std::cout<<"*** TESTING INDEX "<<TestIndex<<std::endl;
+        for (size_t i=0;i<mesh.vert.size();i++)
+        {
+            size_t Index0=i;
+            size_t Index1=mesh.vert[i].Q();
+            if (Index0!=Index1)
+            {
+                std::cout<<"i: "<<i<<" Q: "<<mesh.vert[i].Q()<<std::endl;
+                assert(0);
+            }
+        }
+
+        for (size_t i=0;i<mesh.face.size();i++)
+        {
+            size_t Index0=i;
+            size_t Index1=mesh.face[i].Q();
+            if (Index0!=Index1)
+            {
+                std::cout<<"i: "<<i<<" Q: "<<mesh.face[i].Q()<<std::endl;
+                assert(0);
+            }
+        }
+    }
+
+    void CheckPatches()
+    {
+        //CheckIndexOnQ(10);
+
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            //std::cout<<"Testing Patch "<<i<<std::endl;
+            assert(Patches[i].PatchMesh!=NULL);
+            for (size_t j=0;j<Patches[i].PatchMesh->vert.size();j++)
+            {
+                VertexType *currV=&Patches[i].PatchMesh->vert[j];
+                if (!currV->IsB())continue;
+                TypeBorderVert TypeV=PatchBorderVertexType(i,currV);
+            }
+            for (size_t j=0;j<Patches[i].IndexF.size();j++)
+            {
+                int CurrF=Patches[i].IndexF[j];
+                for (size_t k=0;k<3;k++)
+                {
+                    VertexType *currV=mesh.face[CurrF].V(k);
+                    size_t Index0=vcg::tri::Index(mesh,currV);
+                    size_t Index1=currV->Q();
+                    assert(Index0==Index1);
+                    if (!currV->IsB())continue;
+                    TypeBorderVert TypeV=PatchBorderVertexType(i,currV);
+                }
+            }
+            //std::cout<<"Done Testing"<<std::endl;
+        }
+    }
+
+    void SplitPatchIntoSubPatches(size_t IndexPatch,
+                                  const std::vector<std::vector<size_t> > &NewPatches,
+                                  std::vector<size_t> &NewIndexes)
+    {
+        if(Param.PrintDebug)
+            std::cout<<"De-activated patch: "<<IndexPatch<<std::endl;
+
+        Patches[IndexPatch].Active=false;
+        NewIndexes.clear();
+        //std::cout<<"Re-initializing Num Patches: "<<NewPatches.size()<<std::endl;
+        for (size_t i=0;i<NewPatches.size();i++)
+        {
+            //std::cout<<"Re-initializing patch: "<<i<<std::endl;
+            Patches.push_back(PatchInfo());
+            Patches.back().IndexF=NewPatches[i];
+            Patches.back().Active=true;
+            NewIndexes.push_back(Patches.size()-1);
+
+            if(Param.PrintDebug)
+                std::cout<<"Created new patch: "<<NewIndexes.back()<<std::endl;
+
+        }
+    }
+
+    void UpdateSubPatchesVertexType(const std::vector<size_t> &ToUpdate,
+                                    const std::vector<std::vector<size_t> > &NewConvexPatchOriginalVert,
+                                    const std::vector<std::vector<size_t> > &NewConcavePatchOriginalVert)
+    {
+        assert(ToUpdate.size()==NewConvexPatchOriginalVert.size());
+        assert(ToUpdate.size()==NewConcavePatchOriginalVert.size());
+
+        if (Param.PrintDebug)
+            std::cout<<"Re-initializing Num Patches: "<<ToUpdate.size()<<std::endl;
+        for (size_t i=0;i<ToUpdate.size();i++)
+        {
+            size_t IndexPatch=ToUpdate[i];
+            InitPatchMesh(IndexPatch);
+            if (Param.PrintDebug)
+                std::cout<<"updatig patch vertex type: "<<IndexPatch<<std::endl;
+
+            CopyPatchCornerByOriginalIndex(IndexPatch,
+                                           NewConvexPatchOriginalVert[i],
+                                           NewConcavePatchOriginalVert[i]);
+            if (Param.PrintDebug)
+                std::cout<<"setting new tracing directions "<<IndexPatch<<std::endl;
+
+            SetPatchInitialDirections(IndexPatch);
+        }
+        if (Param.PrintDebug)
+            std::cout<<"done "<<std::endl;
+
+    }
+
+    std::vector<int> FacePatches;
+    void UpdateFacePatches()
+    {
+        FacePatches.clear();
+        FacePatches.resize(mesh.face.size(),-1);
+
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            for (size_t j=0;j<Patches[i].IndexF.size();j++)
+            {
+                size_t IndexF=Patches[i].IndexF[j];
+                assert(IndexF>=0);
+                assert(IndexF<mesh.face.size());
+                FacePatches[IndexF]=i;
+            }
+        }
+    }
+
+    bool OnBorderPatch(const FaceType &f,
+                       size_t IndexE)
+    {
+        if (vcg::face::IsBorder(f,IndexE))return false;
+        FaceType *f_opp=f.cFFp(IndexE);
+        size_t Index0=vcg::tri::Index(mesh,f);
+        size_t Index1=vcg::tri::Index(mesh,f_opp);
+        int Partition0=FacePatches[Index0];
+        int Partition1=FacePatches[Index1];
+        return (Partition0!=Partition1);
+    }
+
+    std::set<std::pair<size_t,size_t> > BorderPatches;
+    void UpdateBorderPatches()
+    {
+        BorderPatches.clear();
+        for (size_t i=0;i<mesh.face.size();i++)
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                if (!OnBorderPatch(mesh.face[i],j))continue;
+                size_t IndexV0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+                size_t IndexV1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+                BorderPatches.insert(std::pair<size_t,size_t>(std::min(IndexV0,IndexV1),
+                                                              std::max(IndexV0,IndexV1)));
+            }
+    }
+
+    //    void UpdateVertexPatchCount()
+    //    {
+
+    //    }
+
+    void ReProjectMesh()
+    {
+        for (size_t i=0;i<mesh.vert.size();i++)
+        {
+            if (mesh.vert[i].IsB())continue;
+            if (FixedVert.count(i)==0)continue;
+            ScalarType maxD=mesh.bbox.Diag();
+            ScalarType minD=0;
+            CoordType closestPT;
+            FaceType *f=vcg::tri::GetClosestFaceBase(OriginalMesh,Grid,mesh.vert[i].P(),maxD,minD,closestPT);
+            mesh.vert[i].P()=closestPT;
+        }
+    }
+
+
+    void SmoothPatchStep()
+    {
+        //save old normal
+        UpdateAttributes(mesh);
+
+        //        std::vector<CoordType> OldNorm;
+        //        for (size_t i=0;i<mesh.face.size();i++)
+        //            OldNorm.push_back(mesh.face[i].N());
+
+        std::vector<CoordType> AvPos(mesh.vert.size(),CoordType(0,0,0));
+        std::vector<size_t> NumDiv(mesh.vert.size(),0);
+
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+        for (size_t i=0;i<mesh.face.size();i++)
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                CoordType Pos0=mesh.face[i].P0(j);
+                CoordType Pos1=mesh.face[i].P1(j);
+
+                size_t IndexV0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+                size_t IndexV1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+
+                std::pair<size_t,size_t> key(std::min(IndexV0,IndexV1),
+                                             std::max(IndexV0,IndexV1));
+
+                if (vcg::face::IsBorder(mesh.face[i],j))continue;
+
+                if (BorderPatches.count(key)==0)continue;
+
+                mesh.vert[IndexV0].SetS();
+                mesh.vert[IndexV1].SetS();
+                AvPos[IndexV0]+=Pos1;
+                AvPos[IndexV1]+=Pos0;
+                NumDiv[IndexV0]++;
+                NumDiv[IndexV1]++;
+            }
+        for (size_t i=0;i<AvPos.size();i++)
+        {
+            if (mesh.vert[i].IsB()){
+                mesh.vert[i].SetS();
+                continue;
+            }
+            if (NumDiv[i]==0)continue;
+            AvPos[i]/=NumDiv[i];
+
+            if (FixedVert.count(i)==0)
+                mesh.vert[i].P()=mesh.vert[i].P()*0.5+AvPos[i]*0.5;
+            else
+                mesh.vert[i].SetS();
+        }
+
+        vcg::tri::UpdateSelection<MeshType>::VertexInvert(mesh);
+        vcg::tri::Smooth<MeshType>::VertexCoordLaplacian(mesh,1,true);
+
+        vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
+
+        //MakeFieldTangential(OldNorm);
+    }
+
+    std::set<size_t> FixedVert;
+
+    void SmoothPatches(size_t numSteps=10)
+    {
+        for (size_t i=0;i<numSteps;i++)
+        {
+            SmoothPatchStep();
+            ReProjectMesh();
+        }
+        UpdateAttributes(mesh);
+    }
+
+    bool SplitConcave(size_t IndexPatch)
+    {
+
+        assert(IndexPatch>=0);
+        assert(IndexPatch<Patches.size());
+        assert(Patches[IndexPatch].Active);
+        MeshType *PatchMesh=Patches[IndexPatch].PatchMesh;
+        VertexFieldTracer<MeshType> *PatchFieldTracer=Patches[IndexPatch].PatchFieldTracer;
+
+        PatchSplitter<MeshType> PSplit(*PatchMesh,*PatchFieldTracer,Param.PrintDebug);
+
+        std::vector<std::vector<size_t> > NewPatches,LocalPatches;
+        std::vector<std::vector<size_t> > NewConvexPatchOriginalVert;
+        std::vector<std::vector<size_t> > NewConcavePatchOriginalVert;
+
+        bool Splitted=PSplit.SplitByConcave(Patches[IndexPatch].ConvexVertIndex,
+                                            Patches[IndexPatch].ConcaveVertIndex,
+                                            Patches[IndexPatch].TracingVert,
+                                            Patches[IndexPatch].TracingDir,
+                                            LocalPatches,NewPatches);//NewConvexPatchOriginalVert,NewConcavePatchOriginalVert);
+
+        if (!Splitted)return false;
+
+        std::cout<<"Convave Tracing split into patches:"<<NewPatches.size()<<std::endl;
+
+        //update patches structures
+        std::vector<size_t> NewIndexes;
+        SplitPatchIntoSubPatches(IndexPatch,NewPatches,NewIndexes);
+
+        UpdateFacePatches();
+        UpdateBorderPatches();
+
+        std::vector<std::vector<std::vector<size_t> > > NewPatchIndexes;
+        NewPatchIndexes.push_back(NewPatches);
+        UpdateSmoothFixedVert(NewPatchIndexes);
+        SmoothPatches();
+
+        PSplit.CopyPositionsFrom(mesh);
+
+        PSplit.GetVertexTopology(LocalPatches,
+                                 Patches[IndexPatch].ConvexVertIndex,
+                                 Patches[IndexPatch].ConcaveVertIndex,
+                                 NewConvexPatchOriginalVert,
+                                 NewConcavePatchOriginalVert);
+
+        //and recompute the field
+        InitField();
+
+        UpdateSubPatchesVertexType(NewIndexes,NewConvexPatchOriginalVert,NewConcavePatchOriginalVert);
+
+        //check consistency
+        CheckPatches();
+
+        //volor the patches
+        ColorPatches();
+
+        return true;
+    }
+
+    void UpdateSmoothFixedVert(const std::vector<std::vector<std::vector<size_t> > > &NewPatches)
+    {
+        //for each old patch
+        vcg::tri::UpdateSelection<MeshType>::FaceClear(mesh);
+        for (size_t i=0;i<NewPatches.size();i++)
+            //for each new patch
+            for (size_t j=0;j<NewPatches[i].size();j++)
+                //for each face
+                for (size_t k=0;k<NewPatches[i][j].size();k++)
+                {
+                    size_t IndexF=NewPatches[i][j][k];
+                    mesh.face[IndexF].SetS();
+                }
+
+        FixedVert.clear();
+        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceStrict(mesh);
+        for (size_t i=0;i<mesh.vert.size();i++)
+        {
+            if (mesh.vert[i].IsB()){FixedVert.insert(i);continue;}
+            if (!mesh.vert[i].IsS()){FixedVert.insert(i);continue;}
+        }
+        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
+    }
+
+    bool SplitNonOk()
+    {
+
+        std::vector<size_t> To_Split;
+
+        //size_t InitialPatchNum=Patches.size();
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            //count the number of corners
+            if (Patches[i].ConvexVertIndex.size()<3)
+            {
+                To_Split.push_back(i);
+                continue;
+            }
+            if (Patches[i].ConvexVertIndex.size()>6)
+            {
+                To_Split.push_back(i);
+                continue;
+            }
+            MeshType *CurrMesh=Patches[i].PatchMesh;
+            size_t holes=vcg::tri::Clean<MeshType>::CountHoles(*CurrMesh);
+            if (holes==1)continue;
+            To_Split.push_back(i);
+        }
+        std::cout<<"Patches Needed to be Resplitted "<<To_Split.size()<<std::endl;
+
+        std::vector<PatchSplitter<MeshType> > PSplit;
+        for (size_t i=0;i<To_Split.size();i++)
+        {
+            size_t IndexPatch=To_Split[i];
+            MeshType *PatchMesh=Patches[IndexPatch].PatchMesh;
+            VertexFieldTracer<MeshType> *PatchFieldTracer=Patches[IndexPatch].PatchFieldTracer;
+            PSplit.push_back(PatchSplitter<MeshType>(*PatchMesh,*PatchFieldTracer,Param.PrintDebug));
+        }
+
+        std::vector<std::vector<size_t> > NewIndexes(To_Split.size());
+        std::vector<std::vector<std::vector<size_t> > > NewPatches(To_Split.size());
+        std::vector<std::vector<std::vector<size_t> > >LocalPatches(To_Split.size());
+
+        bool splitted=false;
+        for (size_t i=0;i<To_Split.size();i++)
+        {
+            std::cout<<"Splitting Patch "<<To_Split[i]<<std::endl;
+            size_t IndexPatch=To_Split[i];
+
+            splitted|=PSplit[i].SplitByBorders(Patches[IndexPatch].ConvexVertIndex,
+                                               Patches[IndexPatch].TracingVert,
+                                               Patches[IndexPatch].TracingDir,
+                                               LocalPatches[i],NewPatches[i]);
+
+            std::cout<<"Border Tracing split into patches:"<<NewPatches[i].size()<<std::endl;
+
+            //update patches structures;
+            SplitPatchIntoSubPatches(IndexPatch,NewPatches[i],NewIndexes[i]);
+        }
+        if (!splitted)return false;
+
+        //then smooth
+        UpdateFacePatches();
+        UpdateBorderPatches();
+
+        UpdateSmoothFixedVert(NewPatches);
+        SmoothPatches();
+
+        //get new vertex topology
+        std::vector<std::vector<std::vector<size_t> > > NewConvexPatchOriginalVert(PSplit.size());
+        std::vector<std::vector<std::vector<size_t> > > NewConcavePatchOriginalVert(PSplit.size());
+
+        for (size_t i=0;i<PSplit.size();i++)
+        {
+            if (Param.PrintDebug)
+                std::cout<<"Get Topology Step"<<std::endl;
+
+            size_t IndexPatch=To_Split[i];
+            PSplit[i].CopyPositionsFrom(mesh);
+            PSplit[i].GetVertexTopology(LocalPatches[i],
+                                        Patches[IndexPatch].ConvexVertIndex,
+                                        Patches[IndexPatch].ConcaveVertIndex,
+                                        NewConvexPatchOriginalVert[i],
+                                        NewConcavePatchOriginalVert[i]);
+        }
+
+        //and recompute the field
+        InitField();
+
+
+        //create the new submeshes and update vertex type
+        for (size_t i=0;i<PSplit.size();i++)
+        {
+            if (Param.PrintDebug)
+                std::cout<<"Update Topology Step"<<std::endl;
+
+            UpdateSubPatchesVertexType(NewIndexes[i],
+                                       NewConvexPatchOriginalVert[i],
+                                       NewConcavePatchOriginalVert[i]);
+
+            if (Param.PrintDebug)
+                std::cout<<"Done"<<std::endl;
+
+        }
+        if (Param.PrintDebug)
+            std::cout<<"check consistency "<<std::endl;
+
+        CheckPatches();
+
+        //volor the patches
+        ColorPatches();
+
+        return true;
+    }
+
+    void InitIndexOnQ()
+    {
+        //save vertex index on quality
+        for (size_t i=0;i<mesh.vert.size();i++)
+            mesh.vert[i].Q()=i;
+
+        //save face index on quality
+        for (size_t i=0;i<mesh.face.size();i++)
+            mesh.face[i].Q()=i;
+    }
+
+public:
+
+
+#ifdef DRAWTRACE
+    void GLDrawPatches()
+    {
+
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glDisable(GL_LIGHTING);
+        glDepthRange(0,0.99998);
+        glLineWidth(10);
+        for (size_t i=0;i<mesh.face.size();i++)
+        {
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                size_t IndexV0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+                size_t IndexV1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+                std::pair<size_t,size_t> key(std::min(IndexV0,IndexV1),std::max(IndexV0,IndexV1));
+                bool IsBorder=vcg::face::IsBorder(mesh.face[i],j);
+                if ((BorderPatches.count(key)==0)&&(!IsBorder))continue;
+
+                vcg::glColor(vcg::Color4b(0,0,0,255));
+
+                CoordType Pos0=mesh.face[i].P0(j);
+                CoordType Pos1=mesh.face[i].P1(j);
+
+                glBegin(GL_LINES);
+                vcg::glVertex(Pos0);
+                vcg::glVertex(Pos1);
+                glEnd();
+            }
+        }
+        glPopAttrib();
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            GLDrawPatch(i);
+            //GLDrawPatchDir(i);
+        }
+    }
+#endif
+
+    void BatchProcess(std::vector<std::vector<size_t> > &Partitions,
+                      std::vector<std::vector<size_t> > &Corner,
+                      Parameters &_Param)
+    {
+        Param=_Param;
+        std::cout<<"*****************************"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"***   GETTING GEO-CONSTR  ***"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*****************************"<<std::endl;
+        //initial check
+        UpdateAttributes(mesh);
+        int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+
+
+        ////        size_t num_split=vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
+        ////        if (num_split>0)
+        //            UpdateAttributes(mesh);
+
+        std::vector<CoordType> ConvexV,ConcaveV;
+        GetGeometricCorners(ConvexV,ConcaveV);
+
+        //        if (Param.InitialSmooth)
+        //            SmoothMesh();
+
+        SelectFacesWithBorderEdge();
+        vcg::PolygonalAlgorithm<MeshType>::Triangulate(mesh,true,true);
+        UpdateAttributes(mesh);
+
+        OriginalMesh.Clear();
+        vcg::tri::Append<MeshType,MeshType>::Mesh(OriginalMesh,mesh);
+        UpdateAttributes(OriginalMesh);
+        Grid.Set(OriginalMesh.face.begin(),OriginalMesh.face.end());
+
+        if (Param.InitialRemesh)
+            RemeshMesh();
+
+        size_t num_split=vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
+        if (num_split>0)
+            UpdateAttributes(mesh);
+        //        int removed=vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+        //        std::cout<<"removed: "<<removed<<std::endl;
+        //initialize the field
+        InitField();
+        //return;
+        SetInitialPatch(ConvexV,ConcaveV);
+
+        InitPatchMesh(0);
+
+        //split the concave patches first
+        std::cout<<"*****************************"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*** SPLITTING CONCAVE     ***"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*****************************"<<std::endl;
+        SplitConcave(0);
+        bool splitted=false;
+        do{
+            splitted=false;
+            for (size_t i=0;i<Patches.size();i++)
+            {
+                if (!Patches[i].Active)continue;
+                if (Patches[i].ConcaveVertIndex.size()==0)continue;
+                splitted|=SplitConcave(i);
+            }
+        }while (splitted);
+
+        //safety check.. all concave non solved becomes flat
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            if (Patches[i].ConcaveVertIndex.size()==0)continue;
+
+            std::set<size_t>::iterator IteSetConcave;
+
+            for (IteSetConcave=Patches[i].ConcaveVertIndex.begin();
+                 IteSetConcave!=Patches[i].ConcaveVertIndex.end();
+                 IteSetConcave++)
+            {
+                std::cout<<"WARNING - Non Traced Concave - MADE FLAT!";
+                size_t IndConcave=(*IteSetConcave);
+                Patches[i].FlatVertIndex.insert(IndConcave);
+            }
+            Patches[i].ConcaveVertIndex.clear();
+        }
+
+        std::cout<<"*****************************"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*** SPLITTING NON OK STEP ***"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*****************************"<<std::endl;
+
+        //split the rest
+        splitted=false;
+        do{
+            splitted=SplitNonOk();
+        }while (splitted);
+
+        std::cout<<"*****************************"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*** COLLECTING RESULTS    ***"<<std::endl;
+        std::cout<<"***                       ***"<<std::endl;
+        std::cout<<"*****************************"<<std::endl;
+
+        //final check
+        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+
+
+        //return the patches
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            //check the holes
+            MeshType *CurrMesh=Patches[i].PatchMesh;
+            size_t holes=vcg::tri::Clean<MeshType>::CountHoles(*CurrMesh);
+            if (holes!=1){std::cout<<"WARNING - Mesh non Disk-Like - ERASED!";}
+
+            //then add the patch
+            if ((Patches[i].ConvexVertIndex.size()<3)||
+                    (Patches[i].ConvexVertIndex.size()>6))
+            {
+                std::cout<<"WARNING - Not good subdivision - FIXED!";
+            }
+        }
+    }
+
+    PatchAssembler(MeshType &_mesh):mesh(_mesh)
+    {}
+};
+
+
+}
+}
+#endif
