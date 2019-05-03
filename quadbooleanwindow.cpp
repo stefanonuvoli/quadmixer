@@ -14,16 +14,16 @@
 
 #include "quadboolean.h"
 
-
+#ifdef NDEBUG
 #define SAVEMESHES
-
+#endif
 
 QuadBooleanWindow::QuadBooleanWindow(QWidget* parent) : QMainWindow(parent)
 {
     ui.setupUi (this);
 
-    loadMesh(mesh1, "mesh1.obj", ui.moveCenterCheckBox->isChecked());
-    loadMesh(mesh2, "mesh4.obj", ui.moveCenterCheckBox->isChecked());
+    loadMesh(mesh1, "mesh5.obj", ui.moveCenterCheckBox->isChecked());
+    loadMesh(mesh2, "mesh6.obj", ui.moveCenterCheckBox->isChecked());
 
     ui.glArea->setMesh1(&mesh1);
     ui.glArea->setMesh2(&mesh2);
@@ -358,9 +358,11 @@ void QuadBooleanWindow::doPatchDecomposition() {
     newSurface.Clear();
     vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
 
+    bool initialRemeshing = ui.initialRemeshingCheckBox->isChecked();
+
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners);
+    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing);
 
     //-----------
 

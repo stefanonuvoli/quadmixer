@@ -421,6 +421,7 @@ void findChartFacesAndBorderFaces(
 
                 charts[chart.label] = chart;
             }
+
         }
     }
 }

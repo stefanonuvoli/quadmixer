@@ -13,6 +13,7 @@ Parameters::Parameters()
     deleteSmall = DEFAULTDELETESMALL;
     deleteNonConnected = DEFAULTDELETENONCONNECTED;
     alpha = DEFAULTALPHA;
+    initialRemeshing = DEFAULTINITIALREMESHING;
     chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
     meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
@@ -176,7 +177,7 @@ void quadBoolean(
      //Get patch decomposition of the new surface     
      std::vector<std::vector<size_t>> newSurfacePartitions;
      std::vector<std::vector<size_t>> newSurfaceCorners;
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners);
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing);
 
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);

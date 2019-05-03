@@ -9,11 +9,16 @@
 #include "quadquadmapping.h"
 #include "quadlibiglbooleaninterface.h"
 
-#include "patch_decomposer.h"
-//#include "patch_assembler.h"
-
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
+
+#define USE_NEW_DECOMPOSER
+
+#ifdef USE_NEW_DECOMPOSER
+#include "patch_assembler.h"
+#else
+#include "patch_decomposer.h"
+#endif
 
 #ifndef NDEBUG
 #include <igl/writeOBJ.h>
@@ -467,21 +472,24 @@ template<class TriangleMeshType>
 std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,
         std::vector<std::vector<size_t>>& partitions,
-        std::vector<std::vector<size_t>>& corners)
+        std::vector<std::vector<size_t>>& corners,
+        const bool initialRemeshing)
 {
     if (newSurface.face.size() <= 0)
         return std::vector<int>();
 
-//    PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
-//    typename PatchAssembler<TriangleMeshType>::Parameters parameters;
-
-//    patchAssembler.BatchProcess(partitions, corners, parameters);
-
+#ifdef USE_NEW_DECOMPOSER
+    PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
+    typename PatchAssembler<TriangleMeshType>::Parameters parameters;
+    patchAssembler.BatchProcess(partitions, corners, parameters);
+    parameters.InitialRemesh = initialRemeshing;
+#else
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
-
     decomposer.SetParam(parameters);
     decomposer.BatchProcess(partitions, corners);
+    vcg::tri::Allocator<TriangleMesh>::CompactEveryVector(newSurface);
+#endif
 
     std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
     for (size_t pId = 0; pId < partitions.size(); pId++) {

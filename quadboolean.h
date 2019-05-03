@@ -10,7 +10,8 @@
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED true
-#define DEFAULTALPHA 0.01
+#define DEFAULTALPHA 0.5
+#define DEFAULTINITIALREMESHING 5
 #define DEFAULTCHARTSMOOTHINGITERATIONS 5
 #define DEFAULTMESHSMOOTHINGITERATIONS 5
 #define DEFAULTRESULTSMOOTHINGITERATIONS 5
@@ -27,6 +28,7 @@ struct Parameters {
     bool deleteSmall;
     bool deleteNonConnected;
     double alpha;
+    bool initialRemeshing;
     int chartSmoothingIterations;
     int meshSmoothingIterations;
     int resultSmoothingIterations;

@@ -2049,11 +2049,11 @@ public:
             if (holes!=1){std::cout<<"WARNING - Mesh non Disk-Like - ERASED!";}
 
             //then add the patch
-            if ((Patches[i].ConvexVertIndex.size()<3)||
-                    (Patches[i].ConvexVertIndex.size()>6))
+            if ((Patches[i].ConvexVertIndex.size()<3) || (Patches[i].ConvexVertIndex.size()>6))
             {
                 std::cout<<"WARNING - Not good subdivision - FIXED!";
             }
+
             Partitions.push_back(Patches[i].IndexF);
             std::vector<size_t> PatchCorner(Patches[i].ConvexVertIndex.begin(),
                                             Patches[i].ConvexVertIndex.end());
