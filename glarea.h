@@ -75,12 +75,19 @@ public:
     void setQuadrangulatedWireframe(bool wireframe);
     void setResultWireframe(bool wireframe);
 
-    void resetTrackball();
-
     vcg::Point3f getSceneCenter() const;
     void setSceneCenter(const vcg::Point3f &value);
     float getSceneRadius() const;
     void setSceneRadius(float value);
+
+    void resetTrackball();
+    void setSceneOnMesh();
+    void setTrackballOnSelected();
+    void selectAndTrackScene();
+    void selectAndTrackMesh1();
+    void selectAndTrackMesh2();
+    void selectAndTrackMesh(PolyMesh* mesh);
+    void applySelectedMeshTransformation();
 
 signals:
     void setStatusBar(QString message);
@@ -116,9 +123,14 @@ private:
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulated;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutResult;
 
-    vcg::Trackball trackball;
+    vcg::Trackball sceneTrackball;
+    vcg::Trackball selectedTrackball;
     vcg::Point3f sceneCenter;
     float sceneRadius;
+
+    PolyMesh* selectedMesh;
+    std::vector<PolyMesh::VertexType> selectedMeshVertices;
+    vcg::Point3d selectedMeshInitialCenter;
 
     void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
     void initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh);

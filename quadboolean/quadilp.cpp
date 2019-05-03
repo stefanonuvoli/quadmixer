@@ -26,7 +26,7 @@ std::vector<int> solveChartSideILP(
         GRBModel model = GRBModel(env);
 
 //        model.set(GRB_IntParam_OutputFlag, 0);
-        model.set(GRB_DoubleParam_TimeLimit, 1.5);
+        model.set(GRB_DoubleParam_TimeLimit, 2.0);
 
         // Create variables
         GRBQuadExpr obj;

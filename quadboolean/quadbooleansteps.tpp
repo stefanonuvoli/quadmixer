@@ -5,10 +5,12 @@
 #include "quadpreserved.h"
 #include "quadilp.h"
 #include "quadconvert.h"
-#include "patch_decomposer.h"
 #include "quadpatterns.h"
 #include "quadquadmapping.h"
 #include "quadlibiglbooleaninterface.h"
+
+#include "patch_decomposer.h"
+//#include "patch_assembler.h"
 
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
@@ -25,17 +27,22 @@ typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh) {
     typename PolyMeshType::ScalarType length = 0;
     size_t numEdges = 0;
     for (size_t i=0;i<mesh.face.size();i++) {
-        for (size_t j=0;j<mesh.face[i].VN();j++)
-        {
-            size_t index0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
-            size_t index1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
-            typename PolyMeshType::CoordType p0=mesh.vert[index0].P();
-            typename PolyMeshType::CoordType p1=mesh.vert[index1].P();
-            length+=(p0-p1).Norm();
-            numEdges++;
+        if (!mesh.face[i].IsD()) {
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                size_t index0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+                size_t index1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+                typename PolyMeshType::CoordType p0=mesh.vert[index0].P();
+                typename PolyMeshType::CoordType p1=mesh.vert[index1].P();
+                length += (p0-p1).Norm();
+                numEdges++;
+            }
         }
     }
+
     length /= numEdges;
+
+    return length;
 }
 
 template<class PolyMeshType>
@@ -464,6 +471,11 @@ std::vector<int> getPatchDecomposition(
 {
     if (newSurface.face.size() <= 0)
         return std::vector<int>();
+
+//    PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
+//    typename PatchAssembler<TriangleMeshType>::Parameters parameters;
+
+//    patchAssembler.BatchProcess(partitions, corners, parameters);
 
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;

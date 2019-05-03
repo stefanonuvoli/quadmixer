@@ -378,47 +378,49 @@ void findChartFacesAndBorderFaces(
 
             chart.label = faceLabel[i];
 
-            std::set<size_t> borderFacesSet;
-            do {
-                size_t fId = stack.top();
-                stack.pop();
-                assert(faceLabel[fId] == chart.label);
+            if (chart.label >= 0) {
+                std::set<size_t> borderFacesSet;
+                do {
+                    size_t fId = stack.top();
+                    stack.pop();
+                    assert(faceLabel[fId] == chart.label);
 
-                if (!visited[fId]) {
-                    chart.faces.push_back(fId);
+                    if (!visited[fId]) {
+                        chart.faces.push_back(fId);
 
-                    typename TriangleMeshType::FaceType* currentFacePointer = &mesh.face[fId];
-                    vcg::face::Pos<typename TriangleMeshType::FaceType> pos(currentFacePointer, 0);
-                    for (int k = 0; k < 3; k++) {
-                        pos.FlipF();
-                        size_t adjFace = vcg::tri::Index(mesh, pos.F());
+                        typename TriangleMeshType::FaceType* currentFacePointer = &mesh.face[fId];
+                        vcg::face::Pos<typename TriangleMeshType::FaceType> pos(currentFacePointer, 0);
+                        for (int k = 0; k < 3; k++) {
+                            pos.FlipF();
+                            size_t adjFace = vcg::tri::Index(mesh, pos.F());
 
-                        //Saving border faces
-                        if (currentFacePointer == pos.F() || faceLabel[adjFace] != chart.label) {
-                            borderFacesSet.insert(fId);
-                        }
-                        else {
-                            if (!visited[adjFace]) {
-                                stack.push(adjFace);
+                            //Saving border faces
+                            if (currentFacePointer == pos.F() || faceLabel[adjFace] != chart.label) {
+                                borderFacesSet.insert(fId);
                             }
+                            else {
+                                if (!visited[adjFace]) {
+                                    stack.push(adjFace);
+                                }
+                            }
+                            pos.FlipF();
+
+                            //Next edge
+                            pos.FlipV();
+                            pos.FlipE();
                         }
-                        pos.FlipF();
 
-                        //Next edge
-                        pos.FlipV();
-                        pos.FlipE();
+                        visited[fId] = true;
                     }
-
-                    visited[fId] = true;
                 }
+                while (!stack.empty());
+
+                assert(borderFacesSet.size() >= 1);
+
+                std::copy(borderFacesSet.begin(), borderFacesSet.end(), std::back_inserter(chart.borderFaces));
+
+                charts[chart.label] = chart;
             }
-            while (!stack.empty());
-
-            assert(borderFacesSet.size() >= 1);
-
-            std::copy(borderFacesSet.begin(), borderFacesSet.end(), std::back_inserter(chart.borderFaces));
-
-            charts[chart.label] = chart;
         }
     }
 }

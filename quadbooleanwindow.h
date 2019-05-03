@@ -24,7 +24,7 @@ public:
     QuadBooleanWindow(QWidget * parent = nullptr);
 
     std::string chooseMeshFile();
-    int loadMesh(PolyMesh& mesh, const std::string& filename);
+    int loadMesh(PolyMesh& mesh, const std::string& filename, bool scaleAndTranslateOnCenter);
 
     void setTrackballOnMeshes();
 
@@ -49,6 +49,7 @@ private slots:
     void on_computeAllPushButton_clicked();
     void on_quadrangulatePushButton_clicked();
     void on_getResultPushButton_clicked();
+    void on_saveResultPushButton_clicked();
 
     void on_showMesh1CheckBox_stateChanged(int arg1);
     void on_showMesh2CheckBox_stateChanged(int arg1);
@@ -67,6 +68,9 @@ private slots:
     void on_showResultLayoutCheckBox_stateChanged(int arg1);
 
     void on_resetTrackballButton_clicked();
+    void on_trackSceneButton_clicked();
+    void on_track1Button_clicked();
+    void on_track2Button_clicked();
 
     void on_showILPCheckBox_stateChanged(int arg1);
 

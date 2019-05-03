@@ -86,14 +86,17 @@ HEADERS += \
 FORMS += \
     quadbooleanwindow.ui
 
+
+#patterns
+include($$PATTERNSPATH/patterns.pri)
+
+#glew
 LIBS += -lGLEW -lglut
 #just for Linux
 unix:!macx {
     DEFINES += GL_GLEXT_PROTOTYPES
     LIBS    += -lGLU
 }
-
-#Compile glew
 DEFINES += GLEW_STATIC
 INCLUDEPATH += $$GLPATH
 
@@ -128,9 +131,6 @@ SOURCES += \
     $$VCGLIBPATH/wrap/ply/plylib.cpp \
     $$VCGLIBPATH/wrap/gui/trackmode.cpp \
     $$VCGLIBPATH/wrap/gui/trackball.cpp
-
-#patterns
-include($$PATTERNSPATH/patterns.pri)
 
 #gurobi
 MODULES += GUROBI
