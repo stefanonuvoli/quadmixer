@@ -21,13 +21,13 @@ namespace internal {
 template <class MeshType>
 void UpdateAttributes(MeshType &curr_mesh)
 {
-    vcg::tri::UpdateNormal<MyTriMesh>::PerFaceNormalized(curr_mesh);
-    vcg::tri::UpdateNormal<MyTriMesh>::PerVertexNormalized(curr_mesh);
-    vcg::tri::UpdateBounding<MyTriMesh>::Box(curr_mesh);
-    vcg::tri::UpdateTopology<MyTriMesh>::FaceFace(curr_mesh);
-    vcg::tri::UpdateTopology<MyTriMesh>::VertexFace(curr_mesh);
-    vcg::tri::UpdateFlags<MyTriMesh>::FaceBorderFromFF(curr_mesh);
-    vcg::tri::UpdateFlags<MyTriMesh>::VertexBorderFromNone(curr_mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(curr_mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(curr_mesh);
+    vcg::tri::UpdateBounding<MeshType>::Box(curr_mesh);
+    vcg::tri::UpdateTopology<MeshType>::FaceFace(curr_mesh);
+    vcg::tri::UpdateTopology<MeshType>::VertexFace(curr_mesh);
+    vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(curr_mesh);
+    vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(curr_mesh);
 }
 
 template <class MeshType>
