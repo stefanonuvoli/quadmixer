@@ -20,9 +20,6 @@ class VertexFieldTracer
 
     //the input mesh to trace
     MeshType &mesh;
-    //    //the neighbours of each vertex (include propagation)
-    //    std::vector<std::vector<size_t> > VNeigh;
-    //
 
     //neighbours only connected by original edges
     std::vector<std::vector<size_t> > VNeigh1;
@@ -335,51 +332,6 @@ public:
         size_t BestD=GetClosestDirTo(IndexV1,DirV0);
         return BestD;
     }
-
-    //    //follow the direction from one vertex to another
-    //    //it return the index of the direction in IndexV1
-    //    bool TraceNext(const size_t IndexV0,
-    //                 const size_t DirectionV0,
-    //                 size_t &IndexV_next,
-    //                 size_t &Direction_next)
-    //    {
-    //        assert(IndexV0>=0);
-    //        assert(IndexV0<mesh.vert.size());
-    //        CoordType TargetD=GetDirection(IndexV0,DirectionV0);
-    //        //TargetD=RotateDirection(IndexV0,Direction0,Correction0);
-    //        CoordType Pos0=mesh.vert[IndexV0].P();
-    //        ScalarType BestDot=-1;
-    //        bool found=false;
-    //        CoordType Norm0=mesh.vert[IndexV0].N();
-    //        for (size_t i=0;i<VNeigh[IndexV0].size();i++)
-    //        {
-    //            int IndexVN=VNeigh[IndexV0][i];
-    //            CoordType Norm1=mesh.vert[IndexVN].N();
-    //            CoordType TargetN=Norm0+Norm1;
-    //            TargetN.Normalize();
-    //            vcg::Matrix33<ScalarType> rot=vcg::RotationMatrix(Norm0,TargetN);
-
-    //            //compute the rotation matrix
-    //            CoordType Pos1=mesh.vert[IndexVN].P();
-    //            CoordType TestDir=(Pos1-Pos0);
-    //            TestDir.Normalize();
-    //            CoordType RotatedDir=rot*TestDir;
-    //            ScalarType currDot=(TargetD*RotatedDir);
-    //            if (currDot<0)continue;
-    //            if (currDot<BestDot)continue;
-
-    //            //size_t Direction_test=FollowDirection(IndexV0,IndexVN,DirectionV0);
-    //            //if (UsedNodes.count(std::pair<size_t,size_t>(IndexVN,Direction_test))>0)continue;
-
-    //            IndexV_next=IndexVN;
-    //            BestDot=currDot;
-    //            found=true;
-    //        }
-    //        //std::cout<<"Dot "<<BestDot<<std::endl;
-    //        if (!found)return false;
-    //        Direction_next=FollowDirection(IndexV0,IndexV_next,DirectionV0);
-    //        return true;
-    //    }
 
     //follow the direction from one vertex to another
     //it return the index of the direction in IndexV1
@@ -861,9 +813,10 @@ public:
 
     //*** CONSTRUCTORS ***
     //draw a trace
-    VertexFieldTracer(MeshType &_mesh):mesh(_mesh)
+    VertexFieldTracer(MeshType &_mesh,size_t _PropagationSteps=1):mesh(_mesh)
     {
-        PropagationSteps=1;
+        PropagationSteps=_PropagationSteps;
+        assert(PropagationSteps>=1);
     }
 };
 
