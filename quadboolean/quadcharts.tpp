@@ -39,8 +39,6 @@ ChartData getPatchDecompositionChartData(
     //Region growing algorithm for getting charts
     findChartFacesAndBorderFaces(mesh, faceLabel, chartData);
 
-    const double cornerCosLimit = cos(CORNERMINANGLE);
-
 
     //TODO SPLIT IN FUNCTIONS
     EdgeSubSideMap edgeSubSideMap;

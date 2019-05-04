@@ -14,7 +14,7 @@
 
 #include "quadboolean.h"
 
-#ifdef NDEBUG
+#ifndef NDEBUG
 #define SAVEMESHES
 #endif
 
@@ -482,6 +482,10 @@ void QuadBooleanWindow::doGetResult()
     //Trace quads following singularities
     QuadBoolean::internal::traceQuads(result, quadTracerLabelResult, motorcycle);
 
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
+
     std::cout << std::endl << " >> "
               << "Quad tracer: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
@@ -494,9 +498,6 @@ void QuadBooleanWindow::doGetResult()
 
 //    colorizeMesh(result, quadTracerLabelResult);
 
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 }
 
 
