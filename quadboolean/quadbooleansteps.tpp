@@ -481,8 +481,8 @@ std::vector<int> getPatchDecomposition(
 #ifdef USE_NEW_DECOMPOSER
     PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
     typename PatchAssembler<TriangleMeshType>::Parameters parameters;
-    patchAssembler.BatchProcess(partitions, corners, parameters);
     parameters.InitialRemesh = initialRemeshing;
+    patchAssembler.BatchProcess(partitions, corners, parameters);
 #else
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
