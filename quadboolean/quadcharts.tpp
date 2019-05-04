@@ -36,9 +36,11 @@ ChartData getPatchDecompositionChartData(
 
     ChartData chartData;
 
+    if (mesh.face.size() == 0)
+        return chartData;
+
     //Region growing algorithm for getting charts
     findChartFacesAndBorderFaces(mesh, faceLabel, chartData);
-
 
     //TODO SPLIT IN FUNCTIONS
     EdgeSubSideMap edgeSubSideMap;
@@ -354,11 +356,15 @@ void findChartFacesAndBorderFaces(
         const std::vector<int>& faceLabel,
         ChartData& chartData)
 {
+    if (mesh.face.size() == 0)
+        return;
+
     std::set<int>& labels = chartData.labels;
     std::vector<Chart>& charts = chartData.charts;
 
     for (size_t fId = 0; fId < mesh.face.size(); fId++) {
-        labels.insert(faceLabel.at(fId));
+        if (faceLabel.at(fId) >= 0)
+            labels.insert(faceLabel.at(fId));
     }
 
     int maxChartLabel = *labels.rbegin();

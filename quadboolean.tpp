@@ -71,7 +71,7 @@ void quadBoolean(
      PolyMesh preservedSurface;
      std::vector<int> preservedSurfaceLabel;
 
-     PolyMesh newSurface;
+     TriangleMeshType newSurface;
      std::vector<int> newSurfaceLabel;
 
      internal::ChartData chartData;

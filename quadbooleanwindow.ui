@@ -238,7 +238,7 @@
        <item>
         <widget class="QSpinBox" name="intersectionSmoothingNRingSpinBox">
          <property name="minimum">
-          <number>2</number>
+          <number>1</number>
          </property>
          <property name="maximum">
           <number>20</number>
@@ -261,7 +261,7 @@
           <number>1</number>
          </property>
          <property name="value">
-          <number>1</number>
+          <number>2</number>
          </property>
         </widget>
        </item>
@@ -271,7 +271,7 @@
           <string>Merge</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -281,7 +281,7 @@
           <string>Delete small</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -314,7 +314,7 @@
           <double>0.100000000000000</double>
          </property>
          <property name="value">
-          <double>0.400000000000000</double>
+          <double>0.500000000000000</double>
          </property>
         </widget>
        </item>
@@ -389,7 +389,7 @@
        <item>
         <widget class="QSpinBox" name="resultSmoothingNRingSpinBox">
          <property name="minimum">
-          <number>2</number>
+          <number>1</number>
          </property>
          <property name="maximum">
           <number>20</number>

@@ -3,15 +3,17 @@
 
 #include "quadboolean/quadbooleansteps.h"
 
+#include "meshtypes.h"
+
 #define DEFAULTMOTORCYCLE true
 #define DEFAULTMINRECTANGLESIDE 2
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
-#define DEFAULTINTERSECTIONSMOOTHINGAVGNRING 5
-#define DEFAULTMERGEQUADS true
-#define DEFAULTDELETESMALL true
-#define DEFAULTDELETENONCONNECTED true
+#define DEFAULTINTERSECTIONSMOOTHINGAVGNRING 3
+#define DEFAULTMERGEQUADS false
+#define DEFAULTDELETESMALL false
+#define DEFAULTDELETENONCONNECTED false
 #define DEFAULTALPHA 0.5
-#define DEFAULTINITIALREMESHING 5
+#define DEFAULTINITIALREMESHING true
 #define DEFAULTCHARTSMOOTHINGITERATIONS 5
 #define DEFAULTMESHSMOOTHINGITERATIONS 5
 #define DEFAULTRESULTSMOOTHINGITERATIONS 5
@@ -37,14 +39,14 @@ struct Parameters {
     Parameters();
 };
 
-template<class PolyMeshType, class TriangleMeshType = PolyMeshType>
+template<class PolyMeshType, class TriangleMeshType = TriangleMesh>
 void quadBoolean(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
         const Operation& operation,
         PolyMeshType& result);
 
-template<class PolyMeshType, class TriangleMeshType>
+template<class PolyMeshType, class TriangleMeshType = TriangleMesh>
 void quadBoolean(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
