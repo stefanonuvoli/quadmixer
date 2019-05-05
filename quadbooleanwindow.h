@@ -62,18 +62,15 @@ private slots:
     void on_showQuadLayout1CheckBox_stateChanged(int arg1);
     void on_showQuadLayout2CheckBox_stateChanged(int arg1);
     void on_showChartSidesCheckBox_stateChanged(int arg1);
+    void on_showILPCheckBox_stateChanged(int arg1);
     void on_showQuadrangulatedCheckBox_stateChanged(int arg1);
     void on_showQuadrangulatedLayoutCheckBox_stateChanged(int arg1);
     void on_showResultCheckBox_stateChanged(int arg1);
-    void on_showResultLayoutCheckBox_stateChanged(int arg1);
 
     void on_resetTrackballButton_clicked();
     void on_trackSceneButton_clicked();
     void on_track1Button_clicked();
     void on_track2Button_clicked();
-
-    void on_showILPCheckBox_stateChanged(int arg1);
-
     void on_showWireframe_stateChanged(int arg1);
 
 private:
@@ -126,8 +123,6 @@ private:
     QuadLayoutData quadLayoutDataQuadrangulatedSurface;
 
     PolyMesh result;
-    std::vector<int> quadTracerLabelResult;
-    QuadLayoutData quadLayoutDataResult;
 
 
     void updateVisibility();

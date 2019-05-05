@@ -96,15 +96,7 @@ void GLArea::setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangu
 void GLArea::setResult(PolyMesh* result)
 {
     initMeshWrapper(this->glWrapResult, result);
-    this->glWrapQuadLayoutResult.mesh = result;
 }
-
-void GLArea::setQuadLayoutResult(QuadLayoutData* quadLayoutDataResult)
-{
-    initQuadLayoutWrapper(this->glWrapQuadLayoutResult, quadLayoutDataResult);
-}
-
-
 
 
 void GLArea::setMesh1Visibility(bool visible)
@@ -181,11 +173,6 @@ void GLArea::setQuadLayoutQuadrangulatedVisibility(bool visible)
 void GLArea::setResultVisibility(bool visible)
 {
     glWrapResult.visible = visible;
-}
-
-void GLArea::setQuadLayoutResultVisibility(bool visible)
-{
-    glWrapQuadLayoutResult.visible = visible;
 }
 
 
@@ -460,7 +447,6 @@ void GLArea::paintGL()
     glWrapQuadrangulated.GLDraw();
     glWrapQuadLayoutQuadrangulated.GLDraw();
     glWrapResult.GLDraw();
-    glWrapQuadLayoutResult.GLDraw();
 
     glPopMatrix();
 

@@ -48,7 +48,6 @@ public:
     void setQuadrangulated(PolyMesh* quadrangulatedNewSurface);
     void setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangulated);
     void setResult(PolyMesh* result);
-    void setQuadLayoutResult(QuadLayoutData* quadLayoutDataResult);
 
     void setMesh1Visibility(bool visible);
     void setMesh2Visibility(bool visible);
@@ -65,7 +64,6 @@ public:
     void setQuadrangulatedVisibility(bool visible);
     void setQuadLayoutQuadrangulatedVisibility(bool visible);
     void setResultVisibility(bool visible);
-    void setQuadLayoutResultVisibility(bool visible);
 
     void setMesh1Wireframe(bool wireframe);
     void setMesh2Wireframe(bool wireframe);
@@ -121,7 +119,6 @@ private:
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutPreserved2;
     GLChartSidesWrap<TriangleMesh> glWrapChartSides;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulated;
-    GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutResult;
 
     vcg::Trackball sceneTrackball;
     vcg::Trackball selectedTrackball;

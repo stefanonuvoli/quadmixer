@@ -596,13 +596,6 @@
          </property>
         </widget>
        </item>
-       <item>
-        <widget class="QCheckBox" name="showResultLayoutCheckBox">
-         <property name="text">
-          <string>L</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
     </item>

@@ -327,6 +327,9 @@ void smoothAlongIntersectionCurves(
 
     vcg::tri::UpdateSelection<TriangleMeshType>::VertexClear(boolean);
 
+    if (intersectionCurves.size() == 0)
+        return;
+
     for (const std::vector<size_t>& intersectionCurve : intersectionCurves) {
         for (const size_t& vId : intersectionCurve) {
             boolean.vert[vId].SetS();

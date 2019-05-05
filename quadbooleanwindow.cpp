@@ -452,11 +452,11 @@ void QuadBooleanWindow::doGetResult()
     PolyMesh coloredquadrangulatedSurface;
     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredPreservedSurface, preservedSurface);
     for (size_t i = 0; i < coloredPreservedSurface.face.size(); i++) {
-        coloredPreservedSurface.face[i].C() = vcg::Color4b(100,200,100,255);
+        coloredPreservedSurface.face[i].C() = vcg::Color4b(255,255,255,255);
     }
     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredquadrangulatedSurface, quadrangulatedSurface);
     for (size_t i = 0; i < coloredquadrangulatedSurface.face.size(); i++) {
-        coloredquadrangulatedSurface.face[i].C() = vcg::Color4b(200,200,200,255);
+        coloredquadrangulatedSurface.face[i].C() = vcg::Color4b(255,255,200,255);
     }
 
     //Clear data
@@ -474,30 +474,12 @@ void QuadBooleanWindow::doGetResult()
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
-
-    start = chrono::steady_clock::now();
-
-    bool motorcycle = ui.motorcycleCheckBox->isChecked();
-
-    //Trace quads following singularities
-    QuadBoolean::internal::traceQuads(result, quadTracerLabelResult, motorcycle);
-
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
-    std::cout << std::endl << " >> "
-              << "Quad tracer: "
-              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
-              << " ms" << std::endl;
-
-    quadLayoutDataResult = QuadBoolean::internal::getQuadLayoutData(result, quadTracerLabelResult);
 
     ui.glArea->setResult(&result);
-    ui.glArea->setQuadLayoutResult(&quadLayoutDataResult);
-
-//    colorizeMesh(result, quadTracerLabelResult);
-
 }
 
 
@@ -523,7 +505,6 @@ void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
             ui.glArea->setQuadrangulated(nullptr);
             ui.glArea->setQuadLayoutQuadrangulated(nullptr);
             ui.glArea->setResult(nullptr);
-            ui.glArea->setQuadLayoutResult(nullptr);
 
             mesh1.Clear();
             mesh2.Clear();
@@ -546,7 +527,6 @@ void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
             ui.showQuadrangulatedCheckBox->setChecked(false);
             ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
             ui.showResultCheckBox->setChecked(false);
-            ui.showResultLayoutCheckBox->setChecked(false);
 
             ui.glArea->setSceneOnMesh();
             ui.glArea->selectAndTrackScene();
@@ -578,7 +558,6 @@ void QuadBooleanWindow::on_quadTracerPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -603,7 +582,6 @@ void QuadBooleanWindow::on_computeBooleanPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -628,7 +606,6 @@ void QuadBooleanWindow::on_smoothPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -653,7 +630,6 @@ void QuadBooleanWindow::on_getSurfacesPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -678,7 +654,6 @@ void QuadBooleanWindow::on_decompositionPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -705,7 +680,6 @@ void QuadBooleanWindow::on_ilpPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -730,7 +704,6 @@ void QuadBooleanWindow::on_quadrangulatePushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(true);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(true);
     ui.showResultCheckBox->setChecked(false);
-    ui.showResultLayoutCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -755,7 +728,6 @@ void QuadBooleanWindow::on_getResultPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(true);
-    ui.showResultLayoutCheckBox->setChecked(true);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -789,7 +761,6 @@ void QuadBooleanWindow::on_computeAllPushButton_clicked()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(true);
-    ui.showResultLayoutCheckBox->setChecked(true);
 
     updateVisibility();
     ui.glArea->update();
@@ -902,12 +873,6 @@ void QuadBooleanWindow::on_showResultCheckBox_stateChanged(int arg1)
     ui.glArea->updateGL();
 }
 
-void QuadBooleanWindow::on_showResultLayoutCheckBox_stateChanged(int arg1)
-{
-    ui.glArea->setQuadLayoutResultVisibility(arg1 == Qt::Checked);
-    ui.glArea->updateGL();
-}
-
 
 
 void QuadBooleanWindow::on_resetTrackballButton_clicked()
@@ -960,7 +925,6 @@ void QuadBooleanWindow::updateVisibility()
     ui.glArea->setQuadrangulatedVisibility(ui.showQuadrangulatedCheckBox->isChecked());
     ui.glArea->setQuadLayoutQuadrangulatedVisibility(ui.showQuadrangulatedLayoutCheckBox->isChecked());
     ui.glArea->setResultVisibility(ui.showResultCheckBox->isChecked());
-    ui.glArea->setQuadLayoutResultVisibility(ui.showResultLayoutCheckBox->isChecked());
 
     ui.glArea->setMesh1Wireframe(ui.showWireframe->isChecked());
     ui.glArea->setMesh2Wireframe(ui.showWireframe->isChecked());
