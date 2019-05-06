@@ -1,0 +1,12 @@
+# Blender MTL File: 'rooster_base_mesh_BI.blend'
+# Material Count: 1
+
+newmtl feather_004
+Ns 96.078431
+Ka 1.000000 1.000000 1.000000
+Kd 0.014554 0.028174 0.022288
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2

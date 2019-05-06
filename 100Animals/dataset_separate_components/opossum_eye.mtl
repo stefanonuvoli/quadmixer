@@ -1,0 +1,12 @@
+# Blender MTL File: 'opossum_base_mesh_BI.blend'
+# Material Count: 1
+
+newmtl eyes
+Ns 749.999996
+Ka 1.000000 1.000000 1.000000
+Kd 0.023280 0.020977 0.021503
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
