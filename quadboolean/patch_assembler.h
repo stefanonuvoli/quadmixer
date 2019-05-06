@@ -1,5 +1,5 @@
-#ifndef PATCH_DECOMPOSER
-#define PATCH_DECOMPOSER
+#ifndef PATCH_ASSEMBLER
+#define PATCH_ASSEMBLER
 
 #include <vcg/math/matrix33.h>
 #include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
@@ -2356,4 +2356,4 @@ public:
 
 }
 }
-#endif
+#endif //PATCH_ASSEMBLER
