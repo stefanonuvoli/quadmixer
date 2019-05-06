@@ -2074,7 +2074,7 @@ private:
             if ((Patches[i].ConvexVertIndex.size()>=3)&&
                     (Patches[i].ConvexVertIndex.size()<=6))continue;
 
-            std::cout<<"WARNING - Not good subdivision - FIXED!"<<std::endl;
+            std::cout<<"WARNING - Not good subdivision "<<Patches[i].ConvexVertIndex.size()<<" sides - FIXED!"<<std::endl;
 
             //get the currentmesh
             MeshType partition_mesh;
