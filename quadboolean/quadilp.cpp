@@ -9,7 +9,7 @@
 namespace QuadBoolean {
 namespace internal {
 
-std::vector<double> getAverageEdgeLength(const ChartData& chartData);
+std::vector<double> getSmoothedChartAverageEdgeLength(const ChartData& chartData);
 
 std::vector<int> solveChartSideILP(
         const ChartData& chartData,
@@ -37,7 +37,7 @@ std::vector<int> solveChartSideILP(
 
         vector<GRBVar> free(chartData.charts.size());
 
-        std::vector<double> avgLength = getAverageEdgeLength(chartData);
+        std::vector<double> avgLength = getSmoothedChartAverageEdgeLength(chartData);
 
         for (size_t i = 0; i < chartData.subSides.size(); i++) {
             const ChartSubSide& subside = chartData.subSides[i];
@@ -510,7 +510,7 @@ std::vector<int> solveChartSideILP(
 //    return result;
 //}
 
-std::vector<double> getAverageEdgeLength(const ChartData& chartData) {
+std::vector<double> getSmoothedChartAverageEdgeLength(const ChartData& chartData) {
     std::vector<double> avgLengths(chartData.charts.size() , -1);
 
     const size_t iterations = AVERAGELENGTHSMOOTHITERATIONS;

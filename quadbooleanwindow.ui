@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1917</width>
+    <width>1812</width>
     <height>567</height>
    </rect>
   </property>
@@ -214,7 +214,7 @@
        <item>
         <widget class="QLabel" name="intersectionSmoothingLabel">
          <property name="text">
-          <string>Intersection sm</string>
+          <string>Int sm</string>
          </property>
         </widget>
        </item>
@@ -231,7 +231,7 @@
        <item>
         <widget class="QLabel" name="intersectionSmoothingNRingLabel">
          <property name="text">
-          <string>NRing</string>
+          <string>N</string>
          </property>
         </widget>
        </item>
@@ -261,7 +261,7 @@
           <number>1</number>
          </property>
          <property name="value">
-          <number>2</number>
+          <number>6</number>
          </property>
         </widget>
        </item>
@@ -329,9 +329,29 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="edgeFactorLabe">
+         <property name="text">
+          <string>E fact</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="edgeFactorSpinBox">
+         <property name="minimum">
+          <double>0.500000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>100.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>2.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="chartSmoothingLabel">
          <property name="text">
-          <string>Quad chart sm</string>
+          <string>Chart sm</string>
          </property>
         </widget>
        </item>
@@ -348,7 +368,7 @@
        <item>
         <widget class="QLabel" name="meshSmoothingLabel">
          <property name="text">
-          <string>Quad mesh sm</string>
+          <string>Quad sm</string>
          </property>
         </widget>
        </item>
@@ -382,7 +402,7 @@
        <item>
         <widget class="QLabel" name="resultSmoothingNRingLabel">
          <property name="text">
-          <string>NRing</string>
+          <string>N</string>
          </property>
         </widget>
        </item>
@@ -643,7 +663,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1917</width>
+     <width>1812</width>
      <height>22</height>
     </rect>
    </property>

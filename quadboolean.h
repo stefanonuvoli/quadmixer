@@ -6,7 +6,7 @@
 #include "meshtypes.h"
 
 #define DEFAULTMOTORCYCLE true
-#define DEFAULTMINRECTANGLESIDE 2
+#define DEFAULTMINRECTANGLEAREA 6
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
 #define DEFAULTINTERSECTIONSMOOTHINGAVGNRING 3
 #define DEFAULTMERGEQUADS false
@@ -14,6 +14,7 @@
 #define DEFAULTDELETENONCONNECTED false
 #define DEFAULTALPHA 0.5
 #define DEFAULTINITIALREMESHING true
+#define DEFAULTEDGEFACTOR 2
 #define DEFAULTCHARTSMOOTHINGITERATIONS 5
 #define DEFAULTMESHSMOOTHINGITERATIONS 5
 #define DEFAULTRESULTSMOOTHINGITERATIONS 5
@@ -25,12 +26,13 @@ struct Parameters {
     bool motorcycle;
     int intersectionSmoothingIterations;
     int intersectionSmoothingAVGNRing;
-    size_t minRectangleSide;
+    size_t minRectangleArea;
     bool mergeQuads;
     bool deleteSmall;
     bool deleteNonConnected;
     double alpha;
     bool initialRemeshing;
+    double edgeFactor;
     int chartSmoothingIterations;
     int meshSmoothingIterations;
     int resultSmoothingIterations;

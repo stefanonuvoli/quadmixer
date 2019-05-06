@@ -102,6 +102,7 @@ protected:
     void mouseMoveEvent(QMouseEvent* e);
     void mouseReleaseEvent(QMouseEvent* e);
     void wheelEvent(QWheelEvent* e);
+    void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
 

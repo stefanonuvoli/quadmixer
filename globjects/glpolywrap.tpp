@@ -11,6 +11,7 @@ GLPolyWrap<MeshType>::GLPolyWrap()
     this->mesh = nullptr;
     this->visible = true;
     this->wireframe = true;
+    this->selected = false;
 }
 
 template<class MeshType>
@@ -32,7 +33,10 @@ void GLPolyWrap<MeshType>::GLDraw()
 
         for(unsigned int i=0; i < face.size(); i++)
         {
-            vcg::glColor(face[i].C());
+            if (selected)
+                vcg::glColor(vcg::Color4b(255,100,100,255));
+            else
+                vcg::glColor(face[i].C());
 
             if(face[i].IsD())  continue;
 

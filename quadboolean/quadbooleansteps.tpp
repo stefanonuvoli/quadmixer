@@ -28,29 +28,6 @@ namespace QuadBoolean {
 namespace internal {
 
 template<class PolyMeshType>
-typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh) {
-    typename PolyMeshType::ScalarType length = 0;
-    size_t numEdges = 0;
-    for (size_t i=0;i<mesh.face.size();i++) {
-        if (!mesh.face[i].IsD()) {
-            for (size_t j=0;j<mesh.face[i].VN();j++)
-            {
-                size_t index0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
-                size_t index1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
-                typename PolyMeshType::CoordType p0=mesh.vert[index0].P();
-                typename PolyMeshType::CoordType p1=mesh.vert[index1].P();
-                length += (p0-p1).Norm();
-                numEdges++;
-            }
-        }
-    }
-
-    length /= numEdges;
-
-    return length;
-}
-
-template<class PolyMeshType>
 void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert)
 {
     //cumulate step
@@ -476,7 +453,8 @@ std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners,
-        const bool initialRemeshing)
+        const bool initialRemeshing,
+        const double edgeFactor)
 {
     if (newSurface.face.size() <= 0)
         return std::vector<int>();
@@ -485,6 +463,7 @@ std::vector<int> getPatchDecomposition(
     PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
     typename PatchAssembler<TriangleMeshType>::Parameters parameters;
     parameters.InitialRemesh = initialRemeshing;
+    parameters.EdgeSizeFactor = edgeFactor;
     patchAssembler.BatchProcess(partitions, corners, parameters);
 #else
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);

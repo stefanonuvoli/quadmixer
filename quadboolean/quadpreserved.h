@@ -28,7 +28,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad,
-        const int minQuadSideLength,
+        const int minimumRectangleArea,
         const bool recursive = true);
 
 template<class PolyMeshType>

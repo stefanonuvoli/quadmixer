@@ -14,6 +14,8 @@ public:
     bool visible;
 
     bool wireframe;
+
+    bool selected;
 };
 
 #include "glpolywrap.tpp"

@@ -22,9 +22,6 @@ QuadBooleanWindow::QuadBooleanWindow(QWidget* parent) : QMainWindow(parent)
 {
     ui.setupUi (this);
 
-    loadMesh(mesh1, "mesh5.obj", ui.moveCenterCheckBox->isChecked());
-    loadMesh(mesh2, "mesh6.obj", ui.moveCenterCheckBox->isChecked());
-
     ui.glArea->setMesh1(&mesh1);
     ui.glArea->setMesh2(&mesh2);
 
@@ -48,7 +45,7 @@ int QuadBooleanWindow::loadMesh(PolyMesh& mesh, const std::string& filename, boo
     int err=vcg::tri::io::Importer<PolyMesh>::Open(mesh, filename.c_str());
     if(err!=0){
         const char* errmsg=vcg::tri::io::Importer<PolyMesh>::ErrorMsg(err);
-        QMessageBox::warning(this,tr("Error Loading Mesh"),QString(errmsg));
+        std::cout << "Error Loading Mesh: " << errmsg << std::endl;
     }
 
     if (scaleAndTranslateOnCenter) {
@@ -57,13 +54,13 @@ int QuadBooleanWindow::loadMesh(PolyMesh& mesh, const std::string& filename, boo
         for (int i = 0; i < mesh.vert.size(); i++) {
             mesh.vert[i].P() -= bbCenter;
         }
-        PolyMesh::ScalarType bbDiag = mesh.bbox.Diag();
-        PolyMesh::ScalarType scaleFactor = 1.0 / bbDiag;
-        for (int i = 0; i < mesh.vert.size(); i++) {
-            mesh.vert[i].P().X() *= scaleFactor;
-            mesh.vert[i].P().Y() *= scaleFactor;
-            mesh.vert[i].P().Z() *= scaleFactor;
-        }
+//        PolyMesh::ScalarType bbDiag = mesh.bbox.Diag();
+//        PolyMesh::ScalarType scaleFactor = 1.0 / bbDiag;
+//        for (int i = 0; i < mesh.vert.size(); i++) {
+//            mesh.vert[i].P().X() *= scaleFactor;
+//            mesh.vert[i].P().Y() *= scaleFactor;
+//            mesh.vert[i].P().Z() *= scaleFactor;
+//        }
     }
     return err;
 }
@@ -359,10 +356,11 @@ void QuadBooleanWindow::doPatchDecomposition() {
     vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
 
     bool initialRemeshing = ui.initialRemeshingCheckBox->isChecked();
+    bool edgeFactor = ui.edgeFactorSpinBox->value();
 
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing);
+    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, edgeFactor);
 
     //-----------
 
@@ -949,9 +947,9 @@ void QuadBooleanWindow::colorizeMesh(
     for (size_t i = 0; i < mesh.face.size(); i++) {
         if (faceLabel[i] >= 0) {
             vcg::Color4b color;
-            color.SetHSVColor(subd * std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])), 1.0, 1.0);
+//            color.SetHSVColor(subd * std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])), 1.0, 1.0);
 
-//            color=vcg::Color4b::Scatter(faceLabel.size(),std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])));
+            color=vcg::Color4b::Scatter(faceLabel.size(),std::distance(faceLabelSet.begin(), faceLabelSet.find(faceLabel[i])));
 
             mesh.face[i].C() = color;
         }

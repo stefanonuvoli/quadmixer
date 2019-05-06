@@ -60,7 +60,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad,
-        const int minimumSideLength,
+        const int minimumRectangleArea,
         const bool recursive)
 {
     std::vector<int> newFaceLabel;
@@ -175,7 +175,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
                         int tmpMaxAreaX = x;
                         int tmpMinAreaX = tmpMaxAreaX - (tmpArea / (tmpMaxAreaY - tmpMinAreaY + 1)) + 1;
 
-                        if (tmpMaxAreaX - tmpMinAreaX + 1 >= minimumSideLength && tmpMaxAreaY - tmpMinAreaY + 1 >= minimumSideLength) {
+                        if (tmpMaxAreaX - tmpMinAreaX + 1 >= minimumRectangleArea || tmpMaxAreaY - tmpMinAreaY + 1 >= minimumRectangleArea) {
                             minAreaX = tmpMinAreaX;
                             minAreaY = tmpMinAreaY;
                             maxAreaX = tmpMaxAreaX;
@@ -458,7 +458,7 @@ int deleteSmallQuadPatches(
             const QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
             const std::vector<size_t>& patchFaces = quadPatch.faces;
 
-            if (quadPatch.sizeX < minPatchSideLength || quadPatch.sizeY < minPatchSideLength) {
+            if (quadPatch.sizeX > minPatchSideLength && quadPatch.sizeY > minPatchSideLength) {
                 nDeleted++;
                 for (const size_t& fId : patchFaces) {
                     preservedQuad[fId] = false;

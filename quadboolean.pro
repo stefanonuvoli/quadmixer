@@ -73,6 +73,7 @@ HEADERS += \
     quadboolean/quadpreserved.h \
     quadboolean/quadlibiglbooleaninterface.h \
     quadboolean/patch_decomposer.h \
+    quadboolean/patch_assembler.h \
     quadboolean/field_tracer.h \
     quadboolean/quadbooleansteps.h \
     quadboolean/quadbooleanoperation.h \

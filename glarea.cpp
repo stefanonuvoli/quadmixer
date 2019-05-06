@@ -268,6 +268,9 @@ void GLArea::selectAndTrackScene() {
 
     setSceneOnMesh();
 
+    glWrapMesh1.selected = false;
+    glWrapMesh2.selected = false;
+
     updateGL();
 }
 
@@ -275,6 +278,8 @@ void GLArea::selectAndTrackMesh1()
 {
     if (glWrapMesh1.mesh != nullptr) {
         selectAndTrackMesh(glWrapMesh1.mesh);
+        glWrapMesh1.selected = true;
+        glWrapMesh2.selected = false;
     }
     updateGL();
 }
@@ -283,6 +288,8 @@ void GLArea::selectAndTrackMesh2()
 {
     if (glWrapMesh2.mesh != nullptr) {
         selectAndTrackMesh(glWrapMesh2.mesh);
+        glWrapMesh1.selected = false;
+        glWrapMesh2.selected = true;
     }
 }
 
@@ -571,5 +578,13 @@ void GLArea::wheelEvent (QWheelEvent * e)
     }
 
     updateGL ();
+}
+
+void GLArea::mouseDoubleClickEvent(QMouseEvent* e)
+{
+    if (e->button() == Qt::LeftButton)
+    {
+        selectAndTrackScene();
+    }
 }
 

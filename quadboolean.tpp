@@ -8,12 +8,13 @@ Parameters::Parameters()
     motorcycle = DEFAULTMOTORCYCLE;
     intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
     intersectionSmoothingAVGNRing = DEFAULTINTERSECTIONSMOOTHINGAVGNRING;
-    minRectangleSide = DEFAULTMINRECTANGLESIDE;
+    minRectangleArea = DEFAULTMINRECTANGLEAREA;
     mergeQuads = DEFAULTMERGEQUADS;
     deleteSmall = DEFAULTDELETESMALL;
     deleteNonConnected = DEFAULTDELETENONCONNECTED;
     alpha = DEFAULTALPHA;
     initialRemeshing = DEFAULTINITIALREMESHING;
+    edgeFactor = DEFAULTEDGEFACTOR;
     chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
     meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
@@ -135,8 +136,8 @@ void quadBoolean(
      internal::findAffectedPatches(mesh2, preservedQuad2, preservedFaceLabel2, affectedPatches2);
 
      //Maximum rectangles in the patches
-     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, parameters.minRectangleSide, true);
-     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, parameters.minRectangleSide, true);
+     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, parameters.minRectangleArea, true);
+     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, parameters.minRectangleArea, true);
 
      //Merge rectangular patches
      if (parameters.mergeQuads) {
@@ -177,7 +178,7 @@ void quadBoolean(
      //Get patch decomposition of the new surface     
      std::vector<std::vector<size_t>> newSurfacePartitions;
      std::vector<std::vector<size_t>> newSurfaceCorners;
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing);
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.edgeFactor);
 
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);

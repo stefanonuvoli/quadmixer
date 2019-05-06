@@ -9,6 +9,9 @@ namespace internal {
 template <class PolyMeshType>
 std::vector<int> splitQuadInTriangle(PolyMeshType& mesh);
 
+template<class PolyMeshType>
+typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh);
+
 }
 }
 

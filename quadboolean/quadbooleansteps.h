@@ -108,7 +108,8 @@ std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners,
-        const bool initialRemeshing = true);
+        const bool initialRemeshing,
+        const double edgeFactor);
 
 std::vector<int> findBestSideSize(
         const ChartData& chartData,

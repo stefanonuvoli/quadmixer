@@ -55,6 +55,28 @@ std::vector<int> splitQuadInTriangle(PolyMeshType& mesh) {
     return birthQuad;
 }
 
+template<class PolyMeshType>
+typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh) {
+    typename PolyMeshType::ScalarType length = 0;
+    size_t numEdges = 0;
+    for (size_t i=0;i<mesh.face.size();i++) {
+        if (!mesh.face[i].IsD()) {
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                size_t index0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
+                size_t index1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
+                typename PolyMeshType::CoordType p0=mesh.vert[index0].P();
+                typename PolyMeshType::CoordType p1=mesh.vert[index1].P();
+                length += (p0-p1).Norm();
+                numEdges++;
+            }
+        }
+    }
+
+    length /= numEdges;
+
+    return length;
+}
 
 }
 }
