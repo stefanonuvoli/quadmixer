@@ -15,6 +15,9 @@ Parameters::Parameters()
     alpha = DEFAULTALPHA;
     initialRemeshing = DEFAULTINITIALREMESHING;
     edgeFactor = DEFAULTEDGEFACTOR;
+    reproject = DEFAULTREPROJECT;
+    splitConcaves = DEFAULTSPLITCONCAVES;
+    finalSmoothing = DEFAULTFINALSMOOTHING;
     chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
     meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
@@ -178,7 +181,7 @@ void quadBoolean(
      //Get patch decomposition of the new surface     
      std::vector<std::vector<size_t>> newSurfacePartitions;
      std::vector<std::vector<size_t>> newSurfaceCorners;
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.edgeFactor);
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.edgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
 
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
@@ -198,7 +201,7 @@ void quadBoolean(
 
      //Get the result
      result.Clear();
-     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, parameters.resultSmoothingIterations, parameters.resultSmoothingAVGNRing);
+     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, boolean, parameters.resultSmoothingIterations, parameters.resultSmoothingAVGNRing);
 }
 
 }

@@ -313,7 +313,7 @@ void smoothAlongIntersectionCurves(
         }
     }
 
-    LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.6);
+    LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.8);
 
     std::vector<int> vMap;
     std::vector<int> fMap;
@@ -454,17 +454,24 @@ std::vector<int> getPatchDecomposition(
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners,
         const bool initialRemeshing,
-        const double edgeFactor)
+        const double edgeFactor,
+        const bool reproject,
+        const bool splitConcaves,
+        const bool finalSmoothing)
 {
     if (newSurface.face.size() <= 0)
         return std::vector<int>();
 
 #ifdef USE_NEW_DECOMPOSER
+    std::vector<std::vector<std::vector<std::pair<size_t,size_t>>>> sides;
     PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
     typename PatchAssembler<TriangleMeshType>::Parameters parameters;
     parameters.InitialRemesh = initialRemeshing;
     parameters.EdgeSizeFactor = edgeFactor;
-    patchAssembler.BatchProcess(partitions, corners, parameters);
+    parameters.FinalSmooth = finalSmoothing;
+    parameters.SplitAllConcave = splitConcaves;
+    parameters.Reproject = reproject;
+    patchAssembler.BatchProcess(partitions, corners, sides, parameters);
 #else
     PatchDecomposer<TriangleMeshType> decomposer(newSurface);
     typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
@@ -645,8 +652,6 @@ void quadrangulate(
         Eigen::MatrixXi quadrangulationF;
         QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartEigenSides, chartSideLength, patchEigenSides, uvMapV, uvMapF, quadrangulationV, quadrangulationF);
 
-        assert(chartV.rows() == uvMapV.rows());
-
 #ifndef NDEBUG
     Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
     for (int i = 0; i < uvMapV.rows(); i++) {
@@ -658,6 +663,7 @@ void quadrangulate(
     std::string uvFile = std::string("res/") + std::to_string(cId) + std::string("_uv.obj");
     igl::writeOBJ(uvFile, uvMesh, uvMapF);
 #endif
+        assert(chartV.rows() == uvMapV.rows());
 
         //Get polymesh
         PolyMeshType quadrangulatedChartMesh;
@@ -668,7 +674,6 @@ void quadrangulate(
 #endif
 
         //Smoothing
-
         if (chartSmoothingIterations > 0) {
             vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedChartMesh);
             for (size_t vId : patchBorders) {
@@ -795,21 +800,29 @@ void quadrangulate(
         }
     }
 
+
+    bool isOriented, isOrientable;
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
+    vcg::tri::Clean<PolyMeshType>::OrientCoherentlyMesh(quadrangulatedNewSurface, isOriented, isOrientable);
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
+
     if (meshSmoothingIterations > 0) {
         vcg::tri::UpdateSelection<PolyMeshType>::VertexAll(quadrangulatedNewSurface);
         for (const size_t& borderVertexId : finalMeshBorders) {
             quadrangulatedNewSurface.vert[borderVertexId].ClearS();
         }
-        vcg::PolygonalAlgorithm<PolyMeshType>::LaplacianReproject(quadrangulatedNewSurface, meshSmoothingIterations, 0.5, true);
+        vcg::PolygonalAlgorithm<PolyMeshType>::template LaplacianReproject<TriangleMeshType>(quadrangulatedNewSurface, newSurface, meshSmoothingIterations, 0.7, 0.7, true);
     }
+
 }
 
 
-template<class PolyMeshType>
+template<class PolyMeshType, class TriangleMeshType>
 void getResult(
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
         PolyMeshType& result,
+        TriangleMeshType& targetBoolean,
         const int resultSmoothingIterations,
         const int avgNRing)
 {
@@ -817,17 +830,17 @@ void getResult(
     vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(quadrangulatedNewSurface);
     for (typename PolyMeshType::FaceIterator fIt = quadrangulatedNewSurface.face.begin(); fIt != quadrangulatedNewSurface.face.end(); fIt++) {
-        bool borderFace = false;
-        for (int k = 0; k < fIt->VN(); k++) {
-            if (vcg::face::IsBorder(*fIt, k)) {
-                borderFace = true;
-            }
-        }
-        if (borderFace) {
+//        bool borderFace = false;
+//        for (int k = 0; k < fIt->VN(); k++) {
+//            if (vcg::face::IsBorder(*fIt, k)) {
+//                borderFace = true;
+//            }
+//        }
+//        if (borderFace) {
             for (int k = 0; k < fIt->VN(); k++) {
                 fIt->V(k)->SetV();
             }
-        }
+//        }
     }
 
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(preservedSurface);
@@ -855,7 +868,12 @@ void getResult(
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(result);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
+    vcg::GridStaticPtr<typename TriangleMeshType::FaceType,typename TriangleMeshType::FaceType::ScalarType> Grid;
     if (resultSmoothingIterations > 0) {
+        Grid.Set(targetBoolean.face.begin(),targetBoolean.face.end());
+    }
+
+    for (int it = 0; it < resultSmoothingIterations; it++) {
         typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * avgNRing;
 
         vcg::tri::UpdateSelection<PolyMeshType>::VertexClear(result);
@@ -865,8 +883,28 @@ void getResult(
             }
         }
 
-        LaplacianGeodesic(result, resultSmoothingIterations, maxDistance, 0.6);
+        LaplacianGeodesic(result, 1, maxDistance, 0.7);
+
+        for (size_t i=0;i<result.vert.size();i++)
+        {
+            vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
+
+            typename TriangleMeshType::ScalarType maxD=result.bbox.Diag();
+            typename TriangleMeshType::ScalarType minD=0;
+            typename TriangleMeshType::CoordType closestPT;
+            typename TriangleMeshType::FaceType *f=
+                    vcg::tri::GetClosestFaceBase<TriangleMeshType>(
+                        targetBoolean,
+                        Grid,
+                        result.vert[i].P(),
+                        maxD,minD,
+                        closestPT);
+
+            result.vert[i].P()=closestPT;
+        }
     }
+
+    vcg::PolygonalAlgorithm<PolyMeshType>::template LaplacianReproject<TriangleMeshType>(result, targetBoolean, resultSmoothingIterations, 0.7, 0.7, true);
 
 
 }

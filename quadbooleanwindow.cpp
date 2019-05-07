@@ -180,6 +180,8 @@ void QuadBooleanWindow::doComputeBooleans() {
 
 void QuadBooleanWindow::doSmooth()
 {
+    booleanSmoothed.Clear();
+
     chrono::steady_clock::time_point start;
 
     start = chrono::steady_clock::now();
@@ -187,9 +189,12 @@ void QuadBooleanWindow::doSmooth()
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
     int intersectionAVGNRing = ui.intersectionSmoothingNRingSpinBox->value();
 
+    //Copy mesh
+    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(booleanSmoothed, boolean);
+
     //Smooth along intersection curves
     QuadBoolean::internal::smoothAlongIntersectionCurves(
-                boolean,
+                booleanSmoothed,
                 VR,
                 FR,
                 intersectionCurves,
@@ -201,7 +206,7 @@ void QuadBooleanWindow::doSmooth()
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
-    ui.glArea->setBoolean(&boolean);
+    ui.glArea->setBoolean(&booleanSmoothed);
 }
 
 
@@ -314,7 +319,7 @@ void QuadBooleanWindow::doGetSurfaces() {
     //New mesh (to be decomposed in patch)
     size_t nFirstFaces = triMesh1.face.size();
     QuadBoolean::internal::getNewSurfaceMesh(
-                boolean,
+                booleanSmoothed,
                 nFirstFaces,
                 birthQuad1, birthQuad2,
                 preservedQuad1, preservedQuad2,
@@ -357,10 +362,13 @@ void QuadBooleanWindow::doPatchDecomposition() {
 
     bool initialRemeshing = ui.initialRemeshingCheckBox->isChecked();
     bool edgeFactor = ui.edgeFactorSpinBox->value();
+    bool reproject = ui.reprojectCheckBox->isChecked();
+    bool splitConcaves = ui.splitConcavesCheckBox->isChecked();
+    bool finalSmoothing = ui.finalSmoothingCheckBox->isChecked();
 
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, edgeFactor);
+    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, edgeFactor, reproject, splitConcaves, finalSmoothing);
 
     //-----------
 
@@ -450,11 +458,11 @@ void QuadBooleanWindow::doGetResult()
     PolyMesh coloredquadrangulatedSurface;
     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredPreservedSurface, preservedSurface);
     for (size_t i = 0; i < coloredPreservedSurface.face.size(); i++) {
-        coloredPreservedSurface.face[i].C() = vcg::Color4b(255,255,255,255);
+        coloredPreservedSurface.face[i].C() = vcg::Color4b(200,255,200,255);
     }
     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredquadrangulatedSurface, quadrangulatedSurface);
     for (size_t i = 0; i < coloredquadrangulatedSurface.face.size(); i++) {
-        coloredquadrangulatedSurface.face[i].C() = vcg::Color4b(255,255,200,255);
+        coloredquadrangulatedSurface.face[i].C() = vcg::Color4b(255,255,255,255);
     }
 
     //Clear data
@@ -465,7 +473,7 @@ void QuadBooleanWindow::doGetResult()
 
     start = chrono::steady_clock::now();
 
-    QuadBoolean::internal::getResult(coloredPreservedSurface, coloredquadrangulatedSurface, result, resultSmoothingIterations, resultAVGNRing);
+    QuadBoolean::internal::getResult(coloredPreservedSurface, coloredquadrangulatedSurface, result, booleanSmoothed, resultSmoothingIterations, resultAVGNRing);
 
     std::cout << std::endl << " >> "
               << "Get result: "

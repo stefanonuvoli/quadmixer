@@ -109,7 +109,10 @@ std::vector<int> getPatchDecomposition(
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners,
         const bool initialRemeshing,
-        const double edgeFactor);
+        const double edgeFactor,
+        const bool reproject,
+        const bool splitConcaves,
+        const bool finalSmoothing);
 
 std::vector<int> findBestSideSize(
         const ChartData& chartData,

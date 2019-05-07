@@ -291,6 +291,7 @@ void GLArea::selectAndTrackMesh2()
         glWrapMesh1.selected = false;
         glWrapMesh2.selected = true;
     }
+    updateGL();
 }
 
 void GLArea::selectAndTrackMesh(PolyMesh* mesh)
@@ -361,7 +362,7 @@ void GLArea::applySelectedMeshTransformation()
 void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
     if (mesh != nullptr) {
 //        vcg::PolygonalAlgorithm<MeshType>::UpdateFaceNormalByFitting(*mesh);
-        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(*mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*mesh);
 
         vcg::tri::UpdateBounding<PolyMesh>::Box(*mesh);

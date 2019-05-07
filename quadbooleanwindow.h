@@ -91,6 +91,8 @@ private:
 
     std::vector<std::vector<size_t>> intersectionCurves;
 
+    TriangleMesh booleanSmoothed;
+
     QuadLayoutData quadLayoutData1;
     QuadLayoutData quadLayoutData2;
 

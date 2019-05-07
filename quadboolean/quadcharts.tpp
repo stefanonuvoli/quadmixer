@@ -8,9 +8,20 @@
 
 #include <unordered_set>
 
+#define MAXITERATIONS 100000
+#include <wrap/io_trimesh/export.h>
 namespace QuadBoolean {
 namespace internal {
 
+inline bool findCurrentNextConfigurationRecursive(
+        const size_t& vCurrentId,
+        const size_t& vStartId,
+        const std::vector<std::vector<size_t>>& vertexNextMap,
+        std::vector<size_t>& nextConfiguration);
+
+inline std::vector<size_t> findCurrentNextConfiguration(
+        const size_t& vCurrentId,
+        const std::vector<std::vector<size_t>>& vertexNextMap);
 
 template<class TriangleMeshType>
 void findChartFacesAndBorderFaces(
@@ -55,9 +66,19 @@ ChartData getPatchDecompositionChartData(
         std::unordered_set<size_t> cornerSet(corners[pId].begin(), corners[pId].end());
 
         EdgeLabelMap edgeLabelMap;
-        std::map<size_t, size_t> vertexNextMap;
+        std::vector<std::vector<size_t>> vertexNextMap(mesh.vert.size());
 
         std::set<size_t> remainingVertices;
+
+#ifndef NDEBUG
+        vcg::tri::UpdateSelection<TriangleMeshType>::FaceClear(mesh);
+        for (const size_t& fId : chart.faces) {
+            mesh.face[fId].SetS();
+        }
+        TriangleMeshType newMesh;
+        vcg::tri::Append<TriangleMeshType, TriangleMeshType>::Mesh(newMesh, mesh, true);
+        vcg::tri::io::ExporterOBJ<TriangleMeshType>::Save(newMesh, "res/lastChartComputed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 
         //Fill edge map and next vertex map
         for (const size_t& fId : chart.borderFaces) {
@@ -100,7 +121,7 @@ ChartData getPatchDecompositionChartData(
                     }
 
                     edgeLabelMap.insert(std::make_pair(edge, std::make_pair(chart.label, adjChartLabel)));
-                    vertexNextMap.insert(std::make_pair(vStartId, vEndId));
+                    vertexNextMap[vStartId].push_back(vEndId);
 
                     remainingVertices.insert(vStartId);
                     remainingVertices.insert(vEndId);
@@ -123,7 +144,9 @@ ChartData getPatchDecompositionChartData(
             bool isCorner = false;
 
             vCurrentId = *remainingVertices.begin();
-            vNextId = vertexNextMap.at(vCurrentId);
+
+            std::vector<size_t> nextConfiguration = findCurrentNextConfiguration(vCurrentId, vertexNextMap);
+            vNextId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
 
             //Get last edge vector
             lastEdgeVec = mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P();
@@ -138,12 +161,13 @@ ChartData getPatchDecompositionChartData(
 
             //Iterate in the borders to get the first corner
             vStartId = vCurrentId;
-            do {                
+            size_t firstCornerIterations = 0;
+            do {
                 remainingVertices.erase(vCurrentId);
 
                 //Next border edge
-                vCurrentId = vertexNextMap.at(vCurrentId);
-                vNextId = vertexNextMap.at(vCurrentId);
+                vCurrentId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
+                vNextId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
 
                 typename TriangleMeshType::CoordType currentEdgeVec = mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P();
                 currentEdgeVec.Normalize();
@@ -163,16 +187,23 @@ ChartData getPatchDecompositionChartData(
 
                 lastEdgeVec = currentEdgeVec;
                 firstIteration = false;
-            } while (!isCorner && vCurrentId != vStartId);
+
+                firstCornerIterations++;
+            } while (!isCorner && vCurrentId != vStartId && firstCornerIterations < MAXITERATIONS);
+
+#ifndef NDEBUG
+            if (firstCornerIterations >= MAXITERATIONS) {
+                std::cout << "Errore: error iterating! Cannot find the first corner or get back to the start vertex." << std::endl;
+            }
+#endif
 
 #ifndef NDEBUG
             if (vCurrentId == vStartId) {
                 std::cout << "Warning 1: input mesh is not well-defined: no corners!" << std::endl;
             }
 #endif
-
             vStartId = vCurrentId;
-            vNextId = vertexNextMap.at(vCurrentId);
+            vNextId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
 
             ChartSide currentSide;
             currentSide.length = 0;
@@ -191,6 +222,7 @@ ChartData getPatchDecompositionChartData(
                 firstIteration = true;
                 isCorner = false;
                 size_t vSubSideStartId = vCurrentId;
+                size_t iterations = 0;
                 do {
                     typename TriangleMeshType::CoordType currentEdgeVec = mesh.vert[vNextId].P() - mesh.vert[vCurrentId].P();
                     currentEdgeVec.Normalize();
@@ -226,18 +258,23 @@ ChartData getPatchDecompositionChartData(
                         else if (firstIteration) {
                             subSideId = findIt->second;
                         }
-                        firstIteration = false;                        
+                        firstIteration = false;
 
                         remainingVertices.erase(vCurrentId);
+                        remainingVertices.erase(vNextId);
 
                         //Next border edge
-                        vCurrentId = vertexNextMap.at(vCurrentId);
-                        vNextId = vertexNextMap.at(vCurrentId);
+                        vCurrentId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
+                        vNextId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
 
                         lastEdgeVec = currentEdgeVec;
                     }
-                } while (!isCorner && currentLabel == adjChartLabel && vCurrentId != vSubSideStartId);
-
+                } while (!isCorner && currentLabel == adjChartLabel && vCurrentId != vSubSideStartId && iterations < MAXITERATIONS);
+#ifndef NDEBUG
+                if (iterations >= MAXITERATIONS) {
+                    std::cout << "Error: error iterating! Cannot find a corner or get back to the start vertex." << std::endl;
+                }
+#endif
 #ifndef NDEBUG
                 if (vCurrentId == vSubSideStartId) {
                     std::cout << "Warning 2: input mesh is not well-defined: single border chart with no corners!" << std::endl;
@@ -429,6 +466,36 @@ void findChartFacesAndBorderFaces(
         }
     }
 }
+
+bool findCurrentNextConfigurationRecursive(
+        const size_t& vCurrentId,
+        const size_t& vStartId,
+        const std::vector<std::vector<size_t>>& vertexNextMap,
+        std::vector<size_t>& nextConfiguration)
+{
+    if (vCurrentId == vStartId)
+        return true;
+
+    for (size_t i = 0; i < vertexNextMap[vCurrentId].size(); i++) {
+        nextConfiguration[vCurrentId] = i;
+        if (findCurrentNextConfigurationRecursive(vertexNextMap[vCurrentId][i], vStartId, vertexNextMap, nextConfiguration)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<size_t> findCurrentNextConfiguration(
+        const size_t& vCurrentId,
+        const std::vector<std::vector<size_t>>& vertexNextMap)
+{
+    std::vector<size_t> nextConfiguration(vertexNextMap.size());
+
+    findCurrentNextConfigurationRecursive(vCurrentId, vCurrentId, vertexNextMap, nextConfiguration);
+
+    return nextConfiguration;
+}
+
 
 ////It works just on triangle meshes
 //template<class TriangleMeshType>

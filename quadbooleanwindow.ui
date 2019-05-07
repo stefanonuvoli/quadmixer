@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1812</width>
+    <width>1637</width>
     <height>567</height>
    </rect>
   </property>
@@ -171,7 +171,7 @@
           <string>Motorcycle</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -212,43 +212,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="intersectionSmoothingLabel">
-         <property name="text">
-          <string>Int sm</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="intersectionSmoothingSpinBox">
-         <property name="maximum">
-          <number>200</number>
-         </property>
-         <property name="value">
-          <number>5</number>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="intersectionSmoothingNRingLabel">
-         <property name="text">
-          <string>N</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QSpinBox" name="intersectionSmoothingNRingSpinBox">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>20</number>
-         </property>
-         <property name="value">
-          <number>3</number>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QLabel" name="minRectangleSideLabel">
          <property name="text">
           <string>Min rectangles</string>
@@ -278,7 +241,7 @@
        <item>
         <widget class="QCheckBox" name="deleteSmallCheckBox">
          <property name="text">
-          <string>Delete small</string>
+          <string>Small</string>
          </property>
          <property name="checked">
           <bool>false</bool>
@@ -288,7 +251,7 @@
        <item>
         <widget class="QCheckBox" name="deleteNonConnectedCheckBox">
          <property name="text">
-          <string>Delete non-connected</string>
+          <string>Non-conn</string>
          </property>
          <property name="checked">
           <bool>false</bool>
@@ -324,7 +287,7 @@
           <string>Remeshing</string>
          </property>
          <property name="checked">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -345,6 +308,88 @@
          </property>
          <property name="value">
           <double>2.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="reprojectCheckBox">
+         <property name="text">
+          <string>Reproject</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="splitConcavesCheckBox">
+         <property name="text">
+          <string>Concaves</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="finalSmoothingCheckBox">
+         <property name="text">
+          <string>Final sm</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <widget class="QLabel" name="intersectionSmoothingLabel">
+         <property name="text">
+          <string>Int sm</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="intersectionSmoothingSpinBox">
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="value">
+          <number>5</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="intersectionSmoothingNRingLabel">
+         <property name="text">
+          <string>N</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="intersectionSmoothingNRingSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>20</number>
+         </property>
+         <property name="value">
+          <number>3</number>
          </property>
         </widget>
        </item>
@@ -663,7 +708,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1812</width>
+     <width>1637</width>
      <height>22</height>
     </rect>
    </property>

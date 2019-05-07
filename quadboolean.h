@@ -15,6 +15,9 @@
 #define DEFAULTALPHA 0.5
 #define DEFAULTINITIALREMESHING true
 #define DEFAULTEDGEFACTOR 2
+#define DEFAULTREPROJECT true
+#define DEFAULTSPLITCONCAVES false
+#define DEFAULTFINALSMOOTHING true
 #define DEFAULTCHARTSMOOTHINGITERATIONS 5
 #define DEFAULTMESHSMOOTHINGITERATIONS 5
 #define DEFAULTRESULTSMOOTHINGITERATIONS 5
@@ -33,6 +36,10 @@ struct Parameters {
     double alpha;
     bool initialRemeshing;
     double edgeFactor;
+    bool reproject;
+    bool splitConcaves;
+    bool finalSmoothing;
+
     int chartSmoothingIterations;
     int meshSmoothingIterations;
     int resultSmoothingIterations;

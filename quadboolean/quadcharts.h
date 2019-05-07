@@ -1,5 +1,5 @@
-#ifndef QUADTRIANGLECHARTS_H
-#define QUADTRIANGLECHARTS_H
+#ifndef QUADCHARTS_H
+#define QUADCHARTS_H
 
 #include <vector>
 #include <array>
@@ -64,4 +64,4 @@ ChartData getPatchDecompositionChartData(
 
 #include "quadcharts.tpp"
 
-#endif // QUADTRIANGLECHARTS_H
+#endif // QUADCHARTS_H
