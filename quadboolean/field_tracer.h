@@ -497,6 +497,8 @@ public:
         //        for (size_t s=0;s<PropagationSteps;s++)
         //            PropagateNeigh();
 
+        assert(0);
+
         InitConnections(ExcludeNodes);
 
         //RemoveOnBorderPaths();
