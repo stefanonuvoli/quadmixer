@@ -65,16 +65,59 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="trackSceneButton">
+           <widget class="QFrame" name="operationFrame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_3">
+             <item>
+              <widget class="QRadioButton" name="operationUnionRadio">
+               <property name="text">
+                <string>U</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="operationIntersectionRadio">
+               <property name="text">
+                <string>I</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="operationDifferenceRadio">
+               <property name="text">
+                <string>D</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="executePushButton">
             <property name="text">
-             <string>Track scene</string>
+             <string>Execute</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="resetTrackballButton">
+           <widget class="QPushButton" name="resetSceneButton">
             <property name="text">
              <string>Reset scene</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="deleteButton">
+            <property name="text">
+             <string>Delete</string>
             </property>
            </widget>
           </item>
@@ -103,6 +146,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="keepColorsCheckBox">
+            <property name="text">
+             <string>Keep colors</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="trackballCheckBox">
             <property name="text">
              <string>Trackball</string>
@@ -123,9 +173,16 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="debugModeCheckBox">
+           <widget class="QCheckBox" name="showParametersCheckBox">
             <property name="text">
-             <string>Debug mode</string>
+             <string>Parameters</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="debugModeButton">
+            <property name="text">
+             <string>Debug/normal mode</string>
             </property>
            </widget>
           </item>
@@ -144,7 +201,7 @@
           <item>
            <widget class="QFrame" name="debugFrame">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -155,7 +212,7 @@
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
+            <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
               <widget class="QFrame" name="toolsFrame">
                <property name="sizePolicy">
@@ -260,7 +317,184 @@
               </widget>
              </item>
              <item>
-              <widget class="QFrame" name="settingsFrame">
+              <widget class="QFrame" name="actionFrame">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_2">
+                <item>
+                 <widget class="QCheckBox" name="showMesh1CheckBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Mesh 1</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showMesh2CheckBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Mesh 2</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showQuadLayout1CheckBox">
+                  <property name="text">
+                   <string>L1</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showQuadLayout2CheckBox">
+                  <property name="text">
+                   <string>L2</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showBooleanCheckBox">
+                  <property name="text">
+                   <string>Boolean</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showIntersectionCurvesCheckBox">
+                  <property name="text">
+                   <string>Intersection curves</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showPreservedSurfaceCheckBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Preserved</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showQuadLayoutPreserved1CheckBox">
+                  <property name="text">
+                   <string>L1</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showQuadLayoutPreserved2CheckBox">
+                  <property name="text">
+                   <string>L2</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showNewSurfaceCheckBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>New</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showChartSidesCheckBox">
+                  <property name="text">
+                   <string>Sides</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showILPCheckBox">
+                  <property name="text">
+                   <string>ILP </string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showQuadrangulatedCheckBox">
+                  <property name="text">
+                   <string>Quadrangulated</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showQuadrangulatedLayoutCheckBox">
+                  <property name="text">
+                   <string>L</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="showResultCheckBox">
+                  <property name="text">
+                   <string>Result</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="parametersFrame">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
+             <item>
+              <widget class="QFrame" name="parametersFrame2">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
                  <horstretch>0</horstretch>
@@ -282,42 +516,6 @@
                   <property name="checked">
                    <bool>false</bool>
                   </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QFrame" name="operationFrame">
-                  <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
-                  </property>
-                  <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_3">
-                   <item>
-                    <widget class="QRadioButton" name="operationUnionRadio">
-                     <property name="text">
-                      <string>U</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QRadioButton" name="operationIntersectionRadio">
-                     <property name="text">
-                      <string>I</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QRadioButton" name="operationDifferenceRadio">
-                     <property name="text">
-                      <string>D</string>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
                  </widget>
                 </item>
                 <item>
@@ -353,7 +551,7 @@
                    <number>20</number>
                   </property>
                   <property name="value">
-                   <number>3</number>
+                   <number>5</number>
                   </property>
                  </widget>
                 </item>
@@ -373,10 +571,10 @@
                    <double>1.000000000000000</double>
                   </property>
                   <property name="singleStep">
-                   <double>0.050000000000000</double>
+                   <double>0.010000000000000</double>
                   </property>
                   <property name="value">
-                   <double>0.100000000000000</double>
+                   <double>0.050000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -532,7 +730,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QFrame" name="frame">
+              <widget class="QFrame" name="parametersFrame1">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
                  <horstretch>0</horstretch>
@@ -708,179 +906,6 @@
                   </property>
                   <property name="value">
                    <number>3</number>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="QFrame" name="actionFrame">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
-               </property>
-               <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
-               </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_2">
-                <item>
-                 <widget class="QPushButton" name="track1Button">
-                  <property name="text">
-                   <string>Track 1</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QPushButton" name="track2Button">
-                  <property name="text">
-                   <string>Track 2</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showMesh1CheckBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Mesh 1</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showMesh2CheckBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Mesh 2</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showQuadLayout1CheckBox">
-                  <property name="text">
-                   <string>L1</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showQuadLayout2CheckBox">
-                  <property name="text">
-                   <string>L2</string>
-                  </property>
-                  <property name="checked">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showBooleanCheckBox">
-                  <property name="text">
-                   <string>Boolean</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showIntersectionCurvesCheckBox">
-                  <property name="text">
-                   <string>Intersection curves</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showPreservedSurfaceCheckBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>Preserved</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showQuadLayoutPreserved1CheckBox">
-                  <property name="text">
-                   <string>L1</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showQuadLayoutPreserved2CheckBox">
-                  <property name="text">
-                   <string>L2</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showNewSurfaceCheckBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>New</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showChartSidesCheckBox">
-                  <property name="text">
-                   <string>Sides</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showILPCheckBox">
-                  <property name="text">
-                   <string>ILP </string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showQuadrangulatedCheckBox">
-                  <property name="text">
-                   <string>Quadrangulated</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showQuadrangulatedLayoutCheckBox">
-                  <property name="text">
-                   <string>L</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="showResultCheckBox">
-                  <property name="text">
-                   <string>Result</string>
                   </property>
                  </widget>
                 </item>

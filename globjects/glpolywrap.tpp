@@ -10,12 +10,14 @@ GLPolyWrap<MeshType>::GLPolyWrap()
 {
     this->mesh = nullptr;
     this->visible = true;
-    this->wireframe = true;
-    this->selected = false;
+    this->transformation = false;
+    this->target1 = false;
+    this->target2 = false;
+    this->name = -1;
 }
 
 template<class MeshType>
-void GLPolyWrap<MeshType>::GLDraw()
+void GLPolyWrap<MeshType>::GLDraw(bool wireframe)
 {
     if (mesh != nullptr && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -33,8 +35,12 @@ void GLPolyWrap<MeshType>::GLDraw()
 
         for(unsigned int i=0; i < face.size(); i++)
         {
-            if (selected)
-                vcg::glColor(vcg::Color4b(255,100,100,255));
+            if (transformation)
+                vcg::glColor(vcg::Color4b(255,165,0,255));
+            else if (target1)
+                vcg::glColor(vcg::Color4b(100,200,100,255));
+            else if (target2)
+                vcg::glColor(vcg::Color4b(100,100,200,255));
             else
                 vcg::glColor(face[i].C());
 
@@ -59,7 +65,7 @@ void GLPolyWrap<MeshType>::GLDraw()
                 int size=face[i].VN();
                 for(int j=0; j<face[i].VN(); j++)
                 {
-                    vcg::glColor(vcg::Color4b(100,100,100,255));
+                    vcg::glColor(vcg::Color4b(0,0,0,255));
 
                     glBegin(GL_LINES);
                     vcg::glVertex( face[i].V(j)->P() );

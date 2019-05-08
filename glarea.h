@@ -35,7 +35,58 @@ public:
 
     size_t addMesh(PolyMesh* mesh);
     void deleteMesh(const size_t& id);
-    void setSceneOnAllMeshes();
+
+    void manageRightClick(const int& x, const int& y);
+    void manageDoubleClick(const int& x, const int& y);
+
+    void resetSceneOnMeshes();
+
+    void selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap);
+    void deselectTargetMesh();
+    void selectTransformationMesh(GLPolyWrap<PolyMesh>* meshWrap);
+    void deselectTransformationMesh();
+    void applySelectedMeshTransformation();
+
+    void setTrackballVisibility(bool visible);
+    void setWireframe(bool visible);
+
+    vcg::Point3f sceneCenter;
+    float sceneRadius;
+
+    bool debugMode;
+
+    bool wireframe;
+
+    GLPolyWrap<PolyMesh>* targetMesh1;
+    GLPolyWrap<PolyMesh>* targetMesh2;
+
+private:
+
+    vcg::Trackball sceneTrackball;
+    bool sceneTrackballVisible;
+
+    GLPolyWrap<PolyMesh>* transformationMesh;
+    std::vector<PolyMesh::VertexType> transformationMeshVertices;
+    vcg::Point3d transformationMeshCenter;
+    vcg::Trackball transformationMeshTrackball;
+
+    void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
+
+protected:
+
+    void initializeGL();
+    void resizeGL(int w, int h);
+    void paintGL();
+
+    void keyReleaseEvent(QKeyEvent* e);
+    void keyPressEvent(QKeyEvent* e);
+    void mousePressEvent(QMouseEvent* e);
+    void mouseMoveEvent(QMouseEvent* e);
+    void mouseReleaseEvent(QMouseEvent* e);
+    void wheelEvent(QWheelEvent* e);
+    void mouseDoubleClickEvent(QMouseEvent* e);
+
+public:
 
     void setMesh1(PolyMesh* mesh);
     void setMesh2(PolyMesh* mesh);
@@ -69,46 +120,11 @@ public:
     void setQuadLayoutQuadrangulatedVisibility(bool visible);
     void setResultVisibility(bool visible);
 
-    void setMesh1Wireframe(bool wireframe);
-    void setMesh2Wireframe(bool wireframe);
-    void setBooleanWireframe(bool wireframe);
-    void setPreservedSurfaceWireframe(bool wireframe);
-    void setNewSurfaceWireframe(bool wireframe);
-    void setQuadrangulatedWireframe(bool wireframe);
-    void setResultWireframe(bool wireframe);
-
-    void setTrackballVisibility(bool visible);
-
-    vcg::Point3f getSceneCenter() const;
-    void setSceneCenter(const vcg::Point3f &value);
-    float getSceneRadius() const;
-    void setSceneRadius(float value);
-
-    void resetTrackball();
-    void zoomSceneOnTheTwoMeshes();
-    void setTrackballOnSelected();
-    void selectAndTrackScene();
-    void selectAndTrackMesh1();
-    void selectAndTrackMesh2();
-    void selectAndTrackMesh(PolyMesh* mesh);
-    void applySelectedMeshTransformation();
+    void resetSceneOnDebugMeshes();
 
 signals:
     void setStatusBar(QString message);
 
-protected:
-
-    void initializeGL();
-    void resizeGL(int w, int h);
-    void paintGL();
-
-    void keyReleaseEvent(QKeyEvent* e);
-    void keyPressEvent(QKeyEvent* e);
-    void mousePressEvent(QMouseEvent* e);
-    void mouseMoveEvent(QMouseEvent* e);
-    void mouseReleaseEvent(QMouseEvent* e);
-    void wheelEvent(QWheelEvent* e);
-    void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
     std::vector<GLPolyWrap<PolyMesh>> glWrapMeshes;
@@ -128,17 +144,7 @@ private:
     GLChartSidesWrap<TriangleMesh> glWrapChartSides;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulated;
 
-    vcg::Trackball sceneTrackball;
-    bool sceneTrackballVisible;
-    vcg::Trackball selectedTrackball;
-    vcg::Point3f sceneCenter;
-    float sceneRadius;
 
-    PolyMesh* selectedMesh;
-    std::vector<PolyMesh::VertexType> selectedMeshVertices;
-    vcg::Point3d selectedMeshInitialCenter;
-
-    void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
     void initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh);
     template<class MeshType>
     void initQuadLayoutWrapper(GLQuadLayoutWrap<MeshType>& glWrap, QuadLayoutData* quadLayoutData);

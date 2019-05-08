@@ -19,20 +19,38 @@ private:
     typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
     typedef QuadBoolean::internal::ChartData TriangleChartData;
 
+
 public:
 
     QuadBooleanWindow(QWidget * parent = nullptr);
     ~QuadBooleanWindow();
 
     void addMesh(const std::string& filename);
+    void addMesh(PolyMesh *mesh);
     void deleteMesh(PolyMesh* mesh);
     void deleteMesh(const size_t& id);
 
+private:
+
+    Ui::mainWindow ui;
+    std::vector<PolyMesh*> meshes;
 
     std::string chooseMeshFile();
     int loadMesh(PolyMesh& mesh, const std::string& filename, const bool translateCenter, const bool scale);
 
-    void setTrackballOnMeshes();
+
+private slots:
+
+    void on_loadButton_clicked();
+    void on_deleteAllButton_clicked();
+    void on_resetSceneButton_clicked();
+
+    void on_trackballCheckBox_stateChanged(int arg1);
+    void on_showWireframe_stateChanged(int arg1);
+
+    void on_showParametersCheckBox_stateChanged(int arg1);
+
+private:
 
     void doTraceQuads();
     void doComputeBooleans();
@@ -47,7 +65,6 @@ public:
 
 private slots:
 
-    void on_loadMeshesPushButton_clicked();
     void on_quadTracerPushButton_clicked();
     void on_computeBooleanPushButton_clicked();    
     void on_smoothPushButton_clicked();
@@ -74,25 +91,14 @@ private slots:
     void on_showQuadrangulatedCheckBox_stateChanged(int arg1);
     void on_showQuadrangulatedLayoutCheckBox_stateChanged(int arg1);
     void on_showResultCheckBox_stateChanged(int arg1);
-    void on_trackballCheckBox_stateChanged(int arg1);
-    void on_showWireframe_stateChanged(int arg1);
 
-    void on_resetTrackballButton_clicked();
-    void on_trackSceneButton_clicked();
-    void on_track1Button_clicked();
-    void on_track2Button_clicked();
+    void on_debugModeButton_clicked();
 
-    void on_debugModeCheckBox_stateChanged(int arg1);
+    void on_deleteButton_clicked();
 
-    void on_loadButton_clicked();
-
-    void on_deleteAllButton_clicked();
+    void on_executePushButton_clicked();
 
 private:
-
-    Ui::mainWindow ui;
-
-    std::vector<PolyMesh*> meshes;
 
     PolyMesh mesh1;
     PolyMesh mesh2;

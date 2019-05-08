@@ -859,17 +859,9 @@ void getResult(
     vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(quadrangulatedNewSurface);
     for (typename PolyMeshType::FaceIterator fIt = quadrangulatedNewSurface.face.begin(); fIt != quadrangulatedNewSurface.face.end(); fIt++) {
-//        bool borderFace = false;
-//        for (int k = 0; k < fIt->VN(); k++) {
-//            if (vcg::face::IsBorder(*fIt, k)) {
-//                borderFace = true;
-//            }
-//        }
-//        if (borderFace) {
-            for (int k = 0; k < fIt->VN(); k++) {
-                fIt->V(k)->SetV();
-            }
-//        }
+        for (int k = 0; k < fIt->VN(); k++) {
+            fIt->V(k)->SetV();
+        }
     }
 
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(preservedSurface);

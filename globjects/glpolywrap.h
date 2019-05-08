@@ -8,14 +8,18 @@ class GLPolyWrap
 public:
     GLPolyWrap();
 
-    void GLDraw();
+    void GLDraw(bool wireframe);
 
     MeshType* mesh;
     bool visible;
 
     bool wireframe;
 
-    bool selected;
+    bool transformation;
+    bool target1;
+    bool target2;
+
+    int name;
 };
 
 #include "glpolywrap.tpp"

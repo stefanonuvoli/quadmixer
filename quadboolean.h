@@ -10,8 +10,8 @@
 #define DEFAULTMINRECTANGLEAREA 2
 #define DEFAULTMINPATCHAREA 6
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
-#define DEFAULTINTERSECTIONSMOOTHINGAVGNRING 3
-#define DEFAULTINTERSECTIONSMOOTHINGMAXBB 0.1
+#define DEFAULTINTERSECTIONSMOOTHINGAVGNRING 5
+#define DEFAULTINTERSECTIONSMOOTHINGMAXBB 0.05
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED false
@@ -55,7 +55,7 @@ struct Parameters {
     int resultSmoothingIterations;
     int resultSmoothingAVGNRing;    
     int resultSmoothingLaplacianIterations;
-    int resultLaplacianAVGNRing;
+    int resultSmoothingLaplacianAVGNRing;
 
     Parameters();
 };

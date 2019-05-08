@@ -41,6 +41,17 @@ void QuadBooleanWindow::addMesh(const string &filename)
 
     loadMesh(*mesh, filename, ui.moveCenterCheckBox->isChecked(), ui.scaleCheckBox->isChecked());
 
+    addMesh(mesh);
+}
+
+void QuadBooleanWindow::addMesh(PolyMesh* mesh)
+{
+    if (!ui.keepColorsCheckBox->isChecked()) {
+        for (size_t fId = 0; fId < mesh->face.size(); fId++) {
+            mesh->face[fId].C() = vcg::Color4b(255,255,255,255);
+        }
+    }
+
     bool isQuadMesh = QuadBoolean::internal::isQuadMesh(*mesh);
 
     if (!isQuadMesh && !QuadBoolean::internal::isTriangleMesh(*mesh)) {
@@ -65,10 +76,11 @@ void QuadBooleanWindow::deleteMesh(PolyMesh* mesh)
 
 void QuadBooleanWindow::deleteMesh(const size_t& id)
 {
+    ui.glArea->deleteMesh(id);
+
     delete meshes[id];
     meshes[id] = nullptr;
 
-    ui.glArea->deleteMesh(id);
     ui.glArea->updateGL();
 }
 
@@ -113,22 +125,14 @@ int QuadBooleanWindow::loadMesh(PolyMesh& mesh, const std::string& filename, con
 
 
 
-
-
-void QuadBooleanWindow::on_debugModeCheckBox_stateChanged(int arg1)
-{
-    ui.debugFrame->setVisible(arg1 == Qt::Checked);
-}
-
 void QuadBooleanWindow::on_loadButton_clicked()
 {
     std::string filename = chooseMeshFile();
     if(!filename.empty()) {
         addMesh(filename);
 
-        ui.glArea->setSceneOnAllMeshes();
-        ui.glArea->selectAndTrackScene();
-        ui.glArea->resetTrackball();
+        ui.glArea->resetSceneOnMeshes();
+        ui.glArea->deselectTransformationMesh();
 
         updateVisibility();
         ui.glArea->updateGL();
@@ -144,36 +148,29 @@ void QuadBooleanWindow::on_deleteAllButton_clicked()
     }
 }
 
-void QuadBooleanWindow::on_resetTrackballButton_clicked()
+void QuadBooleanWindow::on_resetSceneButton_clicked()
 {
-    ui.glArea->resetTrackball();
+    ui.glArea->resetSceneOnMeshes();
 }
 
-void QuadBooleanWindow::on_trackSceneButton_clicked()
+
+void QuadBooleanWindow::on_trackballCheckBox_stateChanged(int arg1)
 {
-    ui.glArea->selectAndTrackScene();
+    ui.glArea->setTrackballVisibility(arg1 == Qt::Checked);
+    ui.glArea->updateGL();
 }
 
 void QuadBooleanWindow::on_showWireframe_stateChanged(int arg1)
 {
-    ui.glArea->setMesh1Wireframe(arg1 == Qt::Checked);
-    ui.glArea->setMesh2Wireframe(arg1 == Qt::Checked);
-    ui.glArea->setBooleanWireframe(arg1 == Qt::Checked);
-    ui.glArea->setPreservedSurfaceWireframe(arg1 == Qt::Checked);
-    ui.glArea->setNewSurfaceWireframe(arg1 == Qt::Checked);
-    ui.glArea->setQuadrangulatedWireframe(arg1 == Qt::Checked);
-    ui.glArea->setResultWireframe(arg1 == Qt::Checked);
+    ui.glArea->setWireframe(arg1 == Qt::Checked);
 
     ui.glArea->updateGL();
 }
 
-
-
-
-
-
-
-
+void QuadBooleanWindow::on_showParametersCheckBox_stateChanged(int arg1)
+{
+    ui.parametersFrame->setVisible(arg1 == Qt::Checked);
+}
 
 
 
@@ -191,6 +188,9 @@ void QuadBooleanWindow::doTraceQuads() {
     chrono::steady_clock::time_point start;
 
     start = chrono::steady_clock::now();
+
+    isQuadMesh1 = QuadBoolean::internal::isQuadMesh(mesh1);
+    isQuadMesh2 = QuadBoolean::internal::isQuadMesh(mesh2);
 
     bool motorcycle = ui.motorcycleCheckBox->isChecked();
 
@@ -608,11 +608,11 @@ void QuadBooleanWindow::doGetResult()
     int resultAVGNRing = ui.resultSmoothingNRingSpinBox->value();
 
     int resultSmoothingLaplacianIterations = ui.resultSmoothingLaplacianSpinBox->value();
-    int resultLaplacianAVGNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
+    int resultSmoothingLaplacianAVGNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
 
     start = chrono::steady_clock::now();
 
-    QuadBoolean::internal::getResult(coloredPreservedSurface, coloredQuadrangulatedSurface, result, booleanSmoothed, resultSmoothingIterations, resultAVGNRing, resultSmoothingLaplacianIterations, resultLaplacianAVGNRing);
+    QuadBoolean::internal::getResult(coloredPreservedSurface, coloredQuadrangulatedSurface, result, booleanSmoothed, resultSmoothingIterations, resultAVGNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianAVGNRing);
 
     std::cout << std::endl << " >> "
               << "Get result: "
@@ -658,50 +658,6 @@ void QuadBooleanWindow::clearVisualizationData()
     ui.showQuadrangulatedCheckBox->setChecked(false);
     ui.showQuadrangulatedLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
-}
-
-
-void QuadBooleanWindow::on_loadMeshesPushButton_clicked()
-{
-
-    std::string filename1 = chooseMeshFile();
-    if(!filename1.empty()) {
-        std::string filename2 = chooseMeshFile();
-        if(!filename2.empty()) {
-            clearVisualizationData();
-
-            mesh1.Clear();
-            mesh2.Clear();
-            loadMesh(mesh1, filename1, ui.moveCenterCheckBox->isChecked(), ui.scaleCheckBox->isChecked());
-            loadMesh(mesh2, filename2, ui.moveCenterCheckBox->isChecked(), ui.scaleCheckBox->isChecked());
-
-            isQuadMesh1 = QuadBoolean::internal::isQuadMesh(mesh1);
-            isQuadMesh2 = QuadBoolean::internal::isQuadMesh(mesh2);
-
-            if (!isQuadMesh1 && !QuadBoolean::internal::isTriangleMesh(mesh1)) {
-                mesh1.Clear();
-                mesh2.Clear();
-                QMessageBox::warning(this, QString("Error"), QString("Meshes must be either quad or triangle."));
-                return;
-            }
-            if (!isQuadMesh2 && !QuadBoolean::internal::isTriangleMesh(mesh2)) {
-                mesh1.Clear();
-                mesh2.Clear();
-                QMessageBox::warning(this, QString("Error"), QString("Meshes must be either quad or triangle."));
-                return;
-            }
-
-            ui.glArea->setMesh1(&mesh1);
-            ui.glArea->setMesh2(&mesh2);
-
-            ui.glArea->zoomSceneOnTheTwoMeshes();
-            ui.glArea->selectAndTrackScene();
-            ui.glArea->resetTrackball();
-
-            updateVisibility();
-            ui.glArea->updateGL();
-        }
-    }
 }
 
 
@@ -1039,24 +995,6 @@ void QuadBooleanWindow::on_showResultCheckBox_stateChanged(int arg1)
     ui.glArea->updateGL();
 }
 
-void QuadBooleanWindow::on_trackballCheckBox_stateChanged(int arg1)
-{
-    ui.glArea->setTrackballVisibility(arg1 == Qt::Checked);
-    ui.glArea->updateGL();
-}
-
-
-void QuadBooleanWindow::on_track1Button_clicked()
-{
-    ui.glArea->selectAndTrackMesh1();
-}
-
-void QuadBooleanWindow::on_track2Button_clicked()
-{
-    ui.glArea->selectAndTrackMesh2();
-}
-
-
 void QuadBooleanWindow::updateVisibility()
 {
     ui.glArea->setMesh1Visibility(ui.showMesh1CheckBox->isChecked());
@@ -1075,15 +1013,10 @@ void QuadBooleanWindow::updateVisibility()
     ui.glArea->setQuadLayoutQuadrangulatedVisibility(ui.showQuadrangulatedLayoutCheckBox->isChecked());
     ui.glArea->setResultVisibility(ui.showResultCheckBox->isChecked());
 
-    ui.glArea->setMesh1Wireframe(ui.showWireframe->isChecked());
-    ui.glArea->setMesh2Wireframe(ui.showWireframe->isChecked());
-    ui.glArea->setBooleanWireframe(ui.showWireframe->isChecked());
-    ui.glArea->setPreservedSurfaceWireframe(ui.showWireframe->isChecked());
-    ui.glArea->setNewSurfaceWireframe(ui.showWireframe->isChecked());
-    ui.glArea->setQuadrangulatedWireframe(ui.showWireframe->isChecked());
-    ui.glArea->setResultWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setWireframe(ui.showWireframe->isChecked());
 
-    ui.debugFrame->setVisible(ui.debugModeCheckBox->isChecked());
+    ui.parametersFrame->setVisible(ui.showParametersCheckBox->isChecked());
+    ui.debugFrame->setVisible(ui.glArea->debugMode);
 }
 
 template<class MeshType>
@@ -1106,5 +1039,83 @@ void QuadBooleanWindow::colorizeMesh(
 
             mesh.face[i].C() = color;
         }
+    }
+}
+
+void QuadBooleanWindow::on_debugModeButton_clicked()
+{
+    ui.glArea->deselectTransformationMesh();
+
+    if (!ui.glArea->debugMode) {
+        if (ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
+            QMessageBox::warning(this, QString("Error"), QString("Select two meshes to switch to the debug mode!"));
+        }
+        else {
+            clearVisualizationData();
+
+            //Copy mesh
+            vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(mesh1, *ui.glArea->targetMesh1->mesh);
+            vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(mesh2, *ui.glArea->targetMesh2->mesh);
+
+            ui.glArea->setMesh1(&mesh1);
+            ui.glArea->setMesh2(&mesh2);
+            ui.glArea->debugMode = true;
+        }
+    }
+    else {
+        clearVisualizationData();
+
+        mesh1.Clear();
+        mesh2.Clear();
+
+        ui.glArea->debugMode = false;
+    }
+
+    updateVisibility();
+}
+
+void QuadBooleanWindow::on_deleteButton_clicked()
+{
+    if (ui.glArea->targetMesh1 != nullptr) {
+        if (ui.glArea->targetMesh2 != nullptr) {
+            QMessageBox::warning(this, QString("Error"), QString("Please select only one mesh."));
+        }
+        else {
+            deleteMesh(ui.glArea->targetMesh1->mesh);
+        }
+    }
+    else {
+        QMessageBox::warning(this, QString("Error"), QString("Please select the mesh to be deleted."));
+    }
+}
+
+void QuadBooleanWindow::on_executePushButton_clicked()
+{
+    if (ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
+        QMessageBox::warning(this, QString("Error"), QString("Select two meshes to proceed!"));
+    }
+    else {
+        PolyMesh* target1 = ui.glArea->targetMesh1->mesh;
+        PolyMesh* target2 = ui.glArea->targetMesh2->mesh;
+        PolyMesh* booleanComputed = new PolyMesh();
+
+        QuadBoolean::Operation operation = QuadBoolean::Operation::UNION;
+        if (ui.operationUnionRadio->isChecked()) {
+            operation = QuadBoolean::Operation::UNION;
+        }
+        else if (ui.operationIntersectionRadio->isChecked()) {
+            operation = QuadBoolean::Operation::INTERSECTION;
+        }
+        else if (ui.operationDifferenceRadio->isChecked()) {
+            operation = QuadBoolean::Operation::DIFFERENCE;
+        }
+
+        QuadBoolean::quadBoolean(*ui.glArea->targetMesh1->mesh, *ui.glArea->targetMesh2->mesh, operation, *booleanComputed);
+
+        deleteMesh(target1);
+        deleteMesh(target2);
+        addMesh(booleanComputed);
+
+        ui.glArea->updateGL();
     }
 }

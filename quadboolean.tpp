@@ -26,8 +26,8 @@ Parameters::Parameters()
     meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
     resultSmoothingAVGNRing = DEFAULTRESULTSMOOTHINGAVGNRING;
-    resultSmoothingLaplacianIterations = DEFAULTRESULTSMOOTHINGLAPLACIANAVGNRING;
-    resultLaplacianAVGNRing = DEFAULTRESULTSMOOTHINGLAPLACIANAVGNRING;
+    resultSmoothingLaplacianIterations = DEFAULTRESULTSMOOTHINGLAPLACIANITERATIONS;
+    resultSmoothingLaplacianAVGNRing = DEFAULTRESULTSMOOTHINGLAPLACIANAVGNRING;
 }
 
 
@@ -88,8 +88,8 @@ void quadBoolean(
 
      std::vector<int> ilpResult;
 
-     PolyMesh quadrangulatedNewSurface;
-     std::vector<int> quadrangulatedNewSurfaceLabel;
+     PolyMesh quadrangulatedSurface;
+     std::vector<int> quadrangulatedSurfaceLabel;
 
      bool isTriangleMesh1 = internal::isTriangleMesh(mesh1);
      bool isTriangleMesh2 = internal::isTriangleMesh(mesh2);
@@ -201,7 +201,7 @@ void quadBoolean(
                  newSurface);
 
 
-     //Get patch decomposition of the new surface     
+     //Get patch decomposition of the new surface
      std::vector<std::vector<size_t>> newSurfacePartitions;
      std::vector<std::vector<size_t>> newSurfaceCorners;
      newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.edgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
@@ -219,12 +219,12 @@ void quadBoolean(
                  ilpResult,
                  parameters.chartSmoothingIterations,
                  parameters.meshSmoothingIterations,
-                 quadrangulatedNewSurface,
-                 quadrangulatedNewSurfaceLabel);
+                 quadrangulatedSurface,
+                 quadrangulatedSurfaceLabel);
 
      //Get the result
      result.Clear();
-     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedNewSurface, result, boolean, parameters.resultSmoothingIterations, parameters.resultSmoothingAVGNRing, parameters.resultSmoothingLaplacianIterations, parameters.resultSmoothingAVGNRing);
+     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedSurface, result, boolean, parameters.resultSmoothingIterations, parameters.resultSmoothingAVGNRing, parameters.resultSmoothingLaplacianIterations, parameters.resultSmoothingLaplacianAVGNRing);
 }
 
 }
