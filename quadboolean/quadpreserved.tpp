@@ -4,7 +4,6 @@
 #include <vcg/complex/algorithms/update/quality.h>
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 
-#include "quadlayoutdata.h"
 
 namespace QuadBoolean {
 namespace internal {
@@ -21,9 +20,14 @@ void computePreservedQuadForMesh(
         const Eigen::VectorXi& J,
         const std::vector<int>& birthQuad,
         const size_t offset,
+        const bool isQuadMesh,
         std::vector<bool>& preservedQuad)
 {
     preservedQuad.resize(triMesh.face.size(), false);
+
+    if (!isQuadMesh) {
+        return;
+    }
 
     for (int i = 0; i < J.rows(); i++) {
         int birthFace = J[i] - offset;
@@ -57,19 +61,23 @@ void computePreservedQuadForMesh(
 template<class PolyMeshType>
 std::vector<int> splitQuadPatchesInMaximumRectangles(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad,
         const int minimumRectangleArea,
         const bool recursive)
 {
+    if (!isQuadMesh)
+        return faceLabel;
+
     std::vector<int> newFaceLabel;
     newFaceLabel.resize(faceLabel.size(), -1);
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
 
-    std::set<int>& labels = quadLayoutData.labels;
-    std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
+    const std::set<int>& labels = quadLayoutData.labels;
+    const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
 
     if (labels.size() == 0) {
         return newFaceLabel;
@@ -81,7 +89,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
 
     for (const int& pId : labels) {
         if (affectedPatches.find(pId) == affectedPatches.end()) {
-            QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
+            const QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
 
             for (size_t fId : quadPatch.faces) {
                 validQuads[fId] = true;
@@ -89,7 +97,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
             }
         }
         else {
-            QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
+            const QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
 
             const vcg::face::Pos<typename PolyMeshType::FaceType>& startPos = quadPatch.startPos;
             const size_t& sizeX = quadPatch.sizeX;
@@ -250,22 +258,28 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
         }
     }
 
+    quadLayoutData = internal::getQuadLayoutData(mesh, isQuadMesh, newFaceLabel);
+
     return newFaceLabel;
 }
 
 template<class PolyMeshType>
 int mergeQuadPatches(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         std::unordered_set<int>& affectedQuads,
         std::vector<int>& faceLabel,
         const std::vector<bool>& preservedQuad)
 {
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
+    if (!isQuadMesh)
+        return 0;
 
     vcg::tri::UpdateQuality<PolyMeshType>::VertexValence(mesh);
 
-    std::set<int>& labels = quadLayoutData.labels;
-    std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
+
+    const std::set<int>& labels = quadLayoutData.labels;
+    const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
 
     for (const int& pId : labels) {
         if (affectedQuads.find(pId) != affectedQuads.end()) {
@@ -364,7 +378,7 @@ int mergeQuadPatches(
                         affectedQuads.erase(adjLabel);
                     }
 
-                    return 1 + mergeQuadPatches(mesh, affectedQuads, faceLabel, preservedQuad);
+                    return 1 + mergeQuadPatches(mesh, isQuadMesh, affectedQuads, faceLabel, preservedQuad);
                 }
 
                 //Turn
@@ -380,19 +394,23 @@ int mergeQuadPatches(
 template<class PolyMeshType>
 int deleteNonConnectedQuadPatches(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad)
 {
-    int nDeleted = 0;
+    if (!isQuadMesh)
+        return 0;
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
+    int nDeleted = 0;    
 
-    std::set<int>& labels = quadLayoutData.labels;
-    std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
+
+    const std::set<int>& labels = quadLayoutData.labels;
+    const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
 
     //Delete non connected patches
     for (const int& pId : labels) {
-        QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
+        const QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
 
         const std::vector<size_t>& patchFaces = quadPatch.faces;
 
@@ -425,32 +443,21 @@ int deleteNonConnectedQuadPatches(
 template<class PolyMeshType>
 int deleteSmallQuadPatches(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         const std::unordered_set<int>& affectedPatches,
+        const int minPatchArea,
         std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad)
 {
+    if (!isQuadMesh)
+        return 0;
+
     int nDeleted = 0;
 
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
-
-    std::set<int>& labels = quadLayoutData.labels;
-    std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
-
-    double avgSize = 0;
-    int nInvalid = 0;
-    for (const int& pId : labels) {
-        if (affectedPatches.find(pId) == affectedPatches.end()) {
-            const QuadLayoutPatch<PolyMeshType>& patch = quadPatches[pId];
-
-            avgSize += std::min(patch.sizeX, patch.sizeY);
-            nInvalid++;
-        }
-    }
-    avgSize /= nInvalid;
-    const int minPatchSideLength = std::min(std::max(static_cast<int>(std::round(avgSize)) - MINIMUMSIDELENGTHDIFFERENCE, MINIMUMSIDEMINLENGTH), MINIMUMSIDEMAXLENGTH);
-
-    std::cout << "Small patches: side less than " << minPatchSideLength << std::endl;
+    const std::set<int>& labels = quadLayoutData.labels;
+    const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
 
     //Delete small patches
     for (const int& pId : labels) {
@@ -458,7 +465,7 @@ int deleteSmallQuadPatches(
             const QuadLayoutPatch<PolyMeshType>& quadPatch = quadPatches[pId];
             const std::vector<size_t>& patchFaces = quadPatch.faces;
 
-            if (quadPatch.sizeX > minPatchSideLength && quadPatch.sizeY > minPatchSideLength) {
+            if (quadPatch.sizeX*quadPatch.sizeY < minPatchArea) {
                 nDeleted++;
                 for (const size_t& fId : patchFaces) {
                     preservedQuad[fId] = false;

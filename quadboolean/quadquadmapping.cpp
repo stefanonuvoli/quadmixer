@@ -307,7 +307,15 @@ Eigen::VectorXd pointToBarycentric(
         baryc(2) = 1.0 - baryc(0) - baryc(1);
     }
 
-    assert(baryc(0) + baryc(1) + baryc(2) >= 1.0 - eps && baryc(0) + baryc(1) + baryc(2) <= 1.0 + eps);
+    if (baryc(0) + baryc(1) + baryc(2) < 1.0 - eps || baryc(0) + baryc(1) + baryc(2) > 1.0 + eps) {
+        baryc(0) = baryc(1) =  baryc(2) = 1.0/3.0;
+        std::cout << "Barycenter sum not 1!" << std::endl;
+    }
+
+    if (std::isnan(baryc(0)) || std::isnan(baryc(1)) || std::isnan(baryc(2))) {
+        baryc(0) = baryc(1) =  baryc(2) = 1.0/3.0;
+        std::cout << "Barycenter nan!" << std::endl;
+    }
 
     baryc(0) = std::max(std::min(baryc(0), 1.0), 0.0);
     baryc(1) = std::max(std::min(baryc(1), 1.0), 0.0);

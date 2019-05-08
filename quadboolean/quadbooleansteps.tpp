@@ -113,6 +113,9 @@ void traceQuads(
         std::vector<int>& faceLabel,
         bool motorcycle)
 {
+    if (mesh.face.size() == 0)
+        return;
+
     //Compute tracer
     QuadMeshTracer<PolyMeshType> tracer(mesh);
     tracer.updatePolymeshAttributes();
@@ -126,6 +129,7 @@ void traceQuads(
 template<class PolyMeshType, class TriangleMeshType>
 void triangulateQuadMesh(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         TriangleMeshType& triMesh,
         std::vector<int>& birthQuad)
 {
@@ -134,7 +138,14 @@ void triangulateQuadMesh(
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpPoly, mesh);
 
     //Triangulate and get birth data
-    birthQuad = splitQuadInTriangle(tmpPoly);
+    if (isQuadMesh) {
+        birthQuad = splitQuadInTriangle(tmpPoly);
+    }
+    else {
+        birthQuad.resize(mesh.face.size(), -1);
+        for (int i = 0; i < mesh.face.size(); i++)
+            birthQuad[i] = i;
+    }
 
     vcg::tri::Append<TriangleMeshType, PolyMeshType>::Mesh(triMesh, tmpPoly);
 }
@@ -298,9 +309,12 @@ void smoothAlongIntersectionCurves(
         Eigen::MatrixXi& FR,
         const std::vector<std::vector<size_t>>& intersectionCurves,
         const int intersectionSmoothingInterations,
-        const int avgNRing)
+        const int avgNRing,
+        const double maxBB)
 {
-    typename TriangleMeshType::ScalarType maxDistance = averageEdgeLength(boolean) * avgNRing;
+    vcg::tri::UpdateBounding<TriangleMeshType>::Box(boolean);
+
+    typename TriangleMeshType::ScalarType maxDistance = std::min(averageEdgeLength(boolean) * avgNRing, boolean.bbox.Diag()*maxBB);
 
     vcg::tri::UpdateSelection<TriangleMeshType>::VertexClear(boolean);
 
@@ -333,14 +347,16 @@ void findPreservedQuads(
         const Eigen::VectorXi& J,
         const std::vector<int>& birthQuad1,
         const std::vector<int>& birthQuad2,
+        const bool isQuadMesh1,
+        const bool isQuadMesh2,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2)
 {
     //Get preserved quads
     size_t nFirstFaces = triMesh1.face.size();
 
-    computePreservedQuadForMesh(triMesh1, VA, FA, VR, FR, J, birthQuad1, 0, preservedQuad1);
-    computePreservedQuadForMesh(triMesh2, VB, FB, VR, FR, J, birthQuad2, nFirstFaces, preservedQuad2);
+    computePreservedQuadForMesh(triMesh1, VA, FA, VR, FR, J, birthQuad1, 0, isQuadMesh1, preservedQuad1);
+    computePreservedQuadForMesh(triMesh2, VB, FB, VR, FR, J, birthQuad2, nFirstFaces, isQuadMesh2, preservedQuad2);
 }
 
 template<class PolyMeshType>
@@ -491,16 +507,20 @@ std::vector<int> getPatchDecomposition(
     return newSurfaceLabel;
 }
 
+template<class TriangleMeshType>
 std::vector<int> findBestSideSize(
+        TriangleMeshType& mesh,
         const ChartData& chartData,
-        const double& alpha)
+        const double& alpha,
+        const double& beta,
+        const ILPMethod& ilpMethod)
 {
     if (chartData.charts.size() <= 0)
         return std::vector<int>();
 
 
     //Solve ILP to find the best patches
-    return solveChartSideILP(chartData, alpha);
+    return solveChartSideILP(mesh, chartData, alpha, beta, ilpMethod);
 }
 
 
@@ -584,6 +604,15 @@ void quadrangulate(
             continue;
         }
 
+        bool ilpSolvedForAll = true;
+        for (size_t sId : chart.chartSubSides) {
+            if (ilpResult[sId] < 1)
+                ilpSolvedForAll = false;
+        }
+
+        if (!ilpSolvedForAll)
+            continue;
+
         //Input mesh
         Eigen::MatrixXd chartV;
         Eigen::MatrixXi chartF;
@@ -653,15 +682,15 @@ void quadrangulate(
         QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartEigenSides, chartSideLength, patchEigenSides, uvMapV, uvMapF, quadrangulationV, quadrangulationF);
 
 #ifndef NDEBUG
-    Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
-    for (int i = 0; i < uvMapV.rows(); i++) {
-        uvMesh(i, 0) = uvMapV(i, 0);
-        uvMesh(i, 1) = uvMapV(i, 1);
-        uvMesh(i, 2) = 0;
-    }
+        Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
+        for (int i = 0; i < uvMapV.rows(); i++) {
+            uvMesh(i, 0) = uvMapV(i, 0);
+            uvMesh(i, 1) = uvMapV(i, 1);
+            uvMesh(i, 2) = 0;
+        }
 
-    std::string uvFile = std::string("res/") + std::to_string(cId) + std::string("_uv.obj");
-    igl::writeOBJ(uvFile, uvMesh, uvMapF);
+        std::string uvFile = std::string("res/") + std::to_string(cId) + std::string("_uv.obj");
+        igl::writeOBJ(uvFile, uvMesh, uvMapF);
 #endif
         assert(chartV.rows() == uvMapV.rows());
 
@@ -801,9 +830,7 @@ void quadrangulate(
     }
 
 
-    bool isOriented, isOrientable;
-    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
-    vcg::tri::Clean<PolyMeshType>::OrientCoherentlyMesh(quadrangulatedNewSurface, isOriented, isOrientable);
+    QuadBoolean::internal::OrientFaces<PolyMeshType>::AutoOrientFaces(quadrangulatedNewSurface);
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
 
     if (meshSmoothingIterations > 0) {
@@ -824,7 +851,9 @@ void getResult(
         PolyMeshType& result,
         TriangleMeshType& targetBoolean,
         const int resultSmoothingIterations,
-        const int avgNRing)
+        const int resultSmoothingAvgNRing,
+        const int resultSmoothingLaplacianIterations,
+        const int resultSmoothingLaplacianAvgNRing)
 {
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(quadrangulatedNewSurface);
@@ -868,13 +897,16 @@ void getResult(
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(result);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
+    if (result.face.size() == 0)
+        return;
+
     vcg::GridStaticPtr<typename TriangleMeshType::FaceType,typename TriangleMeshType::FaceType::ScalarType> Grid;
     if (resultSmoothingIterations > 0) {
         Grid.Set(targetBoolean.face.begin(),targetBoolean.face.end());
     }
 
     for (int it = 0; it < resultSmoothingIterations; it++) {
-        typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * avgNRing;
+        typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * resultSmoothingAvgNRing;
 
         vcg::tri::UpdateSelection<PolyMeshType>::VertexClear(result);
         for (typename PolyMeshType::VertexIterator vIt = result.vert.begin(); vIt != result.vert.end(); vIt++) {
@@ -885,12 +917,12 @@ void getResult(
 
         LaplacianGeodesic(result, 1, maxDistance, 0.7);
 
+        vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
+        typename TriangleMeshType::ScalarType maxD=result.bbox.Diag();
+        typename TriangleMeshType::ScalarType minD=0;
+
         for (size_t i=0;i<result.vert.size();i++)
         {
-            vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
-
-            typename TriangleMeshType::ScalarType maxD=result.bbox.Diag();
-            typename TriangleMeshType::ScalarType minD=0;
             typename TriangleMeshType::CoordType closestPT;
             typename TriangleMeshType::FaceType *f=
                     vcg::tri::GetClosestFaceBase<TriangleMeshType>(
@@ -904,7 +936,16 @@ void getResult(
         }
     }
 
-    vcg::PolygonalAlgorithm<PolyMeshType>::template LaplacianReproject<TriangleMeshType>(result, targetBoolean, resultSmoothingIterations, 0.7, 0.7, true);
+    typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * resultSmoothingLaplacianAvgNRing;
+
+    vcg::tri::UpdateSelection<PolyMeshType>::VertexClear(result);
+    for (typename PolyMeshType::VertexIterator vIt = result.vert.begin(); vIt != result.vert.end(); vIt++) {
+        if (vIt->IsV()) {
+            vIt->SetS();
+        }
+    }
+
+    LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.7);
 
 
 }

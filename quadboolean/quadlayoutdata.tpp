@@ -8,12 +8,16 @@ namespace internal {
 template<class PolyMeshType>
 QuadLayoutData<PolyMeshType> getQuadLayoutData(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         const std::vector<int>& faceLabel)
 {
+    QuadLayoutData<PolyMeshType> quadLayoutData;
+
+    if (!isQuadMesh)
+        return quadLayoutData;
+
     //It works just on closed surfaces
     vcg::tri::RequireFFAdjacency<PolyMeshType>(mesh);
-
-    QuadLayoutData<PolyMeshType> quadLayoutData;
 
     std::set<int>& labels = quadLayoutData.labels;
     std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;

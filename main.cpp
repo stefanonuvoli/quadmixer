@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
 ////        std::cout << "Usage Quadrangulation <meshfilename1.obj> <meshfilename2.obj>\n";
 ////        return -1;
 ////    }
-////    assert(argc>=3);
 
 ////    std::string meshName1 = argv[1];
 ////    std::string meshName2 = argv[2];

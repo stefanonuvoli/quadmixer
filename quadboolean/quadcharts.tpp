@@ -139,7 +139,6 @@ ChartData getPatchDecompositionChartData(
             size_t vNextId;
 
             //Corner detection variables
-            bool firstIteration = true;
             typename TriangleMeshType::CoordType lastEdgeVec;
             bool isCorner = false;
 
@@ -163,8 +162,6 @@ ChartData getPatchDecompositionChartData(
             vStartId = vCurrentId;
             size_t firstCornerIterations = 0;
             do {
-                remainingVertices.erase(vCurrentId);
-
                 //Next border edge
                 vCurrentId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
                 vNextId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
@@ -175,18 +172,7 @@ ChartData getPatchDecompositionChartData(
                 //Check if it is a corner
                 isCorner = cornerSet.find(vCurrentId) != cornerSet.end();
 
-                //Get edge
-                std::pair<size_t, size_t> edge(vCurrentId, vNextId);
-                if (edge.first > edge.second) {
-                    std::swap(edge.first, edge.second);
-                }
-                //Get current label on the other side
-                const std::pair<int,int>& currentEdgeLabels = edgeLabelMap.at(edge);
-                assert(currentEdgeLabels.first == chart.label || currentEdgeLabels.second == chart.label);
-                currentLabel = currentEdgeLabels.first == chart.label ? currentEdgeLabels.second : currentEdgeLabels.first;
-
                 lastEdgeVec = currentEdgeVec;
-                firstIteration = false;
 
                 firstCornerIterations++;
             } while (!isCorner && vCurrentId != vStartId && firstCornerIterations < MAXITERATIONS);
@@ -209,18 +195,33 @@ ChartData getPatchDecompositionChartData(
             currentSide.length = 0;
             currentSide.size = 0;
 
+
             int adjChartLabel;
             do {
                 size_t subSideId = chartData.subSides.size();
                 ChartSubSide currentSubSide;
 
-                adjChartLabel = currentLabel;
+                //Get edge
+                std::pair<size_t, size_t> edge(vCurrentId, vNextId);
+                if (edge.first > edge.second) {
+                    std::swap(edge.first, edge.second);
+                }
+                //Get current label on the other side
+                const std::pair<int,int>& currentEdgeLabels = edgeLabelMap.at(edge);
+                assert(currentEdgeLabels.first == chart.label || currentEdgeLabels.second == chart.label);
+                adjChartLabel = currentEdgeLabels.first == chart.label ? currentEdgeLabels.second : currentEdgeLabels.first;
+
+                std::unordered_set<size_t> cornerSetAdj;
+                if (adjChartLabel >= 0)
+                    cornerSetAdj.insert(corners[adjChartLabel].begin(), corners[adjChartLabel].end());
+
                 double length = 0;
 
                 bool newSubSide = false;
 
-                firstIteration = true;
+                bool firstIteration = true;
                 isCorner = false;
+                bool isAdjCorner = false;
                 size_t vSubSideStartId = vCurrentId;
                 size_t iterations = 0;
                 do {
@@ -235,6 +236,7 @@ ChartData getPatchDecompositionChartData(
                     //Check if it is a corner
                     if (!firstIteration) {
                         isCorner = cornerSet.find(vCurrentId) != cornerSet.end();
+                        isAdjCorner = cornerSetAdj.find(vCurrentId) != cornerSetAdj.end();
                     }
 
                     //Get current label on the other subside
@@ -242,7 +244,7 @@ ChartData getPatchDecompositionChartData(
                     assert(currentEdgeLabels.first == chart.label || currentEdgeLabels.second == chart.label);
                     currentLabel = currentEdgeLabels.first == chart.label ? currentEdgeLabels.second : currentEdgeLabels.first;
 
-                    if (!isCorner && currentLabel == adjChartLabel) {
+                    if (!isCorner && !isAdjCorner && currentLabel == adjChartLabel) {
                         EdgeSubSideMap::iterator findIt = edgeSubSideMap.find(edge);
 
                         //If the subside has already been processed
@@ -261,7 +263,6 @@ ChartData getPatchDecompositionChartData(
                         firstIteration = false;
 
                         remainingVertices.erase(vCurrentId);
-                        remainingVertices.erase(vNextId);
 
                         //Next border edge
                         vCurrentId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
@@ -269,7 +270,7 @@ ChartData getPatchDecompositionChartData(
 
                         lastEdgeVec = currentEdgeVec;
                     }
-                } while (!isCorner && currentLabel == adjChartLabel && vCurrentId != vSubSideStartId && iterations < MAXITERATIONS);
+                } while (!isCorner && !isAdjCorner && currentLabel == adjChartLabel && vCurrentId != vSubSideStartId && iterations < MAXITERATIONS);
 #ifndef NDEBUG
                 if (iterations >= MAXITERATIONS) {
                     std::cout << "Error: error iterating! Cannot find a corner or get back to the start vertex." << std::endl;

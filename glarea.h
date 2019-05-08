@@ -33,6 +33,10 @@ public:
 
     GLArea(QWidget* parent = nullptr);
 
+    size_t addMesh(PolyMesh* mesh);
+    void deleteMesh(const size_t& id);
+    void setSceneOnAllMeshes();
+
     void setMesh1(PolyMesh* mesh);
     void setMesh2(PolyMesh* mesh);
     void setQuadLayout1(QuadLayoutData* quadLayoutData1);
@@ -73,13 +77,15 @@ public:
     void setQuadrangulatedWireframe(bool wireframe);
     void setResultWireframe(bool wireframe);
 
+    void setTrackballVisibility(bool visible);
+
     vcg::Point3f getSceneCenter() const;
     void setSceneCenter(const vcg::Point3f &value);
     float getSceneRadius() const;
     void setSceneRadius(float value);
 
     void resetTrackball();
-    void setSceneOnMesh();
+    void zoomSceneOnTheTwoMeshes();
     void setTrackballOnSelected();
     void selectAndTrackScene();
     void selectAndTrackMesh1();
@@ -105,6 +111,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* e);
 
 private:
+    std::vector<GLPolyWrap<PolyMesh>> glWrapMeshes;
 
     GLPolyWrap<PolyMesh> glWrapMesh1;
     GLPolyWrap<PolyMesh> glWrapMesh2;
@@ -122,6 +129,7 @@ private:
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulated;
 
     vcg::Trackball sceneTrackball;
+    bool sceneTrackballVisible;
     vcg::Trackball selectedTrackball;
     vcg::Point3f sceneCenter;
     float sceneRadius;

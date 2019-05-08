@@ -6,6 +6,8 @@
 
 #include <Eigen/Core>
 
+#include "quadlayoutdata.h"
+
 namespace QuadBoolean {
 namespace internal {
 
@@ -20,11 +22,13 @@ void computePreservedQuadForMesh(
         const Eigen::VectorXi& J,
         const std::vector<int>& birthQuad,
         const size_t offset,
+        const bool isQuadMesh,
         std::vector<bool>& preservedQuad);
 
 template<class PolyMeshType>
 std::vector<int> splitQuadPatchesInMaximumRectangles(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad,
@@ -34,6 +38,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
 template<class PolyMeshType>
 int mergeQuadPatches(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         std::unordered_set<int>& affectedPatches,
         std::vector<int>& faceLabel,
         const std::vector<bool>& preservedQuad);
@@ -41,13 +46,16 @@ int mergeQuadPatches(
 template<class PolyMeshType>
 int deleteNonConnectedQuadPatches(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad);
 
 template<class PolyMeshType>
 int deleteSmallQuadPatches(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         const std::unordered_set<int>& affectedPatches,
+        const int minPatchArea,
         std::vector<int>& faceLabel,
         std::vector<bool>& preservedQuad);
 

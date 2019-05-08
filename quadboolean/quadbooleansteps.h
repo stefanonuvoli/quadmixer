@@ -23,6 +23,7 @@ void traceQuads(
 template<class PolyMeshType, class TriangleMeshType>
 void triangulateQuadMesh(
         PolyMeshType& mesh,
+        const bool isQuadMesh,
         TriangleMeshType& triMesh,
         std::vector<int>& birthQuad);
 
@@ -55,8 +56,12 @@ std::vector<std::vector<size_t>> getIntersectionCurves(
 template<class TriangleMeshType>
 void smoothAlongIntersectionCurves(
         TriangleMeshType& boolean,
+        Eigen::MatrixXd& VR,
+        Eigen::MatrixXi& FR,
         const std::vector<std::vector<size_t>>& intersectionCurves,
-        const int intersectionSmoothingInterations);
+        const int intersectionSmoothingInterations,
+        const int avgNRing,
+        const double maxBB);
 
 template<class TriangleMeshType>
 void findPreservedQuads(
@@ -71,6 +76,8 @@ void findPreservedQuads(
         const Eigen::VectorXi& J,
         const std::vector<int>& birthQuad1,
         const std::vector<int>& birthQuad2,
+        const bool isQuadMesh1,
+        const bool isQuadMesh2,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2);
 
@@ -114,9 +121,13 @@ std::vector<int> getPatchDecomposition(
         const bool splitConcaves,
         const bool finalSmoothing);
 
+
+template<class TriangleMeshType>
 std::vector<int> findBestSideSize(
+        TriangleMeshType& mesh,
         const ChartData& chartData,
-        const double& alpha);
+        const double& alpha,
+        const double& beta);
 
 template<class TriangleMeshType, class PolyMeshType>
 void quadrangulate(
@@ -133,8 +144,11 @@ template<class PolyMeshType>
 void getResult(
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
-        PolyMeshType& result,
-        const double meshSmoothingIterations);
+        PolyMeshType& result,        
+        const int resultSmoothingIterations,
+        const int resultSmoothingAvgNRing,
+        const int resultSmoothingLaplacianIterations,
+        const int resultSmoothingLaplacianAvgNRing);
 
 }
 }

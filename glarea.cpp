@@ -13,8 +13,78 @@ GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
 {
     this->sceneCenter = vcg::Point3f(0,0,0);
     this->sceneRadius = 0;
-    selectedMesh = nullptr;
+    this->sceneTrackballVisible = true;
+    this->selectedMesh = nullptr;
 }
+
+size_t GLArea::addMesh(GLArea::PolyMesh *mesh)
+{
+    size_t id = glWrapMeshes.size();
+    glWrapMeshes.push_back(GLPolyWrap<PolyMesh>());
+    initMeshWrapper(glWrapMeshes[id], mesh);
+
+    return id;
+}
+
+void GLArea::deleteMesh(const size_t& id)
+{
+    glWrapMeshes[id].mesh = nullptr;
+}
+
+void GLArea::setSceneOnAllMeshes()
+{
+    const double maxDouble = std::numeric_limits<double>::max();
+    PolyMesh::CoordType center(0,0,0);
+    double radius = 0;
+
+    PolyMesh::CoordType maxBBPoint(-maxDouble,-maxDouble,-maxDouble);
+    PolyMesh::CoordType minBBPoint(maxDouble,maxDouble,maxDouble);
+
+    int n = 0;
+
+    for (GLPolyWrap<PolyMesh>& glWrapMesh : glWrapMeshes) {
+        if (glWrapMesh.mesh != nullptr) {
+            vcg::tri::UpdateBounding<PolyMesh>::Box(*glWrapMesh.mesh);
+
+            center += glWrapMesh.mesh->bbox.Center();
+
+            vcg::Point3d pMin = glWrapMesh.mesh->bbox.min;
+            vcg::Point3d pMax = glWrapMesh.mesh->bbox.max;
+            maxBBPoint.X() = std::max(maxBBPoint.X(), pMax.X());
+            maxBBPoint.Y() = std::max(maxBBPoint.Y(), pMax.Y());
+            maxBBPoint.Z() = std::max(maxBBPoint.Z(), pMax.Z());
+            minBBPoint.X() = std::min(minBBPoint.X(), pMin.X());
+            minBBPoint.Y() = std::min(minBBPoint.Y(), pMin.Y());
+            minBBPoint.Z() = std::min(minBBPoint.Z(), pMin.Z());
+
+            n++;
+        }
+    }
+
+    if (n > 0) {
+        center /= n;
+        radius = (maxBBPoint - minBBPoint).Norm();
+    }
+
+    vcg::Point3f sceneCenter(static_cast<float>(center.X()),static_cast<float>(center.Y()),static_cast<float>(center.Z()));
+    setSceneCenter(sceneCenter);
+    setSceneRadius(radius);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void GLArea::setMesh1(PolyMesh* mesh1)
@@ -212,6 +282,11 @@ void GLArea::setResultWireframe(bool wireframe)
     glWrapResult.wireframe = wireframe;
 }
 
+void GLArea::setTrackballVisibility(bool visible)
+{
+    this->sceneTrackballVisible = visible;
+}
+
 
 float GLArea::getSceneRadius() const
 {
@@ -241,32 +316,55 @@ void GLArea::resetTrackball()
 }
 
 
-void GLArea::setSceneOnMesh()
+void GLArea::zoomSceneOnTheTwoMeshes()
 {
+    PolyMesh::CoordType center(0,0,0);
+    double radius = 0;
+
     if (glWrapMesh1.mesh != nullptr && glWrapMesh2.mesh != nullptr) {
         vcg::tri::UpdateBounding<PolyMesh>::Box(*glWrapMesh1.mesh);
         vcg::tri::UpdateBounding<PolyMesh>::Box(*glWrapMesh2.mesh);
 
-        PolyMesh::CoordType center(0,0,0);
-        PolyMesh::ScalarType maxDiag = 0;
-
         center += glWrapMesh1.mesh->bbox.Center();
         center += glWrapMesh2.mesh->bbox.Center();
         center /= 2;
+
+        const double maxDouble = std::numeric_limits<double>::max();
+        PolyMesh::CoordType maxBBPoint(-maxDouble,-maxDouble,-maxDouble);
+        PolyMesh::CoordType minBBPoint(maxDouble,maxDouble,maxDouble);
+        vcg::Point3d pMax1 = glWrapMesh1.mesh->bbox.max;
+        vcg::Point3d pMin1 = glWrapMesh1.mesh->bbox.max;
+        maxBBPoint.X() = std::max(maxBBPoint.X(), pMax1.X());
+        maxBBPoint.Y() = std::max(maxBBPoint.Y(), pMax1.Y());
+        maxBBPoint.Z() = std::max(maxBBPoint.Z(), pMax1.Z());
+        minBBPoint.X() = std::min(minBBPoint.X(), pMin1.X());
+        minBBPoint.Y() = std::min(minBBPoint.Y(), pMin1.Y());
+        minBBPoint.Z() = std::min(minBBPoint.Z(), pMin1.Z());
+
+        vcg::Point3d pMax2 = glWrapMesh2.mesh->bbox.max;
+        vcg::Point3d pMin2 = glWrapMesh2.mesh->bbox.min;
+        maxBBPoint.X() = std::max(maxBBPoint.X(), pMax2.X());
+        maxBBPoint.Y() = std::max(maxBBPoint.Y(), pMax2.Y());
+        maxBBPoint.Z() = std::max(maxBBPoint.Z(), pMax2.Z());
+        minBBPoint.X() = std::min(minBBPoint.X(), pMin2.X());
+        minBBPoint.Y() = std::min(minBBPoint.Y(), pMin2.Y());
+        minBBPoint.Z() = std::min(minBBPoint.Z(), pMin2.Z());
+
+        radius = (maxBBPoint - minBBPoint).Norm()/2;
+
         vcg::Point3f sceneCenter(static_cast<float>(center.X()),static_cast<float>(center.Y()),static_cast<float>(center.Z()));
         setSceneCenter(sceneCenter);
 
-        maxDiag = std::max(maxDiag, glWrapMesh1.mesh->bbox.Diag());
-        maxDiag = std::max(maxDiag, glWrapMesh2.mesh->bbox.Diag());
-        setSceneRadius(static_cast<float>(maxDiag/2));
+        setSceneRadius(radius);
     }
-    selectedMesh = nullptr;
+
+    this->selectedMesh = nullptr;
 }
 
 void GLArea::selectAndTrackScene() {
-    selectedMeshVertices.clear();
+    this->selectedMeshVertices.clear();
 
-    setSceneOnMesh();
+    zoomSceneOnTheTwoMeshes();
 
     glWrapMesh1.selected = false;
     glWrapMesh2.selected = false;
@@ -301,9 +399,9 @@ void GLArea::selectAndTrackMesh(PolyMesh* mesh)
     PolyMesh::CoordType center(0,0,0);
     center = mesh->bbox.Center();
 
-    selectedMesh = mesh;
-    selectedMeshVertices = mesh->vert;
-    selectedMeshInitialCenter = center;
+    this->selectedMesh = mesh;
+    this->selectedMeshVertices = mesh->vert;
+    this->selectedMeshInitialCenter = center;
 
     PolyMesh::ScalarType maxDiag = 0;
 
@@ -320,7 +418,7 @@ void GLArea::selectAndTrackMesh(PolyMesh* mesh)
 
 void GLArea::applySelectedMeshTransformation()
 {
-    if (selectedMesh != nullptr) {
+    if (this->selectedMesh != nullptr) {
         selectedTrackball.GetView();
 
         vcg::Similarityf sim = selectedTrackball.track;
@@ -332,29 +430,29 @@ void GLArea::applySelectedMeshTransformation()
         vcg::Quaternionf quat = sim.rot;
         quat.ToMatrix(rot);
 
-        for (size_t i = 0; i < selectedMesh->vert.size(); i++) {
+        for (size_t i = 0; i < this->selectedMesh->vert.size(); i++) {
             vcg::Point3f initialPoint(
-                static_cast<float>(selectedMeshVertices[i].P().X()),
-                static_cast<float>(selectedMeshVertices[i].P().Y()),
-                static_cast<float>(selectedMeshVertices[i].P().Z()));
+                static_cast<float>(this->selectedMeshVertices[i].P().X()),
+                static_cast<float>(this->selectedMeshVertices[i].P().Y()),
+                static_cast<float>(this->selectedMeshVertices[i].P().Z()));
 
             vcg::Point3f point = initialPoint;
-            point -= vcg::Point3f(selectedMeshInitialCenter.X(), selectedMeshInitialCenter.Y(), selectedMeshInitialCenter.Z());
+            point -= vcg::Point3f(this->selectedMeshInitialCenter.X(), this->selectedMeshInitialCenter.Y(), this->selectedMeshInitialCenter.Z());
             point = rot * point;
-            point += vcg::Point3f(selectedMeshInitialCenter.X(), selectedMeshInitialCenter.Y(), selectedMeshInitialCenter.Z());
+            point += vcg::Point3f(this->selectedMeshInitialCenter.X(), this->selectedMeshInitialCenter.Y(), this->selectedMeshInitialCenter.Z());
             point *= scaleFactor;
             point += tra;
 
-            selectedMesh->vert[i].P() = vcg::Point3d(
+            this->selectedMesh->vert[i].P() = vcg::Point3d(
                 static_cast<double>(point.X()),
                 static_cast<double>(point.Y()),
                 static_cast<double>(point.Z())
             );
         }
 
-        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*selectedMesh);
-        vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*selectedMesh);
-        vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(*selectedMesh);
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*this->selectedMesh);
+        vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*this->selectedMesh);
+        vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(*this->selectedMesh);
     }
 }
 
@@ -397,7 +495,7 @@ void GLArea::initChartSidesWrapper(GLChartSidesWrap<MeshType> &glWrap, ChartData
 
 void GLArea::initializeGL()
 {
-    glClearColor(0.9f, 0.9f, 0.9f, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 0);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_NORMALIZE);
@@ -441,6 +539,10 @@ void GLArea::paintGL()
 
     glPushMatrix();
 
+    for (GLPolyWrap<PolyMesh>& glWrap : glWrapMeshes) {
+        glWrap.GLDraw();
+    }
+
     glWrapMesh1.GLDraw();
     glWrapMesh2.GLDraw();
     glWrapBoolean.GLDraw();
@@ -458,7 +560,7 @@ void GLArea::paintGL()
 
     glPopMatrix();
 
-    if (selectedMesh == nullptr) {
+    if (this->sceneTrackballVisible) {
         sceneTrackball.DrawPostApply();
     }
 }
@@ -467,7 +569,7 @@ void GLArea::keyReleaseEvent (QKeyEvent * e)
 {
     e->ignore ();
 
-    if (selectedMesh == nullptr) {
+    if (this->selectedMesh == nullptr) {
         if (e->key () == Qt::Key_Control)
             sceneTrackball.ButtonUp (QT2VCG (Qt::NoButton, Qt::ControlModifier));
         if (e->key () == Qt::Key_Shift)
@@ -495,7 +597,7 @@ void GLArea::keyPressEvent (QKeyEvent * e)
 {
     e->ignore ();
 
-    if (selectedMesh == nullptr) {
+    if (this->selectedMesh == nullptr) {
         if (e->key () == Qt::Key_Control)
             sceneTrackball.ButtonDown (QT2VCG (Qt::NoButton, Qt::ControlModifier));
         if (e->key () == Qt::Key_Shift)
@@ -521,7 +623,7 @@ void GLArea::mousePressEvent (QMouseEvent * e)
 {
     e->accept ();
 
-    if (selectedMesh == nullptr) {
+    if (this->selectedMesh == nullptr) {
         setFocus ();
         sceneTrackball.MouseDown (QT2VCG_X(this,e), QT2VCG_Y(this,e), QT2VCG (e->button (), e->modifiers ()));
     }
@@ -538,7 +640,7 @@ void GLArea::mouseMoveEvent (QMouseEvent * e)
 {
     if (e->buttons ()) {
 
-        if (selectedMesh == nullptr) {
+        if (this->selectedMesh == nullptr) {
             sceneTrackball.MouseMove (QT2VCG_X(this,e), QT2VCG_Y(this,e));
         }
         else {
@@ -553,7 +655,7 @@ void GLArea::mouseMoveEvent (QMouseEvent * e)
 
 void GLArea::mouseReleaseEvent (QMouseEvent * e)
 {
-    if (selectedMesh == nullptr) {
+    if (this->selectedMesh == nullptr) {
         sceneTrackball.MouseUp (QT2VCG_X(this,e), QT2VCG_Y(this,e), QT2VCG (e->button (), e->modifiers ()));
     }
     else {
@@ -568,7 +670,7 @@ void GLArea::mouseReleaseEvent (QMouseEvent * e)
 void GLArea::wheelEvent (QWheelEvent * e)
 {
     const int WHEEL_STEP = 500;
-    if (selectedMesh == nullptr) {
+    if (this->selectedMesh == nullptr) {
         sceneTrackball.MouseWheel (e->delta () / float (WHEEL_STEP), QTWheel2VCG (e->modifiers ()));
     }
     else {

@@ -31,7 +31,8 @@ struct QuadLayoutData {
 
 template<class PolyMeshType>
 QuadLayoutData<PolyMeshType> getQuadLayoutData(
-        PolyMeshType& mesh,
+        PolyMeshType& mesh,        
+        const bool isQuadMesh,
         const std::vector<int>& faceLabel);
 
 }

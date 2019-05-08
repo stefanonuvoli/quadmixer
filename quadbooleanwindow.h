@@ -22,9 +22,15 @@ private:
 public:
 
     QuadBooleanWindow(QWidget * parent = nullptr);
+    ~QuadBooleanWindow();
+
+    void addMesh(const std::string& filename);
+    void deleteMesh(PolyMesh* mesh);
+    void deleteMesh(const size_t& id);
+
 
     std::string chooseMeshFile();
-    int loadMesh(PolyMesh& mesh, const std::string& filename, bool scaleAndTranslateOnCenter);
+    int loadMesh(PolyMesh& mesh, const std::string& filename, const bool translateCenter, const bool scale);
 
     void setTrackballOnMeshes();
 
@@ -36,6 +42,8 @@ public:
     void doSolveILP();
     void doQuadrangulate();
     void doGetResult();
+
+    void clearVisualizationData();
 
 private slots:
 
@@ -66,19 +74,32 @@ private slots:
     void on_showQuadrangulatedCheckBox_stateChanged(int arg1);
     void on_showQuadrangulatedLayoutCheckBox_stateChanged(int arg1);
     void on_showResultCheckBox_stateChanged(int arg1);
+    void on_trackballCheckBox_stateChanged(int arg1);
+    void on_showWireframe_stateChanged(int arg1);
 
     void on_resetTrackballButton_clicked();
     void on_trackSceneButton_clicked();
     void on_track1Button_clicked();
     void on_track2Button_clicked();
-    void on_showWireframe_stateChanged(int arg1);
+
+    void on_debugModeCheckBox_stateChanged(int arg1);
+
+    void on_loadButton_clicked();
+
+    void on_deleteAllButton_clicked();
 
 private:
 
     Ui::mainWindow ui;
 
+    std::vector<PolyMesh*> meshes;
+
     PolyMesh mesh1;
     PolyMesh mesh2;
+
+    bool isQuadMesh1;
+    bool isQuadMesh2;
+
     std::vector<int> quadTracerLabel1;
     std::vector<int> quadTracerLabel2;
 

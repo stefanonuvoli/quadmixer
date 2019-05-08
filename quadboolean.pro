@@ -42,7 +42,6 @@ SOURCES += \
     quadbooleanwindow.cpp \
     glarea.cpp \
     quadboolean/quadpatchtracer.tpp \
-    quadboolean/quadilp.cpp \
     quadboolean/quadconvert.tpp \
     quadboolean/quadcharts.tpp \
     quadboolean/quadpatterns.cpp \
@@ -56,7 +55,9 @@ SOURCES += \
     globjects/glchartsideswrap.tpp \
     globjects/gldrawtext.cpp \
     quadboolean/quadutils.tpp \
-    globjects/gledgeswrap.tpp
+    globjects/gledgeswrap.tpp \
+    triangulatedataset.cpp \
+    quadboolean/quadilp.tpp
 
 HEADERS += \
     quadboolean.h \
