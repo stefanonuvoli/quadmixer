@@ -2466,7 +2466,8 @@ private:
             {
                 size_t IndexPatch=ComponentPatches[i][j];
                 if (Patches[IndexPatch].IndexF.size()==1)
-                    SplitSingleFacePatch(IndexPatch);
+                    assert(0);
+                    //SplitSingleFacePatch(IndexPatch);
                 else
                     ForceSplit(IndexPatch);
             }
