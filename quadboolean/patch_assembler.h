@@ -526,7 +526,7 @@ class PatchSplitter
         CurrV.insert(ConvexPatchMesh.begin(),ConvexPatchMesh.end());
     }
 
-    bool CanRemove(size_t IndexCandidate)
+    bool CanRemove(size_t IndexCandidate,size_t MinPatches)
     {
         assert(IndexCandidate<TraceVertCandidates.size());
 
@@ -536,6 +536,7 @@ class PatchSplitter
         //get current patches before removal
         std::vector<std::vector<size_t> > CurrPatches;
         RetrievePatchesFromPaths(CurrPatches);
+        if (CurrPatches.size()<=MinPatches)return false;
 
         //then update the new corners
         std::set<size_t> CurrV;
@@ -649,7 +650,7 @@ public:
             //at least one patch per vertex
             assert(VertPatchCount[i].size()>0);
             //no more than 4
-            assert(VertPatchCount[i].size()<=4);
+            //assert(VertPatchCount[i].size()<=4);
 
             //retrieve the original vert
             size_t IndexOriginal=patchMesh.vert[i].Q();
@@ -727,17 +728,22 @@ public:
                 continue;
             }
             //cross-intersections, all convex
-            if (VertPatchCount[i].size()==4)
+            if (VertPatchCount[i].size()>=4)
             {
 
-                size_t IndexPatch0=VertPatchCount[i][0];
-                size_t IndexPatch1=VertPatchCount[i][1];
-                size_t IndexPatch2=VertPatchCount[i][2];
-                size_t IndexPatch3=VertPatchCount[i][3];
-                ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
-                ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
-                ConvexPatchVert[IndexPatch2].push_back(IndexOriginal);
-                ConvexPatchVert[IndexPatch3].push_back(IndexOriginal);
+//                size_t IndexPatch0=VertPatchCount[i][0];
+//                size_t IndexPatch1=VertPatchCount[i][1];
+//                size_t IndexPatch2=VertPatchCount[i][2];
+//                size_t IndexPatch3=VertPatchCount[i][3];
+//                ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
+//                ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
+//                ConvexPatchVert[IndexPatch2].push_back(IndexOriginal);
+//                ConvexPatchVert[IndexPatch3].push_back(IndexOriginal);
+                for (size_t j=0;j<VertPatchCount[i].size();j++)
+                {
+                    size_t IndexPatch=VertPatchCount[i][j];
+                    ConvexPatchVert[IndexPatch].push_back(IndexOriginal);
+                }
                 continue;
             }
         }
@@ -804,11 +810,13 @@ public:
             }
     }
 
+
     bool SplitByBorders(const std::set<size_t> &ConvexOriginal,
                         const std::vector<size_t> &TracingVert,
                         const std::vector<std::vector<size_t> > &TracingDir,
                         std::vector<std::vector<size_t> > &LocalPatches,
-                        std::vector<std::vector<size_t> > &NewPatches)
+                        std::vector<std::vector<size_t> > &NewPatches,
+                        size_t MinTraces=0)
     {
         //trace all
         TraceAllBordersCandidates(ConvexOriginal,TracingVert,TracingDir);
@@ -829,11 +837,17 @@ public:
 
         GetConvexVertices(ConvexOriginal,ConvexPatchMesh);
 
+        //int KeptCandidates=CandidatesPathLenghts.size();
         for (size_t i=0;i<CandidatesPathLenghts.size();i++)
         {
+            //if (KeptCandidates<=MinTraces)break;
+
             size_t CurrTrace=CandidatesPathLenghts[i].second;
-            if (!CanRemove(CurrTrace))continue;
+            if (!CanRemove(CurrTrace,MinTraces))continue;
             num_removed++;
+
+            //KeptCandidates--;
+
             TraceVertCandidates[CurrTrace].clear();
             TraceDirCandidates[CurrTrace].clear();
         }
@@ -2035,6 +2049,89 @@ private:
         return true;
     }
 
+//    bool SplitSingleFacePatch(size_t IndexPatch)
+//    {
+
+//    }
+
+    bool ForceSplit(size_t IndexPatch)
+    {
+        assert(IndexPatch>=0);
+        assert(IndexPatch<Patches.size());
+        assert(Patches[IndexPatch].Active);
+        MeshType *PatchMesh=Patches[IndexPatch].PatchMesh;
+        VertexFieldTracer<MeshType> *PatchFieldTracer=Patches[IndexPatch].PatchFieldTracer;
+
+        PatchSplitter<MeshType> PSplit(*PatchMesh,*PatchFieldTracer,Param.PrintDebug);
+
+
+        std::vector<std::vector<size_t> > LocalPatches,NewPatches;
+        bool splitted=PSplit.SplitByBorders(Patches[IndexPatch].ConvexVertIndex,
+                              Patches[IndexPatch].TracingVert,
+                              Patches[IndexPatch].TracingDir,
+                              LocalPatches,NewPatches,4);
+
+        std::vector<size_t> NewIndexes;
+        SplitPatchIntoSubPatches(IndexPatch,NewPatches,NewIndexes);
+        assert(NewPatches.size()>0);
+
+        if (!splitted)return false;
+
+        //then smooth
+        UpdateFacePatches();
+        UpdateBorderPatches();
+
+//        if (Param.InterleaveSmooth)
+//        {
+//            UpdateSmoothFixedVert(NewPatches);
+//            SmoothPatches(0.9,20,Param.Reproject);
+//        }
+
+        //get new vertex topology
+        std::vector<std::vector<size_t> > NewConvexPatchOriginalVert;
+        std::vector<std::vector<size_t> > NewConcavePatchOriginalVert;
+
+        if (Param.PrintDebug)
+                std::cout<<"Get Topology Step"<<std::endl;
+
+        PSplit.CopyPositionsFrom(mesh);
+        PSplit.GetVertexTopology(LocalPatches,
+                                 Patches[IndexPatch].ConvexVertIndex,
+                                 Patches[IndexPatch].ConcaveVertIndex,
+                                 NewConvexPatchOriginalVert,
+                                 NewConcavePatchOriginalVert);
+//        }
+
+//        //and recompute the field if had changed
+//        if (Param.InterleaveSmooth)
+//            InitField();
+
+         InitIndexOnQ();
+
+        if (Param.PrintDebug)
+                std::cout<<"Update Topology Step"<<std::endl;
+
+        UpdateSubPatchesVertexType(NewIndexes,
+                                   NewConvexPatchOriginalVert,
+                                   NewConcavePatchOriginalVert);
+
+         if (Param.PrintDebug)
+                std::cout<<"Done"<<std::endl;
+
+
+        if (Param.PrintDebug)
+            std::cout<<"check consistency "<<std::endl;
+
+        CheckPatches();
+
+        //volor the patches
+        ColorPatches();
+
+        UpdatePatchPosition();
+
+        return true;
+    }
+
     void InitIndexOnQ()
     {
         //save vertex index on quality
@@ -2310,55 +2407,70 @@ private:
 
     void FixSmallCC()
     {
-//        std::set<size_t> explored;
-//        std::vector<std::set<size_t> > Components;
+        std::set<size_t> explored;
+        std::vector<std::set<size_t> > Components;
 
-//        //get connected components
-//        for (size_t i=0;i<mesh.face.size();i++)
-//        {
-//            std::vector<size_t> stack;
-//            size_t IndexF=i;
-//            if (explored.count(IndexF)>0)continue;
+        //get connected components
+        for (size_t i=0;i<mesh.face.size();i++)
+        {
+            std::vector<size_t> stack;
+            size_t IndexF=i;
+            if (explored.count(IndexF)>0)continue;
 
-//            stack.push_back(IndexF);
-//            explored.insert(IndexF);
-//            Components.resize(Components.size()+1);
-//            do
-//            {
-//                size_t currF=stack.back();
-//                stack.pop_back();
+            stack.push_back(IndexF);
+            explored.insert(IndexF);
+            Components.resize(Components.size()+1);
+            do
+            {
+                size_t currF=stack.back();
+                stack.pop_back();
 
-//                Components.back().insert(currF);
-//                for (size_t i=0;i<mesh.face[currF].VN();i++)
-//                {
-//                    if (vcg::face::IsBorder(mesh.face[currF],i))continue;
+                Components.back().insert(currF);
+                for (size_t i=0;i<mesh.face[currF].VN();i++)
+                {
+                    if (vcg::face::IsBorder(mesh.face[currF],i))continue;
 
-//                    int NextFIndex=vcg::tri::Index(mesh,mesh.face[currF].FFp(i));
+                    int NextFIndex=vcg::tri::Index(mesh,mesh.face[currF].FFp(i));
 
-//                    if (explored.count(NextFIndex)>0)continue;
+                    if (explored.count(NextFIndex)>0)continue;
 
-//                    explored.insert(NextFIndex);
-//                    stack.push_back(NextFIndex);
-//                }
-//            }while (!stack.empty());
-//        }
+                    explored.insert(NextFIndex);
+                    stack.push_back(NextFIndex);
+                }
+            }while (!stack.empty());
+        }
+        if (Param.PrintDebug)
+            std::cout<<"There are "<<Components.size()<<" components"<<std::endl;
 
-//        std::vector<std::vector<size_t> > ComponentPatches;
-//        ComponentPatches.resize(Components.size());
-//        for (size_t i=0;i<Patches.size();i++)
-//        {
-//            if (!Patches[i].Active)continue;
-//            assert(Patches[i].IndexF.size()>0);
-//            size_t TestF=Patches[i].IndexF[0];
-//            for (size_t j=0;j<Components.size();j++)
-//            {
-//                if (Components[j].count(TestF)>0)
-//                {
-//                    ComponentPatches[j].push_back(i);
-//                }
-//            }
-//        }
+        std::vector<std::vector<size_t> > ComponentPatches;
+        ComponentPatches.resize(Components.size());
+        for (size_t i=0;i<Patches.size();i++)
+        {
+            if (!Patches[i].Active)continue;
+            assert(Patches[i].IndexF.size()>0);
+            size_t TestF=Patches[i].IndexF[0];
+            for (size_t j=0;j<Components.size();j++)
+            {
+                if (Components[j].count(TestF)>0)
+                    ComponentPatches[j].push_back(i);
+            }
+        }
 
+        for (size_t i=0;i<ComponentPatches.size();i++)
+        {
+            if (ComponentPatches[i].size()>=3)continue;
+            if (Param.PrintDebug)
+                std::cout<<"One Patch must be splitted"<<std::endl;
+
+            for (size_t j=0;j<ComponentPatches[i].size();j++)
+            {
+                size_t IndexPatch=ComponentPatches[i][j];
+                if (Patches[IndexPatch].IndexF.size()==1)
+                    SplitSingleFacePatch(IndexPatch);
+                else
+                    ForceSplit(IndexPatch);
+            }
+        }
         //        std::vector<std::set<size_t> > PatchComponent;
         //        for (size_t i=0;i<)
     }

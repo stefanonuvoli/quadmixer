@@ -9,6 +9,7 @@
 #include<vcg/space/index/grid_util.h>
 #include<vcg/complex/algorithms/geodesic.h>
 #include<vcg/complex/algorithms/polygonal_algorithms.h>
+#include <vcg/complex/algorithms/isotropic_remeshing.h>
 
 template <class MeshType>
 class EnvelopeGenerator
