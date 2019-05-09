@@ -10,6 +10,58 @@
 #include<vcg/complex/algorithms/geodesic.h>
 #include<vcg/complex/algorithms/polygonal_algorithms.h>
 #include <vcg/complex/algorithms/isotropic_remeshing.h>
+#include <vcg/complex/algorithms/create/resampler.h>
+#include <vcg/complex/algorithms/local_optimization.h>
+#include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
+
+// The class prototypes.
+class DeciVertex;
+class DeciEdge;
+class DeciFace;
+
+struct DeciUsedTypes: public vcg::UsedTypes<vcg::Use<DeciVertex>::AsVertexType,
+                                            vcg::Use<DeciEdge>::AsEdgeType,
+                                            vcg::Use<DeciFace>::AsFaceType>{};
+
+class DeciVertex  : public vcg::Vertex< DeciUsedTypes,
+    vcg::vertex::VFAdj,
+    vcg::vertex::Coord3f,
+    vcg::vertex::Mark,
+    vcg::vertex::Qualityf,
+    vcg::vertex::BitFlags  >{
+public:
+  vcg::math::Quadric<double> &Qd() {return q;}
+private:
+  vcg::math::Quadric<double> q;
+  };
+
+class DeciEdge : public vcg::Edge< DeciUsedTypes> {};
+
+typedef BasicVertexPair<DeciVertex> VertexPair;
+
+class DeciFace    : public vcg::Face< DeciUsedTypes,
+                vcg::face::VertexRef,
+                vcg::face::VFAdj,
+                vcg::face::FFAdj,
+                vcg::face::BitFlags,
+                vcg::face::Normal3d,
+                vcg::face::Color4b,
+                vcg::face::CurvatureDird,
+                vcg::face::Qualityd,
+                vcg::face::WedgeTexCoord2d,
+                vcg::face::Mark > {};
+
+// the main mesh class
+class DeciMesh    : public vcg::tri::TriMesh<std::vector<DeciVertex>, std::vector<DeciFace> > {};
+
+typedef BasicVertexPair<DeciVertex> VertexPair;
+class MyTriEdgeCollapse: public vcg::tri::TriEdgeCollapseQuadric< DeciMesh, VertexPair, MyTriEdgeCollapse, QInfoStandard<DeciVertex>  > {
+            public:
+            typedef  vcg::tri::TriEdgeCollapseQuadric< DeciMesh,  VertexPair, MyTriEdgeCollapse, QInfoStandard<DeciVertex>  > TECQ;
+            typedef  DeciMesh::VertexType::EdgeType EdgeType;
+            inline MyTriEdgeCollapse(  const VertexPair &p, int i, vcg::BaseParameterClass *pp) :TECQ(p,i,pp){}
+};
+
 
 template <class MeshType>
 class EnvelopeGenerator
@@ -203,6 +255,44 @@ class EnvelopeGenerator
         UpdateAttributes(curr_mesh);
     }
 
+
+    static void ExpandImplicit(MeshType &curr_mesh,
+                               MeshType &expand_mesh,
+                               ScalarType offsetVal=0.02)
+    {
+        vcg::tri::UpdateBounding<MeshType>::Box(curr_mesh);
+        vcg::Box3<ScalarType> bb = curr_mesh.bbox;
+        //ScalarType offsetVal=bb.Diag()*Offset;
+        bb.Offset(offsetVal);
+        ScalarType cell_side = bb.Diag()/100.0;
+        bb.Offset(cell_side);
+        vcg::Point3i box_size(bb.DimX()/cell_side,bb.DimY()/cell_side,bb.DimZ()/cell_side);
+        vcg::tri::Resampler<MeshType,MeshType>::Resample(curr_mesh,expand_mesh,bb,box_size,cell_side*5,offsetVal);
+
+        //decimate
+        DeciMesh decimated;
+        vcg::tri::Append<DeciMesh,MeshType>::Mesh(decimated,expand_mesh);
+
+        TriEdgeCollapseQuadricParameter qparams;
+        qparams.QualityThr  =.3;
+        qparams.NormalCheck=true;
+        qparams.PreserveTopology=true;
+        vcg::LocalOptimization<DeciMesh> DeciSession(decimated,&qparams);
+        DeciSession.template Init<MyTriEdgeCollapse>();
+        printf("Initial Heap Size %i\n",int(DeciSession.h.size()));
+
+        size_t FinalSize=5000;
+        DeciSession.SetTargetSimplices(FinalSize);
+        DeciSession.SetTimeBudget(0.5f);
+        DeciSession.SetTargetOperations(100000);
+        while(DeciSession.DoOptimization() && decimated.fn>FinalSize);// && DeciSession.currMetric < TargetError)
+        //if(TargetError< std::numeric_limits<float>::max() ) DeciSession.SetTargetMetric(TargetError);
+
+        expand_mesh.Clear();
+        vcg::tri::Append<MeshType,DeciMesh>::Mesh(expand_mesh,decimated);
+
+    }
+
     static void ExpandSelected(MeshType &curr_mesh,
                                size_t smooth_steps,
                                bool External)
@@ -323,18 +413,12 @@ class EnvelopeGenerator
                 P2*bary.Z());
     }
 
-public:
-
-    static void GenerateEnvelope(MeshType &input_mesh,
-                                 const std::vector<size_t> &Vert,
-                                 MeshType &envelope0,
-                                 MeshType &envelope1,
-                                 size_t smooth_steps=5,
-                                 bool External=false)
+    static void ComputeHarmonics(MeshType &input_mesh,
+                          const std::vector<size_t> &Vert,
+                          MeshType &outMesh)
     {
-        MeshType mesh;
-        vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,input_mesh);
-        UpdateAttributes(mesh);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(outMesh,input_mesh);
+        UpdateAttributes(outMesh);
 
         //step 1 compute harmonics
         typename vcg::tri::Harmonic<MeshType, ScalarType>::ConstraintVec constraints;
@@ -343,29 +427,29 @@ public:
 
         for (size_t i=0;i<Vert.size();i+=2)
         {
-            constraints.push_back(HarmoConstraint(&(mesh.vert[Vert[i]]), -1.0));
-            constraints.push_back(HarmoConstraint(&(mesh.vert[Vert[i+1]]), 1.0));
+            constraints.push_back(HarmoConstraint(&(outMesh.vert[Vert[i]]), -1.0));
+            constraints.push_back(HarmoConstraint(&(outMesh.vert[Vert[i+1]]), 1.0));
         }
         typename MeshType::template PerVertexAttributeHandle<ScalarType> handle;
-        handle=vcg::tri::Allocator<MeshType>::template GetPerVertexAttribute<ScalarType>(mesh, "harmonic");
-        bool ok = vcg::tri::Harmonic<MeshType, ScalarType>::ComputeScalarField(mesh, constraints, handle);
+        handle=vcg::tri::Allocator<MeshType>::template GetPerVertexAttribute<ScalarType>(outMesh, "harmonic");
+        bool ok = vcg::tri::Harmonic<MeshType, ScalarType>::ComputeScalarField(outMesh, constraints, handle);
         assert(ok);
-        vcg::tri::UpdateQuality<MeshType>::VertexFromAttributeHandle(mesh,handle);
-        vcg::tri::UpdateColor<MeshType>::PerVertexQualityRamp(mesh,-1,1);
+        vcg::tri::UpdateQuality<MeshType>::VertexFromAttributeHandle(outMesh,handle);
+        vcg::tri::UpdateColor<MeshType>::PerVertexQualityRamp(outMesh,-1,1);
 
         //step 1 storethe harmonic field on  quality
-        for (size_t i=0;i<mesh.vert.size();i++)
-            mesh.vert[i].Q()=handle[i];
+        for (size_t i=0;i<outMesh.vert.size();i++)
+            outMesh.vert[i].Q()=handle[i];
 
         //vcg::tri::Smooth<MeshType>::VertexQualityLaplacian(mesh,10);
 
         //step 2 compute edges to be splitted
         std::map<EdgeCoordKey,CoordType> SplitOps;
-        for (size_t i=0;i<mesh.face.size();i++)
-            for (size_t j=0;j<mesh.face[i].VN();j++)
+        for (size_t i=0;i<outMesh.face.size();i++)
+            for (size_t j=0;j<outMesh.face[i].VN();j++)
             {
-                VertexType *V0=mesh.face[i].V0(j);
-                VertexType *V1=mesh.face[i].V1(j);
+                VertexType *V0=outMesh.face[i].V0(j);
+                VertexType *V1=outMesh.face[i].V1(j);
                 ScalarType Harmonic0=V0->Q();
                 ScalarType Harmonic1=V1->Q();
                 if (fabs(Harmonic0)<0.00001)continue;
@@ -381,64 +465,118 @@ public:
             }
         SplitLev<MeshType> splMd(&SplitOps);
         EdgePred<MeshType> eP(&SplitOps);
-        bool done=vcg::tri::RefineE<MeshType,SplitLev<MeshType>,EdgePred<MeshType> >(mesh,splMd,eP);
-        UpdateAttributes(mesh);
+        bool done=vcg::tri::RefineE<MeshType,SplitLev<MeshType>,EdgePred<MeshType> >(outMesh,splMd,eP);
+        UpdateAttributes(outMesh);
 
-        //step 3 split into two meshes
-        envelope0.Clear();
-        envelope1.Clear();
-        vcg::tri::UpdateQuality<MeshType>::FaceFromVertex(mesh);
-        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
-        for (size_t i=0;i<mesh.face.size();i++)
-            if (mesh.face[i].Q()<0)mesh.face[i].SetS();
+        vcg::tri::UpdateQuality<MeshType>::FaceFromVertex(outMesh);
+        vcg::tri::UpdateSelection<MeshType>::Clear(outMesh);
+        for (size_t i=0;i<outMesh.face.size();i++)
+            if (outMesh.face[i].Q()<0)outMesh.face[i].SetS();
+    }
+
+public:
+
+//    static void GetPolyline(MeshType &input_mesh,
+//                            const std::vector<size_t> &Vert,
+//                            )
+//    {
+
+//    }
+
+    static void GenerateEnvelope(MeshType &input_mesh,
+                                 const std::vector<size_t> &Vert,
+                                 MeshType &envelope0,
+                                 MeshType &envelope1,
+                                 size_t smooth_steps=5,
+                                 int Inflate_dir=0,
+                                 bool Implicit=true,
+                                 ScalarType offset=0.02)
+    {
+        MeshType mesh;
+
+
+        ComputeHarmonics(input_mesh,Vert,mesh);
+
+        MeshType part0;
+        MeshType part1;
 
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
-        vcg::tri::Append<MeshType,MeshType>::Mesh(envelope0,mesh,true);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(part0,mesh,true);
 
         vcg::tri::UpdateSelection<MeshType>::FaceInvert(mesh);
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
 
-        vcg::tri::Append<MeshType,MeshType>::Mesh(envelope1,mesh,true);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(part1,mesh,true);
         vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
 
-        UpdateAttributes(envelope0);
-        UpdateAttributes(envelope1);
+        UpdateAttributes(part0);
+        UpdateAttributes(part1);
 
-        vcg::tri::Allocator<MeshType>::CompactEveryVector(envelope0);
-        vcg::tri::Allocator<MeshType>::CompactEveryVector(envelope1);
+        vcg::tri::Allocator<MeshType>::CompactEveryVector(part0);
+        vcg::tri::Allocator<MeshType>::CompactEveryVector(part1);
         //step 5 close holes
-        size_t numF0=envelope0.face.size();
-        size_t numF1=envelope1.face.size();
+        size_t numF0=part0.face.size();
+        size_t numF1=part1.face.size();
 
-        ScalarType AvgEdge0=AverageEdgeSize(envelope0)/2;
-        ScalarType AvgEdge1=AverageEdgeSize(envelope1)/2;
+        ScalarType AvgEdge0=AverageEdgeSize(part0)/2;
+        ScalarType AvgEdge1=AverageEdgeSize(part1)/2;
 
 
-        vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(envelope0,envelope0.face.size(),false);
-        vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(envelope1,envelope1.face.size(),false);
-        size_t numF0_after=envelope0.face.size();
-        size_t numF1_after=envelope1.face.size();
+        vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(part0,part0.face.size(),false);
+        vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(part1,part1.face.size(),false);
+        size_t numF0_after=part0.face.size();
+        size_t numF1_after=part1.face.size();
 
-        vcg::tri::UpdateSelection<MeshType>::Clear(envelope0);
-        vcg::tri::UpdateSelection<MeshType>::Clear(envelope1);
+        vcg::tri::UpdateSelection<MeshType>::Clear(part0);
+        vcg::tri::UpdateSelection<MeshType>::Clear(part1);
         for (size_t i=numF0;i<numF0_after;i++)
-            envelope0.face[i].SetS();
+            part0.face[i].SetS();
         for (size_t i=numF1;i<numF1_after;i++)
-            envelope1.face[i].SetS();
+            part1.face[i].SetS();
 
-        RemeshSelected(envelope0,AvgEdge0);
-        RemeshSelected(envelope1,AvgEdge1);
+        RemeshSelected(part0,AvgEdge0);
+        RemeshSelected(part1,AvgEdge1);
+
+
+        for (size_t i=numF0;i<part0.face.size();i++)
+            part0.face[i].SetS();
+
+        for (size_t i=numF1;i<part1.face.size();i++)
+            part1.face[i].SetS();
+
+
+        envelope0.Clear();
+        envelope1.Clear();
+
+        if (Inflate_dir!=0)
+        {
+           if (Inflate_dir==1)
+           {
+            ExpandSelected(envelope0,smooth_steps,true);
+            ExpandSelected(envelope1,smooth_steps,true);
+           }else
+           {
+            ExpandSelected(envelope0,smooth_steps,false);
+            ExpandSelected(envelope1,smooth_steps,false);
+           }
+        }
+
+        ScalarType OffsetVal=input_mesh.bbox.Diag()*offset;
+        if (Implicit)
+        {
+            ExpandImplicit(part0,envelope0,OffsetVal);
+            ExpandImplicit(part1,envelope1,OffsetVal);
+        }
+        else
+        {
+            vcg::tri::Append<MeshType,MeshType>::Mesh(envelope0,part0);
+            vcg::tri::Append<MeshType,MeshType>::Mesh(envelope1,part1);
+        }
 
         std::cout<<"Done"<<std::endl;
 
-        for (size_t i=numF0;i<envelope0.face.size();i++)
-            envelope0.face[i].SetS();
-
-        for (size_t i=numF1;i<envelope1.face.size();i++)
-            envelope1.face[i].SetS();
-
-        ExpandSelected(envelope0,smooth_steps,External);
-        ExpandSelected(envelope1,smooth_steps,External);
+        //ExpandSelected(envelope0,smooth_steps,External);
+        //ExpandSelected(envelope1,smooth_steps,External);
 
     }
 
@@ -447,7 +585,9 @@ public:
                                  MeshType &envelope0,
                                  MeshType &envelope1,
                                  size_t smooth_steps=5,
-                                 bool External=false)
+                                 int Inflate_dir=0,
+                                 bool Implicit=true,
+                                 ScalarType offsetval=0.01)
     {
         MeshType mesh;
         vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,input_mesh);
@@ -485,7 +625,7 @@ public:
             mesh.vert.back().P()=Pos;
             IndexV.push_back(mesh.vert.size()-1);
         }
-        GenerateEnvelope(mesh,IndexV,envelope0,envelope1,smooth_steps,External);
+        GenerateEnvelope(mesh,IndexV,envelope0,envelope1,smooth_steps,Inflate_dir,Implicit,offsetval);
         return true;
     }
 };
