@@ -20,46 +20,46 @@ class DeciEdge;
 class DeciFace;
 
 struct DeciUsedTypes: public vcg::UsedTypes<vcg::Use<DeciVertex>::AsVertexType,
-                                            vcg::Use<DeciEdge>::AsEdgeType,
-                                            vcg::Use<DeciFace>::AsFaceType>{};
+        vcg::Use<DeciEdge>::AsEdgeType,
+        vcg::Use<DeciFace>::AsFaceType>{};
 
 class DeciVertex  : public vcg::Vertex< DeciUsedTypes,
-    vcg::vertex::VFAdj,
-    vcg::vertex::Coord3f,
-    vcg::vertex::Mark,
-    vcg::vertex::Qualityf,
-    vcg::vertex::BitFlags  >{
+        vcg::vertex::VFAdj,
+        vcg::vertex::Coord3f,
+        vcg::vertex::Mark,
+        vcg::vertex::Qualityf,
+        vcg::vertex::BitFlags  >{
 public:
-  vcg::math::Quadric<double> &Qd() {return q;}
+    vcg::math::Quadric<double> &Qd() {return q;}
 private:
-  vcg::math::Quadric<double> q;
-  };
+    vcg::math::Quadric<double> q;
+};
 
 class DeciEdge : public vcg::Edge< DeciUsedTypes> {};
 
 typedef BasicVertexPair<DeciVertex> VertexPair;
 
 class DeciFace    : public vcg::Face< DeciUsedTypes,
-                vcg::face::VertexRef,
-                vcg::face::VFAdj,
-                vcg::face::FFAdj,
-                vcg::face::BitFlags,
-                vcg::face::Normal3d,
-                vcg::face::Color4b,
-                vcg::face::CurvatureDird,
-                vcg::face::Qualityd,
-                vcg::face::WedgeTexCoord2d,
-                vcg::face::Mark > {};
+        vcg::face::VertexRef,
+        vcg::face::VFAdj,
+        vcg::face::FFAdj,
+        vcg::face::BitFlags,
+        vcg::face::Normal3d,
+        vcg::face::Color4b,
+        vcg::face::CurvatureDird,
+        vcg::face::Qualityd,
+        vcg::face::WedgeTexCoord2d,
+        vcg::face::Mark > {};
 
 // the main mesh class
 class DeciMesh    : public vcg::tri::TriMesh<std::vector<DeciVertex>, std::vector<DeciFace> > {};
 
 typedef BasicVertexPair<DeciVertex> VertexPair;
 class MyTriEdgeCollapse: public vcg::tri::TriEdgeCollapseQuadric< DeciMesh, VertexPair, MyTriEdgeCollapse, QInfoStandard<DeciVertex>  > {
-            public:
-            typedef  vcg::tri::TriEdgeCollapseQuadric< DeciMesh,  VertexPair, MyTriEdgeCollapse, QInfoStandard<DeciVertex>  > TECQ;
-            typedef  DeciMesh::VertexType::EdgeType EdgeType;
-            inline MyTriEdgeCollapse(  const VertexPair &p, int i, vcg::BaseParameterClass *pp) :TECQ(p,i,pp){}
+public:
+    typedef  vcg::tri::TriEdgeCollapseQuadric< DeciMesh,  VertexPair, MyTriEdgeCollapse, QInfoStandard<DeciVertex>  > TECQ;
+    typedef  DeciMesh::VertexType::EdgeType EdgeType;
+    inline MyTriEdgeCollapse(  const VertexPair &p, int i, vcg::BaseParameterClass *pp) :TECQ(p,i,pp){}
 };
 
 
@@ -191,28 +191,6 @@ class EnvelopeGenerator
         vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(curr_mesh);
     }
 
-    //    void Expand(MeshType &curr_mesh,MeshType &inflated,ScalarType Offset)
-    //    {
-    //        vcg::Point3i volumeDim;
-    //        ScalarType voxelSize = curr_mesh.bbox.Diag()/50.0f;
-    //        bool discretizeFlag = false;
-    //        bool multiSampleFlag = false;
-    //        bool absDistFlag = false;
-
-    //        vcg::Box3<ScalarType> volumeBox = curr_mesh.bbox;
-    //        volumeBox.Offset(volumeBox.Diag()/10.0f+Offset);
-    //        vcg::BestDim(volumeBox , voxelSize, volumeDim );
-
-    ////        qDebug("Resampling mesh using a volume of %i x %i x %i",volumeDim[0],volumeDim[1],volumeDim[2]);
-    ////        qDebug("     VoxelSize is %f, offset is %f ", voxelSize,offsetThr);
-    ////        qDebug("     Mesh Box is %f %f %f",mesh.bbox.DimX(),mesh.bbox.DimY(),mesh.bbox.DimZ() );
-
-    //        MCTriMesh temp_mesh,inflated_temp;
-    //        vcg::tri::Append<MCTriMesh,MeshType>::Mesh(temp_mesh,curr_mesh);
-    //        vcg::tri::Resampler<MCTriMesh,MCTriMesh,MCTriMesh::ScalarType>::Resample(temp_mesh, inflated_temp, volumeBox, volumeDim, voxelSize, Offset,discretizeFlag,multiSampleFlag,absDistFlag/*, cb*/);
-
-    //    }
-
     static ScalarType AverageEdgeSize(MeshType &curr_mesh)
     {
         ScalarType AVGEdge=0;
@@ -276,6 +254,8 @@ class EnvelopeGenerator
         TriEdgeCollapseQuadricParameter qparams;
         qparams.QualityThr  =.3;
         qparams.NormalCheck=true;
+        qparams.OptimalPlacement=true;
+        qparams.HardNormalCheck=true;
         qparams.PreserveTopology=true;
         vcg::LocalOptimization<DeciMesh> DeciSession(decimated,&qparams);
         DeciSession.template Init<MyTriEdgeCollapse>();
@@ -309,6 +289,7 @@ class EnvelopeGenerator
                 if (IsSel0=IsSel1)continue;
                 seeds.push_back(curr_mesh.face[i].V0(j));
                 seeds.push_back(curr_mesh.face[i].V1(j));
+                //std::cout<<"Seed "<<std::endl;
             }
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(curr_mesh);
 
@@ -324,6 +305,7 @@ class EnvelopeGenerator
             if (!curr_mesh.vert[i].IsS())continue;
             MaxRad=std::max(MaxRad,curr_mesh.vert[i].Q());
         }
+
         MaxRad*=0.9;
         //then expand
         for (size_t i=0;i<curr_mesh.vert.size();i++)
@@ -414,8 +396,8 @@ class EnvelopeGenerator
     }
 
     static void ComputeHarmonics(MeshType &input_mesh,
-                          const std::vector<size_t> &Vert,
-                          MeshType &outMesh)
+                                 const std::vector<size_t> &Vert,
+                                 MeshType &outMesh)
     {
         vcg::tri::Append<MeshType,MeshType>::Mesh(outMesh,input_mesh);
         UpdateAttributes(outMesh);
@@ -474,14 +456,69 @@ class EnvelopeGenerator
             if (outMesh.face[i].Q()<0)outMesh.face[i].SetS();
     }
 
+    static bool AddInternalVertices(MeshType &in_mesh,const std::vector<CoordType> &Pos,
+                                    MeshType &out_mesh,
+                                    std::vector<size_t> &IndexV)
+    {
+        vcg::tri::Append<MeshType,MeshType>::Mesh(out_mesh,in_mesh);
+        UpdateAttributes(out_mesh);
+
+        std::vector<size_t> SplitFace;
+        std::vector<CoordType> SplitBary;
+        FindClosestFaceBary(out_mesh,Pos,SplitFace,SplitBary);
+
+        //check the faces to be unique with the flag
+        vcg::tri::UpdateSelection<MeshType>::Clear(out_mesh);
+
+        assert(SplitFace.size()==SplitBary.size());
+        //then make the barycenter close to border
+        for (size_t i=0;i<SplitFace.size();i++)
+        {
+            size_t IndexF=SplitFace[i];
+            std::cout<<"Face "<<IndexF<<std::endl;
+            if (out_mesh.face[IndexF].IsS())
+            {
+                std::cout<<"WARNING SAME FACE SELECTED TWICE"<<std::endl;
+                return false;
+            }
+            out_mesh.face[IndexF].SetS();
+            ClampBarycenterCoords(SplitBary[i]);
+        }
+
+
+        //then split the faces
+        IndexV.clear();
+        for (size_t i=0;i<SplitFace.size();i++)
+        {
+            size_t IndexF=SplitFace[i];
+            vcg::PolygonalAlgorithm<MeshType>::Triangulate(out_mesh,IndexF);
+            CoordType Pos=InterpolatePos(out_mesh,IndexF,SplitBary[i]);
+            out_mesh.vert.back().P()=Pos;
+            IndexV.push_back(out_mesh.vert.size()-1);
+        }
+        return true;
+    }
+
 public:
 
-//    static void GetPolyline(MeshType &input_mesh,
-//                            const std::vector<size_t> &Vert,
-//                            )
-//    {
-
-//    }
+    static void GetPolyline(MeshType &input_mesh,
+                            const std::vector<size_t> &Vert,
+                            std::vector<std::pair<CoordType,CoordType> > &Segments)
+    {
+        MeshType outMesh;
+        Segments.clear();
+        ComputeHarmonics(input_mesh,Vert,outMesh);
+        for (size_t i=0;i<outMesh.face.size();i++)
+            for (size_t j=0;j<outMesh.face[i].VN();j++)
+            {
+                FaceType *f0=&outMesh.face[i];
+                FaceType *f1=f0->FFp(j);
+                if (f0->IsS()==f1->IsS())continue;
+                CoordType P0=outMesh.face[i].P0(j);
+                CoordType P1=outMesh.face[i].P1(j);
+                Segments.push_back(std::pair<CoordType,CoordType>(P0,P1));
+            }
+    }
 
     static void GenerateEnvelope(MeshType &input_mesh,
                                  const std::vector<size_t> &Vert,
@@ -550,15 +587,15 @@ public:
 
         if (Inflate_dir!=0)
         {
-           if (Inflate_dir==1)
-           {
-            ExpandSelected(envelope0,smooth_steps,true);
-            ExpandSelected(envelope1,smooth_steps,true);
-           }else
-           {
-            ExpandSelected(envelope0,smooth_steps,false);
-            ExpandSelected(envelope1,smooth_steps,false);
-           }
+            if (Inflate_dir==1)
+            {
+                ExpandSelected(part0,smooth_steps,true);
+                ExpandSelected(part1,smooth_steps,true);
+            }else
+            {
+                ExpandSelected(part0,smooth_steps,false);
+                ExpandSelected(part1,smooth_steps,false);
+            }
         }
 
         ScalarType OffsetVal=input_mesh.bbox.Diag()*offset;
@@ -590,42 +627,22 @@ public:
                                  ScalarType offsetval=0.01)
     {
         MeshType mesh;
-        vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,input_mesh);
-        UpdateAttributes(mesh);
-
-        std::vector<size_t> SplitFace;
-        std::vector<CoordType> SplitBary;
-        FindClosestFaceBary(mesh,Pos,SplitFace,SplitBary);
-
-        //check the faces to be unique with the flag
-        vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
-
-        assert(SplitFace.size()==SplitBary.size());
-        //then make the barycenter close to border
-        for (size_t i=0;i<SplitFace.size();i++)
-        {
-            size_t IndexF=SplitFace[i];
-            std::cout<<"Face "<<IndexF<<std::endl;
-            if (mesh.face[IndexF].IsS())
-            {
-                std::cout<<"WARNING SAME FACE SELECTED TWICE"<<std::endl;
-                return false;
-            }
-            mesh.face[IndexF].SetS();
-            ClampBarycenterCoords(SplitBary[i]);
-        }
-
         std::vector<size_t> IndexV;
-        //then split the faces
-        for (size_t i=0;i<SplitFace.size();i++)
-        {
-            size_t IndexF=SplitFace[i];
-            vcg::PolygonalAlgorithm<MeshType>::Triangulate(mesh,IndexF);
-            CoordType Pos=InterpolatePos(mesh,IndexF,SplitBary[i]);
-            mesh.vert.back().P()=Pos;
-            IndexV.push_back(mesh.vert.size()-1);
-        }
+        bool isOK=AddInternalVertices(input_mesh,Pos,mesh,IndexV);
+        if (!isOK)return false;
         GenerateEnvelope(mesh,IndexV,envelope0,envelope1,smooth_steps,Inflate_dir,Implicit,offsetval);
+        return true;
+    }
+
+    static bool GetPolyline(MeshType &input_mesh,
+                     const std::vector<CoordType> &Pos,
+                     std::vector<std::pair<CoordType,CoordType> > &Segments)
+    {
+        MeshType mesh;
+        std::vector<size_t> IndexV;
+        bool isOK=AddInternalVertices(input_mesh,Pos,mesh,IndexV);
+        if (!isOK)return false;
+        GetPolyline(mesh,IndexV,Segments);
         return true;
     }
 };
