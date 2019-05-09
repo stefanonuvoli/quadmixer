@@ -889,6 +889,11 @@ void getResult(
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(result);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
+    vcg::tri::UpdateNormal<TriangleMesh>::PerFaceNormalized(targetBoolean);
+    vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalized(targetBoolean);
+    vcg::tri::UpdateBounding<TriangleMesh>::Box(targetBoolean);
+    vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalizedPerFace(targetBoolean);
+
     if (result.face.size() == 0)
         return;
 

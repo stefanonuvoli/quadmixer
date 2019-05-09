@@ -24,6 +24,7 @@ GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
 
 size_t GLArea::addMesh(GLArea::PolyMesh *mesh)
 {
+    deselectTargetMeshes();
     deselectTransformationMesh();
 
     size_t id = glWrapMeshes.size();
@@ -34,10 +35,10 @@ size_t GLArea::addMesh(GLArea::PolyMesh *mesh)
     return id;
 }
 
-void GLArea::deleteMesh(const size_t& id)
+void GLArea::removeMesh(const size_t& id)
 {
+    deselectTargetMeshes();
     deselectTransformationMesh();
-    deselectTargetMesh();
 
     glWrapMeshes[id].mesh = nullptr;
 }
@@ -146,7 +147,7 @@ void GLArea::manageDoubleClick(const int &x, const int &y)
         selectTargetMesh(picked[0]);
     }
     else {
-        deselectTargetMesh();
+        deselectTargetMeshes();
     }
 }
 
@@ -161,7 +162,7 @@ void GLArea::selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap)
         this->targetMesh2->target2 = true;
     }
     else {
-        deselectTargetMesh();
+        deselectTargetMeshes();
 
         selectTargetMesh(meshWrap);
     }
@@ -169,7 +170,7 @@ void GLArea::selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap)
     updateGL();
 }
 
-void GLArea::deselectTargetMesh() {
+void GLArea::deselectTargetMeshes() {
     if (targetMesh1 != nullptr) {
         this->targetMesh1->target1 = false;
         this->targetMesh1 = nullptr;
@@ -230,6 +231,12 @@ void GLArea::applySelectedMeshTransformation()
         vcg::Quaternionf quat = sim.rot;
         quat.ToMatrix(rot);
 
+
+        vcg::Point3f translateCenter(
+                    transformationMeshCenter.X(),
+                    transformationMeshCenter.Y(),
+                    transformationMeshCenter.Z());
+
         for (size_t i = 0; i < this->transformationMesh->mesh->vert.size(); i++) {
             vcg::Point3f initialPoint(
                 static_cast<float>(this->transformationMeshVertices[i].P().X()),
@@ -237,14 +244,10 @@ void GLArea::applySelectedMeshTransformation()
                 static_cast<float>(this->transformationMeshVertices[i].P().Z()));
 
             vcg::Point3f point = initialPoint;
-            vcg::Point3f translateCenter(
-                        transformationMeshCenter.X(),
-                        transformationMeshCenter.Y(),
-                        transformationMeshCenter.Z());
             point -= translateCenter;
+            point += tra;
             point = rot * point;
             point += translateCenter;
-            point += rot * tra;
             point *= scaleFactor;
 
             this->transformationMesh->mesh->vert[i].P() = vcg::Point3d(
@@ -254,6 +257,7 @@ void GLArea::applySelectedMeshTransformation()
             );
         }
 
+        vcg::tri::UpdateBounding<PolyMesh>::Box(*this->transformationMesh->mesh);
         vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*this->transformationMesh->mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*this->transformationMesh->mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(*this->transformationMesh->mesh);
@@ -268,8 +272,8 @@ void GLArea::setTrackballVisibility(bool visible)
 
 void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
     if (mesh != nullptr) {
-        //        vcg::PolygonalAlgorithm<MeshType>::UpdateFaceNormalByFitting(*mesh);
         vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(*mesh);
+//        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*mesh);
 
         vcg::tri::UpdateBounding<PolyMesh>::Box(*mesh);
@@ -343,8 +347,8 @@ void GLArea::paintGL()
         glWrapQuadLayoutPreserved1.GLDraw();
         glWrapQuadLayoutPreserved2.GLDraw();
         glWrapChartSides.GLDraw();
-        glWrapQuadrangulated.GLDraw(wireframe);
-        glWrapQuadLayoutQuadrangulated.GLDraw();
+        glWrapQuadrangulation.GLDraw(wireframe);
+        glWrapQuadLayoutQuadrangulation.GLDraw();
         glWrapResult.GLDraw(wireframe);
     }
 
@@ -564,14 +568,14 @@ void GLArea::setIlpResult(std::vector<int>* ilpResult)
     this->glWrapChartSides.ilpResult = ilpResult;
 }
 
-void GLArea::setQuadrangulated(PolyMesh* quadrangulated)
+void GLArea::setQuadrangulation(PolyMesh* quadrangulation)
 {
-    initMeshWrapper(this->glWrapQuadrangulated, quadrangulated);
+    initMeshWrapper(this->glWrapQuadrangulation, quadrangulation);
 }
 
-void GLArea::setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangulated)
+void GLArea::setQuadLayoutQuadrangulation(QuadLayoutData* quadLayoutQuadrangulation)
 {
-    initQuadLayoutWrapper(this->glWrapQuadLayoutQuadrangulated, quadLayoutDataQuadrangulated);
+    initQuadLayoutWrapper(this->glWrapQuadLayoutQuadrangulation, quadLayoutQuadrangulation);
 }
 
 void GLArea::setResult(PolyMesh* result)
@@ -641,14 +645,14 @@ void GLArea::setILPVisibility(bool visible)
     glWrapChartSides.ilpVisible = visible;
 }
 
-void GLArea::setQuadrangulatedVisibility(bool visible)
+void GLArea::setQuadrangulationVisibility(bool visible)
 {
-    glWrapQuadrangulated.visible = visible;
+    glWrapQuadrangulation.visible = visible;
 }
 
-void GLArea::setQuadLayoutQuadrangulatedVisibility(bool visible)
+void GLArea::setQuadLayoutQuadrangulationVisibility(bool visible)
 {
-    glWrapQuadLayoutQuadrangulated.visible = visible;
+    glWrapQuadLayoutQuadrangulation.visible = visible;
 }
 
 void GLArea::setResultVisibility(bool visible)

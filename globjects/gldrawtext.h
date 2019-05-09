@@ -3,6 +3,8 @@
 
 #include <string>
 
-void drawTextGL(float x, float y, float z, const std::string& str);
+#include <GL/glut.h>
+
+void drawTextGL(float x, float y, float z, const std::string& str, void* font);
 
 #endif // GLDRAWTEXT_H

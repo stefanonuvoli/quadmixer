@@ -5,6 +5,8 @@
 #include <vcg/complex/complex.h>
 #include <wrap/gl/space.h>
 
+#include "gldrawtext.h"
+
 template<class MeshType>
 GLPolyWrap<MeshType>::GLPolyWrap()
 {
@@ -35,14 +37,18 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe)
 
         for(unsigned int i=0; i < face.size(); i++)
         {
-            if (transformation)
+            if (transformation) {
                 vcg::glColor(vcg::Color4b(255,165,0,255));
-            else if (target1)
+            }
+            else if (target1) {
                 vcg::glColor(vcg::Color4b(100,200,100,255));
-            else if (target2)
+            }
+            else if (target2) {
                 vcg::glColor(vcg::Color4b(100,100,200,255));
-            else
+            }
+            else {
                 vcg::glColor(face[i].C());
+            }
 
             if(face[i].IsD())  continue;
 
@@ -74,6 +80,32 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe)
                 }
             }
         }
+
+        if (transformation) {
+            vcg::glColor(vcg::Color4b(255,165,0,255));
+            drawTextGL(mesh->bbox.max.X(),
+                       mesh->bbox.max.Y(),
+                       mesh->bbox.max.Z(),
+                       "T",
+                       GLUT_BITMAP_TIMES_ROMAN_24);
+        }
+        if (target1) {
+            vcg::glColor(vcg::Color4b(100,200,100,255));
+            drawTextGL(mesh->bbox.min.X(),
+                       mesh->bbox.min.Y(),
+                       mesh->bbox.min.Z(),
+                       "A",
+                       GLUT_BITMAP_TIMES_ROMAN_24);
+        }
+        if (target2) {
+            vcg::glColor(vcg::Color4b(100,100,200,255));
+            drawTextGL(mesh->bbox.min.X(),
+                       mesh->bbox.min.Y(),
+                       mesh->bbox.min.Z(),
+                       "B",
+                       GLUT_BITMAP_TIMES_ROMAN_24);
+        }
+
 
         //glEnd();
         glPopAttrib();

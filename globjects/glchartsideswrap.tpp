@@ -57,11 +57,12 @@ void GLChartSidesWrap<MeshType>::GLDraw()
                 sideInfo += " -> " + std::to_string((*ilpResult)[sId]);
             }
 
-            vcg::glColor(vcg::Color4b(80,80,80,255));
+            vcg::glColor(vcg::Color4b(0,0,0,255));
             drawTextGL(centerV.X(),
                        centerV.Y(),
                        centerV.Z(),
-                       sideInfo.c_str());
+                       sideInfo.c_str(),
+                       GLUT_BITMAP_TIMES_ROMAN_24);
         }
 
         glPopAttrib();

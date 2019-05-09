@@ -10,8 +10,14 @@
     <height>719</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="windowTitle">
-   <string>Quad boolean</string>
+   <string>Quad Mixer</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout">
@@ -42,7 +48,7 @@
        <item>
         <widget class="QFrame" name="leftFrame">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -53,47 +59,64 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_2">
-          <property name="sizeConstraint">
-           <enum>QLayout::SetDefaultConstraint</enum>
-          </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
-           <widget class="QPushButton" name="loadButton">
-            <property name="text">
-             <string>Load</string>
+           <widget class="QFrame" name="loadFrame">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QFrame" name="operationFrame">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
             </property>
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
-              <widget class="QRadioButton" name="operationUnionRadio">
+              <widget class="QPushButton" name="loadMeshButton">
                <property name="text">
-                <string>U</string>
+                <string>Load</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="moveCenterCheckBox">
+               <property name="text">
+                <string>Move center</string>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="operationIntersectionRadio">
+              <widget class="QCheckBox" name="scaleCheckBox">
                <property name="text">
-                <string>I</string>
+                <string>Scale</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="operationDifferenceRadio">
+              <widget class="QCheckBox" name="keepColorsCheckBox">
                <property name="text">
-                <string>D</string>
+                <string>Keep colors</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="deleteMeshButton">
+               <property name="text">
+                <string>Delete</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="deleteAllButton">
+               <property name="text">
+                <string>Delete All</string>
                </property>
               </widget>
              </item>
@@ -101,89 +124,140 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="executePushButton">
-            <property name="text">
-             <string>Execute</string>
+           <widget class="QFrame" name="booleanFrame">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2">
+             <property name="sizeConstraint">
+              <enum>QLayout::SetDefaultConstraint</enum>
+             </property>
+             <item>
+              <widget class="QPushButton" name="booleanOperationButton">
+               <property name="text">
+                <string>Boolean operation</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="operationFrame">
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_3">
+                <item>
+                 <widget class="QRadioButton" name="operationUnionRadio">
+                  <property name="text">
+                   <string>U</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="operationIntersectionRadio">
+                  <property name="text">
+                   <string>I</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="operationDifferenceRadio">
+                  <property name="text">
+                   <string>D</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="detachButton">
+               <property name="text">
+                <string>Detach</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="undoButton">
+               <property name="text">
+                <string>Undo</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="resetSceneButton">
-            <property name="text">
-             <string>Reset scene</string>
+           <widget class="QFrame" name="sceneFrame">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="deleteButton">
-            <property name="text">
-             <string>Delete</string>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="deleteAllButton">
-            <property name="text">
-             <string>Delete All</string>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="moveCenterCheckBox">
-            <property name="text">
-             <string>Move center</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="scaleCheckBox">
-            <property name="text">
-             <string>Scale</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="keepColorsCheckBox">
-            <property name="text">
-             <string>Keep colors</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="trackballCheckBox">
-            <property name="text">
-             <string>Trackball</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="showWireframe">
-            <property name="text">
-             <string>Wireframes</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="showParametersCheckBox">
-            <property name="text">
-             <string>Parameters</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="debugModeButton">
-            <property name="text">
-             <string>Debug/normal mode</string>
-            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_7">
+             <item>
+              <widget class="QPushButton" name="resetSceneButton">
+               <property name="text">
+                <string>Reset scene</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="trackballCheckBox">
+               <property name="text">
+                <string>Trackball</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="showWireframe">
+               <property name="text">
+                <string>Wireframes</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="showParametersCheckBox">
+               <property name="text">
+                <string>Show parameters</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="debugModeButton">
+               <property name="text">
+                <string>Debug/normal mode</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
          </layout>
@@ -244,70 +318,70 @@
                  <number>9</number>
                 </property>
                 <item>
-                 <widget class="QPushButton" name="computeAllPushButton">
+                 <widget class="QPushButton" name="computeAllButton">
                   <property name="text">
                    <string>Compute all</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="quadTracerPushButton">
+                 <widget class="QPushButton" name="quadTracerButton">
                   <property name="text">
                    <string>Quad tracer</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="computeBooleanPushButton">
+                 <widget class="QPushButton" name="computeBooleanButton">
                   <property name="text">
                    <string>Compute boolean</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="smoothPushButton">
+                 <widget class="QPushButton" name="smoothButton">
                   <property name="text">
                    <string>Smooth</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="getSurfacesPushButton">
+                 <widget class="QPushButton" name="getSurfacesButton">
                   <property name="text">
                    <string>Get surfaces</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="decompositionPushButton">
+                 <widget class="QPushButton" name="decompositionButton">
                   <property name="text">
                    <string>Decomposition</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="ilpPushButton">
+                 <widget class="QPushButton" name="ilpButton">
                   <property name="text">
                    <string>ILP</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="quadrangulatePushButton">
+                 <widget class="QPushButton" name="quadrangulateButton">
                   <property name="text">
                    <string>Quadrangulate</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="getResultPushButton">
+                 <widget class="QPushButton" name="getResultButton">
                   <property name="text">
                    <string>Get result</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="saveResultPushButton">
+                 <widget class="QPushButton" name="saveResultButton">
                   <property name="text">
                    <string>Save result</string>
                   </property>
@@ -452,14 +526,14 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="showQuadrangulatedCheckBox">
+                 <widget class="QCheckBox" name="showQuadrangulationCheckBox">
                   <property name="text">
                    <string>Quadrangulated</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="showQuadrangulatedLayoutCheckBox">
+                 <widget class="QCheckBox" name="showQuadrangulationLayoutCheckBox">
                   <property name="text">
                    <string>L</string>
                   </property>
@@ -819,14 +893,14 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="meshSmoothingLabel">
+                 <widget class="QLabel" name="quadrangulationSmoothingLabel">
                   <property name="text">
                    <string>Quad sm</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="meshSmoothingSpinBox">
+                 <widget class="QSpinBox" name="quadrangulationSmoothingSpinBox">
                   <property name="maximum">
                    <number>200</number>
                   </property>

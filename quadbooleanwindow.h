@@ -1,12 +1,10 @@
 #ifndef QUADBOOLEANWINDOW_H
 #define QUADBOOLEANWINDOW_H
 
-
-#include "meshtypes.h"
 #include "ui_quadbooleanwindow.h"
 
-#include "quadboolean/quadlayoutdata.h"
-#include "quadboolean/quadcharts.h"
+#include "quadboolean.h"
+#include "meshtypes.h"
 
 class QuadBooleanWindow : public QMainWindow
 {
@@ -25,30 +23,57 @@ public:
     QuadBooleanWindow(QWidget * parent = nullptr);
     ~QuadBooleanWindow();
 
+    void booleanOperation();
+    void detachOperationSelect();
+    void detachOperation();
+
     void addMesh(const std::string& filename);
     void addMesh(PolyMesh *mesh);
-    void deleteMesh(PolyMesh* mesh);
-    void deleteMesh(const size_t& id);
+    void hideMesh(PolyMesh* mesh);
+    void hideMesh(const size_t& id);
+
+    void setLastOperation(
+            PolyMesh* target1,
+            PolyMesh* target2,
+            PolyMesh* result1,
+            PolyMesh* result2);
+    void undoLastOperation();
 
 private:
 
     Ui::mainWindow ui;
     std::vector<PolyMesh*> meshes;
 
+    PolyMesh* lastTarget1;
+    PolyMesh* lastTarget2;
+    PolyMesh* lastResult1;
+    PolyMesh* lastResult2;
+
+    QuadBoolean::Parameters getParametersFromUI();
+    QuadBoolean::Operation getOperationFromUI();
+
     std::string chooseMeshFile();
     int loadMesh(PolyMesh& mesh, const std::string& filename, const bool translateCenter, const bool scale);
+
+    void updateVisibility();
 
 
 private slots:
 
-    void on_loadButton_clicked();
-    void on_deleteAllButton_clicked();
-    void on_resetSceneButton_clicked();
+    void on_loadMeshButton_clicked();
 
+    void on_booleanOperationButton_clicked();
+    void on_detachButton_clicked();
+    void on_undoButton_clicked();
+
+    void on_deleteMeshButton_clicked();
+    void on_deleteAllButton_clicked();
+
+    void on_resetSceneButton_clicked();
     void on_trackballCheckBox_stateChanged(int arg1);
     void on_showWireframe_stateChanged(int arg1);
-
-    void on_showParametersCheckBox_stateChanged(int arg1);
+    void on_showParametersCheckBox_stateChanged(int arg1);    
+    void on_debugModeButton_clicked();
 
 private:
 
@@ -65,16 +90,16 @@ private:
 
 private slots:
 
-    void on_quadTracerPushButton_clicked();
-    void on_computeBooleanPushButton_clicked();    
-    void on_smoothPushButton_clicked();
-    void on_getSurfacesPushButton_clicked();
-    void on_decompositionPushButton_clicked();
-    void on_ilpPushButton_clicked();
-    void on_computeAllPushButton_clicked();
-    void on_quadrangulatePushButton_clicked();
-    void on_getResultPushButton_clicked();
-    void on_saveResultPushButton_clicked();
+    void on_quadTracerButton_clicked();
+    void on_computeBooleanButton_clicked();
+    void on_smoothButton_clicked();
+    void on_getSurfacesButton_clicked();
+    void on_decompositionButton_clicked();
+    void on_ilpButton_clicked();
+    void on_computeAllButton_clicked();
+    void on_quadrangulateButton_clicked();
+    void on_getResultButton_clicked();
+    void on_saveResultButton_clicked();
 
     void on_showMesh1CheckBox_stateChanged(int arg1);
     void on_showMesh2CheckBox_stateChanged(int arg1);
@@ -88,15 +113,10 @@ private slots:
     void on_showQuadLayout2CheckBox_stateChanged(int arg1);
     void on_showChartSidesCheckBox_stateChanged(int arg1);
     void on_showILPCheckBox_stateChanged(int arg1);
-    void on_showQuadrangulatedCheckBox_stateChanged(int arg1);
-    void on_showQuadrangulatedLayoutCheckBox_stateChanged(int arg1);
+    void on_showQuadrangulationCheckBox_stateChanged(int arg1);
+    void on_showQuadrangulationLayoutCheckBox_stateChanged(int arg1);
     void on_showResultCheckBox_stateChanged(int arg1);
 
-    void on_debugModeButton_clicked();
-
-    void on_deleteButton_clicked();
-
-    void on_executePushButton_clicked();
 
 private:
 
@@ -147,14 +167,12 @@ private:
 
     std::vector<int> ilpResult;
 
-    PolyMesh quadrangulatedSurface;
-    std::vector<int> quadrangulatedSurfaceLabel;
+    PolyMesh quadrangulation;
+    std::vector<int> quadrangulationLabel;
     QuadLayoutData quadLayoutDataQuadrangulatedSurface;
 
     PolyMesh result;
 
-
-    void updateVisibility();
 
     template<class MeshType>
     void colorizeMesh(

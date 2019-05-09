@@ -10,7 +10,7 @@
 #define DEFAULTMINRECTANGLEAREA 2
 #define DEFAULTMINPATCHAREA 6
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
-#define DEFAULTINTERSECTIONSMOOTHINGAVGNRING 5
+#define DEFAULTINTERSECTIONSMOOTHINGNRING 5
 #define DEFAULTINTERSECTIONSMOOTHINGMAXBB 0.05
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
@@ -26,19 +26,19 @@
 #define DEFAULTCHARTSMOOTHINGITERATIONS 5
 #define DEFAULTMESHSMOOTHINGITERATIONS 5
 #define DEFAULTRESULTSMOOTHINGITERATIONS 5
-#define DEFAULTRESULTSMOOTHINGAVGNRING 5
+#define DEFAULTRESULTSMOOTHINGNRING 5
 #define DEFAULTRESULTSMOOTHINGLAPLACIANITERATIONS 5
-#define DEFAULTRESULTSMOOTHINGLAPLACIANAVGNRING 3
+#define DEFAULTRESULTSMOOTHINGLAPLACIANNRING 3
 
 namespace QuadBoolean {
 
 struct Parameters {
     bool motorcycle;
     int intersectionSmoothingIterations;
-    int intersectionSmoothingAVGNRing;
+    int intersectionSmoothingNRing;
     double intersectionSmoothingMaxBB;
-    size_t minRectangleArea;
-    size_t minPatchArea;
+    int minRectangleArea;
+    int minPatchArea;
     bool mergeQuads;
     bool deleteSmall;
     bool deleteNonConnected;
@@ -46,16 +46,16 @@ struct Parameters {
     double alpha;
     double beta;
     bool initialRemeshing;
-    double edgeFactor;
+    double initialRemeshingEdgeFactor;
     bool reproject;
     bool splitConcaves;
     bool finalSmoothing;
     int chartSmoothingIterations;
-    int meshSmoothingIterations;
+    int quadrangulationSmoothingIterations;
     int resultSmoothingIterations;
-    int resultSmoothingAVGNRing;    
+    int resultSmoothingNRing;
     int resultSmoothingLaplacianIterations;
-    int resultSmoothingLaplacianAVGNRing;
+    int resultSmoothingLaplacianNRing;
 
     Parameters();
 };

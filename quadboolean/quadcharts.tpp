@@ -13,13 +13,13 @@
 namespace QuadBoolean {
 namespace internal {
 
-inline bool findCurrentNextConfigurationRecursive(
+bool findCurrentNextConfigurationRecursive(
         const size_t& vCurrentId,
         const size_t& vStartId,
         const std::vector<std::vector<size_t>>& vertexNextMap,
         std::vector<size_t>& nextConfiguration);
 
-inline std::vector<size_t> findCurrentNextConfiguration(
+std::vector<size_t> findCurrentNextConfiguration(
         const size_t& vCurrentId,
         const std::vector<std::vector<size_t>>& vertexNextMap);
 
@@ -468,7 +468,7 @@ void findChartFacesAndBorderFaces(
     }
 }
 
-bool findCurrentNextConfigurationRecursive(
+inline bool findCurrentNextConfigurationRecursive(
         const size_t& vCurrentId,
         const size_t& vStartId,
         const std::vector<std::vector<size_t>>& vertexNextMap,
@@ -486,7 +486,7 @@ bool findCurrentNextConfigurationRecursive(
     return false;
 }
 
-std::vector<size_t> findCurrentNextConfiguration(
+inline std::vector<size_t> findCurrentNextConfiguration(
         const size_t& vCurrentId,
         const std::vector<std::vector<size_t>>& vertexNextMap)
 {

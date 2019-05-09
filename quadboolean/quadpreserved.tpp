@@ -478,7 +478,7 @@ int deleteSmallQuadPatches(
     return nDeleted;
 }
 
-int maxHist(const std::vector<int>& row, int& startColumn, int& endColumn)
+inline int maxHist(const std::vector<int>& row, int& startColumn, int& endColumn)
 {
     // Create an empty stack. The stack holds indexes
     // of hist[] array. The bars stored in stack are

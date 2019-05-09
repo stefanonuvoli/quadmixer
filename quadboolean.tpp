@@ -3,11 +3,11 @@
 
 namespace QuadBoolean {
 
-Parameters::Parameters()
+inline Parameters::Parameters()
 {
     motorcycle = DEFAULTMOTORCYCLE;
     intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
-    intersectionSmoothingAVGNRing = DEFAULTINTERSECTIONSMOOTHINGAVGNRING;
+    intersectionSmoothingNRing = DEFAULTINTERSECTIONSMOOTHINGNRING;
     intersectionSmoothingMaxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
     minRectangleArea = DEFAULTMINRECTANGLEAREA;
     minPatchArea = DEFAULTMINPATCHAREA;
@@ -18,16 +18,16 @@ Parameters::Parameters()
     alpha = DEFAULTALPHA;
     beta = DEFAULTBETA;
     initialRemeshing = DEFAULTINITIALREMESHING;
-    edgeFactor = DEFAULTEDGEFACTOR;
+    initialRemeshingEdgeFactor = DEFAULTEDGEFACTOR;
     reproject = DEFAULTREPROJECT;
     splitConcaves = DEFAULTSPLITCONCAVES;
     finalSmoothing = DEFAULTFINALSMOOTHING;
     chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
-    meshSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
+    quadrangulationSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
-    resultSmoothingAVGNRing = DEFAULTRESULTSMOOTHINGAVGNRING;
+    resultSmoothingNRing = DEFAULTRESULTSMOOTHINGNRING;
     resultSmoothingLaplacianIterations = DEFAULTRESULTSMOOTHINGLAPLACIANITERATIONS;
-    resultSmoothingLaplacianAVGNRing = DEFAULTRESULTSMOOTHINGLAPLACIANAVGNRING;
+    resultSmoothingLaplacianNRing = DEFAULTRESULTSMOOTHINGLAPLACIANNRING;
 }
 
 
@@ -88,8 +88,8 @@ void quadBoolean(
 
      std::vector<int> ilpResult;
 
-     PolyMesh quadrangulatedSurface;
-     std::vector<int> quadrangulatedSurfaceLabel;
+     PolyMesh quadrangulation;
+     std::vector<int> quadrangulationLabel;
 
      bool isTriangleMesh1 = internal::isTriangleMesh(mesh1);
      bool isTriangleMesh2 = internal::isTriangleMesh(mesh2);
@@ -140,7 +140,7 @@ void quadBoolean(
                  FR,
                  intersectionCurves,
                  parameters.intersectionSmoothingIterations,
-                 parameters.intersectionSmoothingAVGNRing,
+                 parameters.intersectionSmoothingNRing,
                  parameters.intersectionSmoothingMaxBB);
 
      //Face labels
@@ -204,7 +204,7 @@ void quadBoolean(
      //Get patch decomposition of the new surface
      std::vector<std::vector<size_t>> newSurfacePartitions;
      std::vector<std::vector<size_t>> newSurfaceCorners;
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.edgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.initialRemeshingEdgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
 
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
@@ -218,13 +218,30 @@ void quadBoolean(
                  chartData,
                  ilpResult,
                  parameters.chartSmoothingIterations,
-                 parameters.meshSmoothingIterations,
-                 quadrangulatedSurface,
-                 quadrangulatedSurfaceLabel);
+                 parameters.quadrangulationSmoothingIterations,
+                 quadrangulation,
+                 quadrangulationLabel);
+
+     vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(quadrangulation);
+     vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(quadrangulation);
+     vcg::tri::UpdateBounding<PolyMesh>::Box(quadrangulation);
+     vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(quadrangulation);
+
+     vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(preservedSurface);
+     vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(preservedSurface);
+     vcg::tri::UpdateBounding<PolyMesh>::Box(preservedSurface);
+     vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(preservedSurface);
 
      //Get the result
      result.Clear();
-     QuadBoolean::internal::getResult(preservedSurface, quadrangulatedSurface, result, boolean, parameters.resultSmoothingIterations, parameters.resultSmoothingAVGNRing, parameters.resultSmoothingLaplacianIterations, parameters.resultSmoothingLaplacianAVGNRing);
+     QuadBoolean::internal::getResult(preservedSurface, quadrangulation, result, boolean, parameters.resultSmoothingIterations, parameters.resultSmoothingNRing, parameters.resultSmoothingLaplacianIterations, parameters.resultSmoothingLaplacianNRing);
+
+
+
+     vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(result);
+     vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(result);
+     vcg::tri::UpdateBounding<PolyMesh>::Box(result);
+     vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(result);
 }
 
 }

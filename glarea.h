@@ -34,7 +34,7 @@ public:
     GLArea(QWidget* parent = nullptr);
 
     size_t addMesh(PolyMesh* mesh);
-    void deleteMesh(const size_t& id);
+    void removeMesh(const size_t& id);
 
     void manageRightClick(const int& x, const int& y);
     void manageDoubleClick(const int& x, const int& y);
@@ -42,7 +42,7 @@ public:
     void resetSceneOnMeshes();
 
     void selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap);
-    void deselectTargetMesh();
+    void deselectTargetMeshes();
     void selectTransformationMesh(GLPolyWrap<PolyMesh>* meshWrap);
     void deselectTransformationMesh();
     void applySelectedMeshTransformation();
@@ -100,8 +100,8 @@ public:
     void setNewSurface(TriangleMesh* boolean);
     void setChartSides(ChartData* chartData);
     void setIlpResult(std::vector<int>* ilpResult);
-    void setQuadrangulated(PolyMesh* quadrangulatedNewSurface);
-    void setQuadLayoutQuadrangulated(QuadLayoutData* quadLayoutDataQuadrangulated);
+    void setQuadrangulation(PolyMesh* quadrangulation);
+    void setQuadLayoutQuadrangulation(QuadLayoutData* quadLayoutQuadrangulation);
     void setResult(PolyMesh* result);
 
     void setMesh1Visibility(bool visible);
@@ -116,8 +116,8 @@ public:
     void setNewSurfaceVisibility(bool visible);
     void setChartSidesVisibility(bool visible);
     void setILPVisibility(bool visible);
-    void setQuadrangulatedVisibility(bool visible);
-    void setQuadLayoutQuadrangulatedVisibility(bool visible);
+    void setQuadrangulationVisibility(bool visible);
+    void setQuadLayoutQuadrangulationVisibility(bool visible);
     void setResultVisibility(bool visible);
 
     void resetSceneOnDebugMeshes();
@@ -135,14 +135,14 @@ private:
     GLEdgesWrap<TriangleMesh> glWrapIntersectionCurves;
     GLPolyWrap<PolyMesh> glWrapPreservedSurface;
     GLPolyWrap<TriangleMesh> glWrapNewSurface;
-    GLPolyWrap<PolyMesh> glWrapQuadrangulated;
+    GLPolyWrap<PolyMesh> glWrapQuadrangulation;
     GLPolyWrap<PolyMesh> glWrapResult;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayout1;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayout2;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutPreserved1;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutPreserved2;
     GLChartSidesWrap<TriangleMesh> glWrapChartSides;
-    GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulated;
+    GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulation;
 
 
     void initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh);
