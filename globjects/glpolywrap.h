@@ -1,6 +1,7 @@
 #ifndef GLPOLYWRAP_H
 #define GLPOLYWRAP_H
 
+#include <vector>
 
 template<class MeshType>
 class GLPolyWrap
@@ -18,6 +19,8 @@ public:
     bool transformation;
     bool target1;
     bool target2;
+
+    std::vector<typename MeshType::CoordType> pickedPoints;
 
     int name;
 };

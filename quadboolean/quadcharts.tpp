@@ -10,18 +10,11 @@
 
 #define MAXITERATIONS 100000
 #include <wrap/io_trimesh/export.h>
+
+#include "quadutils.h"
+
 namespace QuadBoolean {
 namespace internal {
-
-bool findCurrentNextConfigurationRecursive(
-        const size_t& vCurrentId,
-        const size_t& vStartId,
-        const std::vector<std::vector<size_t>>& vertexNextMap,
-        std::vector<size_t>& nextConfiguration);
-
-std::vector<size_t> findCurrentNextConfiguration(
-        const size_t& vCurrentId,
-        const std::vector<std::vector<size_t>>& vertexNextMap);
 
 template<class TriangleMeshType>
 void findChartFacesAndBorderFaces(
@@ -144,7 +137,7 @@ ChartData getPatchDecompositionChartData(
 
             vCurrentId = *remainingVertices.begin();
 
-            std::vector<size_t> nextConfiguration = findCurrentNextConfiguration(vCurrentId, vertexNextMap);
+            std::vector<size_t> nextConfiguration = findVertexChainPath(vCurrentId, vertexNextMap);
             vNextId = vertexNextMap[vCurrentId][nextConfiguration[vCurrentId]];
 
             //Get last edge vector
@@ -468,34 +461,6 @@ void findChartFacesAndBorderFaces(
     }
 }
 
-inline bool findCurrentNextConfigurationRecursive(
-        const size_t& vCurrentId,
-        const size_t& vStartId,
-        const std::vector<std::vector<size_t>>& vertexNextMap,
-        std::vector<size_t>& nextConfiguration)
-{
-    if (vCurrentId == vStartId)
-        return true;
-
-    for (size_t i = 0; i < vertexNextMap[vCurrentId].size(); i++) {
-        nextConfiguration[vCurrentId] = i;
-        if (findCurrentNextConfigurationRecursive(vertexNextMap[vCurrentId][i], vStartId, vertexNextMap, nextConfiguration)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-inline std::vector<size_t> findCurrentNextConfiguration(
-        const size_t& vCurrentId,
-        const std::vector<std::vector<size_t>>& vertexNextMap)
-{
-    std::vector<size_t> nextConfiguration(vertexNextMap.size());
-
-    findCurrentNextConfigurationRecursive(vCurrentId, vCurrentId, vertexNextMap, nextConfiguration);
-
-    return nextConfiguration;
-}
 
 
 ////It works just on triangle meshes

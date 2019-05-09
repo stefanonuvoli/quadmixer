@@ -12,6 +12,8 @@
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 #include <vcg/complex/algorithms/mesh_to_matrix.h>
 
+#include <map>
+
 #define USE_NEW_DECOMPOSER
 
 #ifdef USE_NEW_DECOMPOSER
@@ -28,84 +30,14 @@ namespace QuadBoolean {
 namespace internal {
 
 template<class PolyMeshType>
-void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert)
-{
-    //cumulate step
-    AvVert.clear();
-    AvVert.resize(poly_m.vert.size(),typename PolyMeshType::CoordType(0,0,0));
-    std::vector<typename PolyMeshType::ScalarType> AvSum(poly_m.vert.size(),0);
-    for (size_t i=0;i<poly_m.face.size();i++)
-        for (size_t j=0;j<(size_t)poly_m.face[i].VN();j++)
-        {
-            //get current vertex
-            typename PolyMeshType::VertexType *currV=poly_m.face[i].V(j);
-            //and its position
-            typename PolyMeshType::CoordType currP=currV->P();
-            //cumulate over other positions
-            typename PolyMeshType::ScalarType W=vcg::PolyArea(poly_m.face[i]);
-            //assert(W!=0);
-            for (size_t k=0;k<(size_t)poly_m.face[i].VN();k++)
-            {
-                if (k==j) continue;
-                int IndexV=vcg::tri::Index(poly_m,poly_m.face[i].V(k));
-                AvVert[IndexV]+=currP*W;
-                AvSum[IndexV]+=W;
-            }
-        }
-
-    //average step
-    for (size_t i=0;i<poly_m.vert.size();i++)
-    {
-        if (AvSum[i]==0)continue;
-        AvVert[i]/=AvSum[i];
-    }
-}
+void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert);
 
 template <class PolyMeshType>
 void LaplacianGeodesic(
         PolyMeshType &poly_m,
         int nstep,
         const double maxDistance,
-        const double minDumpS = 0.5)
-{
-    std::vector<typename PolyMeshType::VertexPointer> seedVec;
-    for (int i = 0; i < poly_m.vert.size(); i++) {
-        if (poly_m.vert[i].IsS()) {
-            seedVec.push_back(&poly_m.vert[i]);
-        }
-    }
-    vcg::tri::EuclideanDistance<PolyMeshType> ed;
-    vcg::tri::UpdateTopology<PolyMeshType>::VertexFace(poly_m);
-    vcg::tri::Geodesic<PolyMeshType>::Compute(poly_m,seedVec, ed);
-
-    std::vector<double> DampS(poly_m.vert.size());
-    for (int i = 0; i < poly_m.vert.size(); i++) {
-        if (poly_m.vert[i].Q() < maxDistance) {
-            DampS[i] = poly_m.vert[i].Q() / maxDistance;
-            assert(DampS[i] >= 0 && DampS[i] <= 1);
-            DampS[i] = minDumpS + DampS[i]*(1-minDumpS);
-        }
-        else {
-            DampS[i] = std::numeric_limits<double>::max();
-        }
-    }
-
-    for (int s=0;s<nstep;s++)
-    {
-        std::vector< typename PolyMesh::CoordType> AvVert;
-        LaplacianPos(poly_m,AvVert);
-
-        for (size_t i=0;i<poly_m.vert.size();i++)
-        {
-            if (DampS[i] > 1)
-                continue;
-
-            poly_m.vert[i].P()=poly_m.vert[i].P()*DampS[i]+
-                    AvVert[i]*(1-DampS[i]);
-        }
-    }
-
-}
+        const double minDumpS = 0.5);
 
 template<class PolyMeshType>
 void traceQuads(
@@ -182,10 +114,7 @@ void computeBooleanOperation(
     eigenToVCG(VR, FR, result);
 }
 
-template<class TriangleMeshType>
-std::vector<std::vector<size_t>> getIntersectionCurves(
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
+inline std::vector<size_t> getIntersectionVertices(
         const Eigen::MatrixXd& VA,
         const Eigen::MatrixXd& VB,
         const Eigen::MatrixXd& VR,
@@ -194,13 +123,13 @@ std::vector<std::vector<size_t>> getIntersectionCurves(
         const Eigen::MatrixXi& FR,
         const Eigen::VectorXi& J)
 {
-    std::vector<std::vector<size_t>> intersectionCurves;
+    std::vector<size_t> intersectionVertices;
 
-    int nFirstFaces = triMesh1.face.size();
+    int nFirstFaces = FA.rows();
 
     std::set<int> vertexSet1;
     std::set<int> vertexSet2;
-    std::unordered_map<int, int> vertexMap;
+    std::vector<std::vector<size_t>> vertexMap(VR.rows(), std::vector<size_t>());
 
 
     for (int i = 0; i < J.rows(); i++) {
@@ -241,73 +170,18 @@ std::vector<std::vector<size_t>> getIntersectionCurves(
     }
 
     std::set<int> vertexSet;
-    std::set_intersection(vertexSet1.begin(), vertexSet1.end(), vertexSet2.begin(), vertexSet2.end(), std::inserter(vertexSet, vertexSet.begin()));
 
-    //Create the next map
-    for (int i = 0; i < J.rows(); i++) {
-        int birthFace = J[i];
+    std::set_intersection(vertexSet1.begin(), vertexSet1.end(), vertexSet2.begin(), vertexSet2.end(), std::back_inserter(intersectionVertices));
 
-        //If the birth face is in the first mesh
-        if (birthFace < nFirstFaces) {
-            for (int j = 0; j < 3; j++) {
-                if (vertexSet.find(FR(i, j)) != vertexSet.end() &&
-                    vertexSet.find(FR(i,(j+1)%3)) != vertexSet.end() &&
-                    vertexSet.find(FR(i,(j+2)%3)) == vertexSet.end())
-                {
-                    vertexMap.insert(
-                                std::make_pair(
-                                    FR(i, j),
-                                    FR(i, (j+1)%3))
-                                );
-                }
-            }
-        }
-    }
-
-
-
-    while (!vertexSet.empty()) {
-        std::vector<size_t> intersectionCurve;
-
-        int vStart = *(vertexSet.begin());
-
-        int vCurrent = vStart;
-
-        bool done = false;
-        do {
-            vertexSet.erase(vCurrent);
-            intersectionCurve.push_back(vCurrent);
-
-            std::unordered_map<int, int>::iterator vNextIt = vertexMap.find(vCurrent);
-
-            if (vNextIt == vertexMap.end()) {
-                done = true;
-            }
-            else {
-                vCurrent = vNextIt->second;
-
-                if (vertexSet.find(vCurrent) == vertexSet.end()) {
-                    done = true;
-                }
-            }
-        } while (!done);
-
-        assert(vCurrent == vStart);
-
-        intersectionCurve.push_back(vCurrent);
-
-        intersectionCurves.push_back(intersectionCurve);
-    }
-
-    return intersectionCurves;
+    return intersectionVertices;
 }
 
 template<class TriangleMeshType>
-void smoothAlongIntersectionCurves(
+void smoothAlongIntersectionVertices(
         TriangleMeshType& boolean,
         Eigen::MatrixXd& VR,
         Eigen::MatrixXi& FR,
-        const std::vector<std::vector<size_t>>& intersectionCurves,
+        const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
         const int avgNRing,
         const double maxBB)
@@ -318,13 +192,11 @@ void smoothAlongIntersectionCurves(
 
     vcg::tri::UpdateSelection<TriangleMeshType>::VertexClear(boolean);
 
-    if (intersectionCurves.size() == 0)
+    if (intersectionVertices.size() == 0)
         return;
 
-    for (const std::vector<size_t>& intersectionCurve : intersectionCurves) {
-        for (const size_t& vId : intersectionCurve) {
-            boolean.vert[vId].SetS();
-        }
+    for (const size_t& vId : intersectionVertices) {
+        boolean.vert[vId].SetS();
     }
 
     LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.8);
@@ -334,29 +206,19 @@ void smoothAlongIntersectionCurves(
     QuadBoolean::internal::VCGToEigen(boolean, VR, FR, vMap, fMap);
 }
 
-template<class TriangleMeshType>
+
+template<class PolyMeshType, class TriangleMeshType>
 void findPreservedQuads(
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
-        const Eigen::MatrixXd& VA,
-        const Eigen::MatrixXd& VB,
-        const Eigen::MatrixXd& VR,
-        const Eigen::MatrixXi& FA,
-        const Eigen::MatrixXi& FB,
-        const Eigen::MatrixXi& FR,
-        const Eigen::VectorXi& J,
-        const std::vector<int>& birthQuad1,
-        const std::vector<int>& birthQuad2,
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
+        TriangleMeshType& triResult,
         const bool isQuadMesh1,
         const bool isQuadMesh2,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2)
 {
-    //Get preserved quads
-    size_t nFirstFaces = triMesh1.face.size();
-
-    computePreservedQuadForMesh(triMesh1, VA, FA, VR, FR, J, birthQuad1, 0, isQuadMesh1, preservedQuad1);
-    computePreservedQuadForMesh(triMesh2, VB, FB, VR, FR, J, birthQuad2, nFirstFaces, isQuadMesh2, preservedQuad2);
+    computePreservedQuadForMesh(mesh1, triResult, isQuadMesh1, preservedQuad1);
+    computePreservedQuadForMesh(mesh2, triResult, isQuadMesh2, preservedQuad2);
 }
 
 template<class PolyMeshType>
@@ -411,6 +273,7 @@ void getPreservedSurfaceMesh(
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(preservedSurface, mesh1, true);
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(preservedSurface, mesh2, true);
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(preservedSurface);
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(preservedSurface);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(preservedSurface);
 
     newFaceLabel.resize(preservedSurface.face.size(), -1);
@@ -420,35 +283,71 @@ void getPreservedSurfaceMesh(
 }
 
 
-template<class TriangleMeshType>
+template<class PolyMeshType, class TriangleMeshType>
 void getNewSurfaceMesh(
         TriangleMeshType& triResult,
-        const size_t& nFirstFaces,
-        const std::vector<int>& birthQuad1,
-        const std::vector<int>& birthQuad2,
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
         const std::vector<bool>& preservedQuad1,
         const std::vector<bool>& preservedQuad2,
-        const Eigen::VectorXi& J,
         TriangleMeshType& newSurface)
 {
+    vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(triResult);
+
     //Selected the new surface triangle faces
-    std::vector<bool> isNewSurface(triResult.face.size(), false);
+    std::vector<bool> isNewSurface(triResult.face.size(), true);
 
-    for (int i = 0; i < J.rows(); i++) {
-        int birthFace = J[i];
+    std::set<std::set<typename PolyMeshType::CoordType>> quadSet;
 
-        //If the birth face is in the first mesh
-        if (birthFace < nFirstFaces) {
-            int firstMeshIndex = birthFace;
-            if (!preservedQuad1[birthQuad1[firstMeshIndex]]) {
-                isNewSurface[i] = true;
-            }
+    for (size_t i = 0; i < mesh1.face.size(); i++) {
+        if (preservedQuad1[i]) {
+            std::set<typename PolyMeshType::CoordType> coordSet;
+            for (int j = 0; j < mesh1.face[i].VN(); j++)
+                coordSet.insert(mesh1.face[i].V(j)->P());
+
+            quadSet.insert(coordSet);
         }
-        //The birth face is in the second mesh
-        else {
-            int secondMeshIndex = birthFace - nFirstFaces;
-            if (!preservedQuad2[birthQuad2[secondMeshIndex]]) {
-                isNewSurface[i] = true;
+    }
+    for (size_t i = 0; i < mesh2.face.size(); i++) {
+        if (preservedQuad2[i]) {
+            std::set<typename PolyMeshType::CoordType> coordSet;
+            for (int j = 0; j < mesh2.face[i].VN(); j++)
+                coordSet.insert(mesh2.face[i].V(j)->P());
+
+            quadSet.insert(coordSet);
+        }
+    }
+
+    for (size_t i = 0; i < triResult.face.size(); i++) {
+        if (isNewSurface[i]) {
+            std::set<typename TriangleMeshType::CoordType> coordSet;
+
+            for (int k = 0; k < triResult.face[i].VN(); k++) {
+                coordSet.insert(triResult.face[i].V(k)->P());
+            }
+
+            for (int k = 0; k < triResult.face[i].VN() && isNewSurface[i]; k++) {
+                typename TriangleMeshType::FacePointer fp = triResult.face[i].FFp(k);
+
+                if (fp == &triResult.face[i])
+                    continue;
+
+                std::set<typename PolyMeshType::CoordType> coordSetComplete = coordSet;
+
+                int otherFaceEdge = triResult.face[i].FFi(k);
+                int oppositeVert = (otherFaceEdge + 2) % 3;
+
+                coordSetComplete.insert(fp->V(oppositeVert)->P());
+
+                typename std::set<std::set<typename PolyMeshType::CoordType>>::iterator findIt = quadSet.find(coordSetComplete);
+                if (findIt != quadSet.end()) {
+                    quadSet.erase(findIt);
+
+                    size_t adjFaceId = vcg::tri::Index(triResult, fp);
+
+                    isNewSurface[adjFaceId] = false;
+                    isNewSurface[i] = false;
+                }
             }
         }
     }
@@ -943,8 +842,87 @@ void getResult(
     }
 
     LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.7);
+}
 
 
+
+template<class PolyMeshType>
+void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert)
+{
+    //cumulate step
+    AvVert.clear();
+    AvVert.resize(poly_m.vert.size(),typename PolyMeshType::CoordType(0,0,0));
+    std::vector<typename PolyMeshType::ScalarType> AvSum(poly_m.vert.size(),0);
+    for (size_t i=0;i<poly_m.face.size();i++)
+        for (size_t j=0;j<(size_t)poly_m.face[i].VN();j++)
+        {
+            //get current vertex
+            typename PolyMeshType::VertexType *currV=poly_m.face[i].V(j);
+            //and its position
+            typename PolyMeshType::CoordType currP=currV->P();
+            //cumulate over other positions
+            typename PolyMeshType::ScalarType W=vcg::PolyArea(poly_m.face[i]);
+            //assert(W!=0);
+            for (size_t k=0;k<(size_t)poly_m.face[i].VN();k++)
+            {
+                if (k==j) continue;
+                int IndexV=vcg::tri::Index(poly_m,poly_m.face[i].V(k));
+                AvVert[IndexV]+=currP*W;
+                AvSum[IndexV]+=W;
+            }
+        }
+
+    //average step
+    for (size_t i=0;i<poly_m.vert.size();i++)
+    {
+        if (AvSum[i]==0)continue;
+        AvVert[i]/=AvSum[i];
+    }
+}
+
+template <class PolyMeshType>
+void LaplacianGeodesic(
+        PolyMeshType &poly_m,
+        int nstep,
+        const double maxDistance,
+        const double minDumpS)
+{
+    std::vector<typename PolyMeshType::VertexPointer> seedVec;
+    for (int i = 0; i < poly_m.vert.size(); i++) {
+        if (poly_m.vert[i].IsS()) {
+            seedVec.push_back(&poly_m.vert[i]);
+        }
+    }
+    vcg::tri::EuclideanDistance<PolyMeshType> ed;
+    vcg::tri::UpdateTopology<PolyMeshType>::VertexFace(poly_m);
+    vcg::tri::Geodesic<PolyMeshType>::Compute(poly_m,seedVec, ed);
+
+    std::vector<double> DampS(poly_m.vert.size());
+    for (int i = 0; i < poly_m.vert.size(); i++) {
+        if (poly_m.vert[i].Q() < maxDistance) {
+            DampS[i] = poly_m.vert[i].Q() / maxDistance;
+            assert(DampS[i] >= 0 && DampS[i] <= 1);
+            DampS[i] = minDumpS + DampS[i]*(1-minDumpS);
+        }
+        else {
+            DampS[i] = std::numeric_limits<double>::max();
+        }
+    }
+
+    for (int s=0;s<nstep;s++)
+    {
+        std::vector< typename PolyMesh::CoordType> AvVert;
+        LaplacianPos(poly_m,AvVert);
+
+        for (size_t i=0;i<poly_m.vert.size();i++)
+        {
+            if (DampS[i] > 1)
+                continue;
+
+            poly_m.vert[i].P()=poly_m.vert[i].P()*DampS[i]+
+                    AvVert[i]*(1-DampS[i]);
+        }
+    }
 }
 
 }

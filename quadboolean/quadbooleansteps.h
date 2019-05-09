@@ -41,10 +41,7 @@ void computeBooleanOperation(
         Eigen::MatrixXi& FR,
         Eigen::VectorXi& J);
 
-template<class TriangleMeshType>
-std::vector<std::vector<size_t>> getIntersectionCurves(
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
+std::vector<size_t> getIntersectionVertices(
         const Eigen::MatrixXd& VA,
         const Eigen::MatrixXd& VB,
         const Eigen::MatrixXd& VR,
@@ -54,28 +51,20 @@ std::vector<std::vector<size_t>> getIntersectionCurves(
         const Eigen::VectorXi& J);
 
 template<class TriangleMeshType>
-void smoothAlongIntersectionCurves(
+void smoothAlongIntersectionVertices(
         TriangleMeshType& boolean,
         Eigen::MatrixXd& VR,
         Eigen::MatrixXi& FR,
-        const std::vector<std::vector<size_t>>& intersectionCurves,
+        const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
         const int avgNRing,
         const double maxBB);
 
-template<class TriangleMeshType>
+template<class PolyMeshType, class TriangleMeshType>
 void findPreservedQuads(
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
-        const Eigen::MatrixXd& VA,
-        const Eigen::MatrixXd& VB,
-        const Eigen::MatrixXd& VR,
-        const Eigen::MatrixXi& FA,
-        const Eigen::MatrixXi& FB,
-        const Eigen::MatrixXi& FR,
-        const Eigen::VectorXi& J,
-        const std::vector<int>& birthQuad1,
-        const std::vector<int>& birthQuad2,
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
+        TriangleMeshType& triResult,
         const bool isQuadMesh1,
         const bool isQuadMesh2,
         std::vector<bool>& preservedQuad1,
@@ -99,15 +88,13 @@ void getPreservedSurfaceMesh(
         PolyMeshType& preservedSurface,
         std::vector<int>& newFaceLabel);
 
-template<class TriangleMeshType>
+template<class PolyMeshType, class TriangleMeshType>
 void getNewSurfaceMesh(
         TriangleMeshType& triResult,
-        const size_t& nFirstFaces,
-        const std::vector<int>& birthQuad1,
-        const std::vector<int>& birthQuad2,
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
         const std::vector<bool>& preservedQuad1,
         const std::vector<bool>& preservedQuad2,
-        const Eigen::VectorXi& J,
         TriangleMeshType& newSurface);
 
 template<class TriangleMeshType>

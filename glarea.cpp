@@ -8,6 +8,7 @@
 
 #include <wrap/qt/trackball.h>
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
+#include <quadboolean/envelope_generator.h>
 
 #include <wrap/gl/picking.h>
 
@@ -20,6 +21,7 @@ GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
     this->targetMesh1 = nullptr;
     this->targetMesh2 = nullptr;
     this->debugMode = false;
+    this->detachMode = false;
 }
 
 size_t GLArea::addMesh(GLArea::PolyMesh *mesh)
@@ -39,6 +41,8 @@ void GLArea::removeMesh(const size_t& id)
 {
     deselectTargetMeshes();
     deselectTransformationMesh();
+
+    setDetachMode(false);
 
     glWrapMeshes[id].mesh = nullptr;
 }
@@ -127,6 +131,9 @@ static void drawMesh(std::vector<GLPolyWrap<QuadBoolean::PolyMesh>>::value_type&
 
 void GLArea::manageRightClick(const int& x, const int& y)
 {
+    setDetachMode(false);
+
+    deselectTargetMeshes();
     deselectTransformationMesh();
 
     std::vector<GLPolyWrap<PolyMesh>*> picked;
@@ -139,16 +146,53 @@ void GLArea::manageRightClick(const int& x, const int& y)
 
 void GLArea::manageDoubleClick(const int &x, const int &y)
 {
+    deselectTransformationMesh();
 
     std::vector<GLPolyWrap<PolyMesh>*> picked;
     vcg::Pick(x, y, glWrapMeshes, picked, &drawMesh);
 
-    if (picked.size() > 0) {
-        selectTargetMesh(picked[0]);
+    if (this->detachMode) {
+        if (picked.size() > 0) {
+            if (picked[0] == targetMesh1) {
+                PolyMesh::CoordType point;
+                Pick(x, y, point);
+                targetMesh1->pickedPoints.push_back(point);
+
+
+                if (envelopeWrap.visible && targetMesh1->pickedPoints.size() > 0 && targetMesh1->pickedPoints.size() % 2 == 0) {
+                    std::vector<std::pair<TriangleMesh::CoordType, TriangleMesh::CoordType>> segments;
+
+                    PolyMesh targetCopy;
+                    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(targetCopy, *targetMesh1->mesh);
+                    QuadBoolean::internal::splitQuadInTriangle(targetCopy);
+
+                    TriangleMesh targetTriangulated;
+                    vcg::tri::Append<TriangleMesh, PolyMesh>::Mesh(targetTriangulated, targetCopy);
+
+                    bool result = EnvelopeGenerator<TriangleMesh>::GetPolyline(targetTriangulated, targetMesh1->pickedPoints, segments);
+
+                    if (result) {
+                        envelopeWrap.segments = segments;
+                    }
+                    else {
+                        envelopeWrap.segments.clear();
+                        targetMesh1->pickedPoints.clear();
+                    }
+                }
+
+                updateGL();
+            }
+        }
     }
     else {
-        deselectTargetMeshes();
+        if (picked.size() > 0) {
+            selectTargetMesh(picked[0]);
+        }
+        else {
+            deselectTargetMeshes();
+        }
     }
+
 }
 
 void GLArea::selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap)
@@ -182,7 +226,9 @@ void GLArea::deselectTargetMeshes() {
 }
 
 void GLArea::selectTransformationMesh(GLPolyWrap<PolyMesh>* meshWrap)
-{
+{    
+    setDetachMode(false);
+
     vcg::tri::UpdateBounding<PolyMesh>::Box(*meshWrap->mesh);
 
     PolyMesh::CoordType center(0,0,0);
@@ -334,12 +380,13 @@ void GLArea::paintGL()
         for (GLPolyWrap<PolyMesh>& glWrap : glWrapMeshes) {
             glWrap.GLDraw(wireframe);
         }
+        envelopeWrap.GLDraw();
     }
     else {
         glWrapMesh1.GLDraw(wireframe);
         glWrapMesh2.GLDraw(wireframe);
         glWrapBoolean.GLDraw(wireframe);
-        glWrapIntersectionCurves.GLDraw();
+        glWrapIntersectionVertices.GLDraw();
         glWrapPreservedSurface.GLDraw(wireframe);
         glWrapNewSurface.GLDraw(wireframe);
         glWrapQuadLayout1.GLDraw();
@@ -529,12 +576,12 @@ void GLArea::setQuadLayout2(QuadLayoutData* quadLayoutData2)
 void GLArea::setBoolean(TriangleMesh* boolean)
 {
     initMeshWrapper(this->glWrapBoolean, boolean);
-    glWrapIntersectionCurves.mesh = boolean;
+    glWrapIntersectionVertices.mesh = boolean;
 }
 
-void GLArea::setIntersectionCurves(std::vector<std::vector<size_t>>* intersectionCurves)
+void GLArea::setIntersectionVertices(std::vector<size_t>* intersectionVertices)
 {
-    glWrapIntersectionCurves.edges = intersectionCurves;
+    glWrapIntersectionVertices.vertices = intersectionVertices;
 }
 
 void GLArea::setPreservedSurface(PolyMesh* preservedSurface)
@@ -609,9 +656,9 @@ void GLArea::setBooleanVisibility(bool visible)
     glWrapBoolean.visible = visible;
 }
 
-void GLArea::setIntersectionCurvesVisibility(bool visible)
+void GLArea::setIntersectionVerticesVisibility(bool visible)
 {
-    glWrapIntersectionCurves.visible = visible;
+    glWrapIntersectionVertices.visible = visible;
 }
 
 void GLArea::setPreservedSurfaceVisibility(bool visible)
@@ -663,6 +710,23 @@ void GLArea::setResultVisibility(bool visible)
 void GLArea::setWireframe(bool visible)
 {
     this->wireframe = visible;
+}
+
+
+bool GLArea::getDetachMode() const
+{
+    return detachMode;
+}
+
+void GLArea::setDetachMode(bool value)
+{
+    deselectTransformationMesh();
+
+    if (targetMesh1 != nullptr)
+        targetMesh1->pickedPoints.clear();
+    envelopeWrap.segments.clear();
+
+    detachMode = value;
 }
 
 void GLArea::initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh) {

@@ -38,13 +38,13 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe)
         for(unsigned int i=0; i < face.size(); i++)
         {
             if (transformation) {
-                vcg::glColor(vcg::Color4b(255,165,0,255));
+                vcg::glColor(vcg::Color4b(255,200,30,255));
             }
             else if (target1) {
-                vcg::glColor(vcg::Color4b(100,200,100,255));
+                vcg::glColor(vcg::Color4b(200,255,200,255));
             }
             else if (target2) {
-                vcg::glColor(vcg::Color4b(100,100,200,255));
+                vcg::glColor(vcg::Color4b(200,200,255,255));
             }
             else {
                 vcg::glColor(face[i].C());
@@ -105,6 +105,24 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe)
                        "B",
                        GLUT_BITMAP_TIMES_ROMAN_24);
         }
+
+        int n = 0;
+        glDepthRange(0.0,0.999999);
+        glPointSize(8);
+        glDisable(GL_LIGHTING);
+        glBegin(GL_POINTS);
+        for (const typename MeshType::CoordType& point : pickedPoints) {
+            if (n % 2 == 0) {
+                vcg::glColor(vcg::Color4b(255,0,0,255));
+            }
+            else {
+                vcg::glColor(vcg::Color4b(0,0,255,255));
+            }
+            vcg::glVertex(point);
+
+            n++;
+        }
+        glEnd();
 
 
         //glEnd();

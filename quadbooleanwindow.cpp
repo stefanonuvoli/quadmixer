@@ -8,6 +8,9 @@
 #include <wrap/io_trimesh/import.h>
 #include <wrap/io_trimesh/export.h>
 
+#include "quadboolean/envelope_generator.h"
+#include "quadboolean/quadlibiglbooleaninterface.h"
+
 #include "quadbooleanwindow.h"
 
 #include "meshtypes.h"
@@ -45,6 +48,11 @@ void QuadBooleanWindow::booleanOperation()
     QuadBoolean::Parameters parameters = getParametersFromUI();
     QuadBoolean::Operation operation = getOperationFromUI();
 
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target1, "res/booleanoperation1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target2, "res/booleanoperation2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
+
     QuadBoolean::quadBoolean(*target1, *target2, operation, *booleanResult, parameters);
 
     hideMesh(target1);
@@ -57,29 +65,66 @@ void QuadBooleanWindow::booleanOperation()
 }
 
 void QuadBooleanWindow::detachOperationSelect()
-{
+{    
+    ui.glArea->setDetachMode(true);
 
+    ui.glArea->updateGL();
 }
 
 void QuadBooleanWindow::detachOperation()
 {
+    ui.glArea->deselectTransformationMesh();
+
+    std::vector<PolyMesh::CoordType> points = ui.glArea->targetMesh1->pickedPoints;
+
     PolyMesh* target1 = ui.glArea->targetMesh1->mesh;
     PolyMesh* detachResult1 = new PolyMesh();
     PolyMesh* detachResult2 = new PolyMesh();
 
-    QuadBoolean::Parameters parameters = getParametersFromUI();
+    PolyMesh targetCopy;
+    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(targetCopy, *target1);
+    QuadBoolean::internal::splitQuadInTriangle(targetCopy);
 
-    PolyMesh detachedTriangleMesh1;
-    PolyMesh detachedTriangleMesh2;
+    TriangleMesh targetTriangulated;
+    vcg::tri::Append<TriangleMesh, PolyMesh>::Mesh(targetTriangulated, targetCopy);
 
-    QuadBoolean::quadBoolean(*target1, detachedTriangleMesh1, QuadBoolean::Operation::INTERSECTION, *detachResult1, parameters);
-    QuadBoolean::quadBoolean(*target1, detachedTriangleMesh2, QuadBoolean::Operation::INTERSECTION, *detachResult2, parameters);
+    TriangleMesh detachedTriangleMesh1;
+    TriangleMesh detachedTriangleMesh2;
+    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 5, 1, false, 0.02);
 
-    hideMesh(target1);
-    addMesh(detachResult1);
-    addMesh(detachResult2);
+    if (result) {
+        PolyMesh detachedPolyMesh1;
+        PolyMesh detachedPolyMesh2;
+        vcg::tri::Append<PolyMesh, TriangleMesh>::Mesh(detachedPolyMesh1, detachedTriangleMesh1);
+        vcg::tri::Append<PolyMesh, TriangleMesh>::Mesh(detachedPolyMesh2, detachedTriangleMesh2);
 
-    setLastOperation(target1, nullptr, detachResult1, detachResult2);
+    #ifdef SAVEMESHES
+        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target1, "res/detachedinput.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(detachedPolyMesh1, "res/detached1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(detachedPolyMesh2, "res/detached2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    #endif
+
+        QuadBoolean::Parameters parameters = getParametersFromUI();
+        parameters.intersectionSmoothingMaxBB = 1;
+        parameters.intersectionSmoothingNRing = 1;
+        parameters.intersectionSmoothingIterations = 2;
+        parameters.resultSmoothingLaplacianNRing = 1;
+        parameters.resultSmoothingLaplacianIterations = 2;
+        QuadBoolean::quadBoolean(*target1, detachedPolyMesh1, QuadBoolean::Operation::INTERSECTION, *detachResult1, parameters);
+        QuadBoolean::quadBoolean(*target1, detachedPolyMesh2, QuadBoolean::Operation::INTERSECTION, *detachResult2, parameters);
+
+        addMesh(detachResult1);
+        addMesh(detachResult2);
+
+        hideMesh(target1);
+
+        setLastOperation(target1, nullptr, detachResult1, detachResult2);
+    }
+    else {
+        QMessageBox::warning(this, QString("Error"), QString("Detach points too close."));
+    }
+
+    ui.glArea->setDetachMode(true);
 
     ui.glArea->updateGL();
 }
@@ -300,7 +345,7 @@ void QuadBooleanWindow::updateVisibility()
     ui.glArea->setMesh1Visibility(ui.showMesh1CheckBox->isChecked());
     ui.glArea->setMesh2Visibility(ui.showMesh2CheckBox->isChecked());
     ui.glArea->setBooleanVisibility(ui.showBooleanCheckBox->isChecked());
-    ui.glArea->setIntersectionCurvesVisibility(ui.showIntersectionCurvesCheckBox->isChecked());
+    ui.glArea->setIntersectionVerticesVisibility(ui.showIntersectionVerticesCheckBox->isChecked());
     ui.glArea->setPreservedSurfaceVisibility(ui.showPreservedSurfaceCheckBox->isChecked());
     ui.glArea->setNewSurfaceVisibility(ui.showNewSurfaceCheckBox->isChecked());
     ui.glArea->setQuadLayout1Visibility(ui.showQuadLayout1CheckBox->isChecked());
@@ -333,42 +378,6 @@ void QuadBooleanWindow::on_loadMeshButton_clicked()
         ui.glArea->updateGL();
     }
 }
-
-void QuadBooleanWindow::on_booleanOperationButton_clicked()
-{
-    if (ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
-        QMessageBox::warning(this, QString("Error"), QString("Please select two meshes for the boolean operation."));
-    }
-    else {
-        booleanOperation();
-    }
-}
-
-void QuadBooleanWindow::on_detachButton_clicked()
-{
-    if (ui.glArea->targetMesh1 != nullptr) {
-        if (ui.glArea->targetMesh2 != nullptr) {
-            QMessageBox::warning(this, QString("Error"), QString("Please select a single mesh for the detach operation."));
-        }
-        else {
-            detachOperation();
-        }
-    }
-    else {
-        QMessageBox::warning(this, QString("Error"), QString("Please select a mesh for the detach operation."));
-    }
-}
-
-void QuadBooleanWindow::on_undoButton_clicked()
-{
-    if (lastTarget1 == nullptr && lastTarget1 == nullptr && lastResult1 == nullptr &&  lastResult2 == nullptr) {
-        QMessageBox::warning(this, QString("Error"), QString("There is no operation to undo."));
-    }
-    else {
-        undoLastOperation();
-    }
-}
-
 void QuadBooleanWindow::on_deleteMeshButton_clicked()
 {
     if (ui.glArea->targetMesh1 != nullptr) {
@@ -379,8 +388,10 @@ void QuadBooleanWindow::on_deleteMeshButton_clicked()
             if (ui.glArea->targetMesh1->mesh == lastResult1 || ui.glArea->targetMesh1->mesh == lastResult2) {
                 setLastOperation(nullptr, nullptr, nullptr, nullptr);
             }
+
+            PolyMesh* mesh = ui.glArea->targetMesh1->mesh;
             hideMesh(ui.glArea->targetMesh1->mesh);
-            delete ui.glArea->targetMesh1->mesh;
+            delete mesh;
         }
     }
     else {
@@ -396,6 +407,84 @@ void QuadBooleanWindow::on_deleteAllButton_clicked()
             hideMesh(id);
             delete meshes[id];
         }
+    }
+    ui.glArea->setDetachMode(false);
+}
+
+
+void QuadBooleanWindow::on_saveMeshButton_clicked()
+{
+    if (ui.glArea->targetMesh1 != nullptr) {
+        if (ui.glArea->targetMesh2 != nullptr) {
+            QMessageBox::warning(this, QString("Error"), QString("Please select a single mesh to save."));
+        }
+        else {
+            QString filename = QFileDialog::getSaveFileName(this,
+                                                            tr("Save Mesh"),
+                                                            QDir::currentPath(),
+                                                            tr("Mesh (*.obj *.ply *.off)"));
+
+            vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*ui.glArea->targetMesh1->mesh, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);
+        }
+    }
+    else {
+        QMessageBox::warning(this, QString("Error"), QString("Please select a mesh to save."));
+    }
+}
+
+void QuadBooleanWindow::on_booleanOperationButton_clicked()
+{
+    if (ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
+        QMessageBox::warning(this, QString("Error"), QString("Please select two meshes for the boolean operation."));
+    }
+    else {
+        booleanOperation();
+    }
+}
+
+void QuadBooleanWindow::on_detachButton_clicked()
+{
+    if (ui.glArea->getDetachMode()) {
+        if (ui.glArea->targetMesh1->pickedPoints.size() < 2) {
+            QMessageBox::warning(this, QString("Error"), QString("Please select at least two vertices in the mesh for the detach operation."));
+        }
+        else if (ui.glArea->targetMesh1->pickedPoints.size() % 2 != 0) {
+            QMessageBox::warning(this, QString("Error"), QString("Please select an even number of points."));
+        }
+        else {
+            detachOperation();
+        }
+    }
+    else {
+        if (ui.glArea->targetMesh1 != nullptr) {
+            if (ui.glArea->targetMesh2 != nullptr) {
+                QMessageBox::warning(this, QString("Error"), QString("Please select a single mesh for the detach operation."));
+            }
+            else {
+                detachOperationSelect();
+            }
+        }
+        else {
+            QMessageBox::warning(this, QString("Error"), QString("Please select a mesh for the detach operation."));
+        }
+    }
+}
+
+void QuadBooleanWindow::on_abortDetachButton_clicked()
+{    
+    ui.glArea->setDetachMode(false);
+    if (ui.glArea->targetMesh1 != nullptr)
+
+    ui.glArea->updateGL();
+}
+
+void QuadBooleanWindow::on_undoButton_clicked()
+{
+    if (lastTarget1 == nullptr && lastTarget1 == nullptr && lastResult1 == nullptr &&  lastResult2 == nullptr) {
+        QMessageBox::warning(this, QString("Error"), QString("There is no operation to undo."));
+    }
+    else {
+        undoLastOperation();
     }
 }
 
@@ -557,21 +646,20 @@ void QuadBooleanWindow::doComputeBooleans() {
 
     start = chrono::steady_clock::now();
 
-    intersectionCurves = QuadBoolean::internal::getIntersectionCurves(
-                triMesh1, triMesh2,
+    intersectionVertices = QuadBoolean::internal::getIntersectionVertices(
                 VA, VB, VR,
                 FA, FB, FR,
                 J);
 
 
     std::cout << std::endl << " >> "
-              << "Intersection curves: "
+              << "Intersection vertices: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
     ui.glArea->setBoolean(&boolean);
 
-    ui.glArea->setIntersectionCurves(&intersectionCurves);
+    ui.glArea->setIntersectionVertices(&intersectionVertices);
 
 
 #ifdef SAVEMESHES
@@ -596,12 +684,12 @@ void QuadBooleanWindow::doSmooth()
     //Copy mesh
     vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(booleanSmoothed, boolean);
 
-    //Smooth along intersection curves
-    QuadBoolean::internal::smoothAlongIntersectionCurves(
+    //Smooth along intersection vertices
+    QuadBoolean::internal::smoothAlongIntersectionVertices(
                 booleanSmoothed,
                 VR,
                 FR,
-                intersectionCurves,
+                intersectionVertices,
                 intersectionSmoothingIterations,
                 intersectionNRing,
                 intersectionSmoothingMaxBB);
@@ -612,7 +700,7 @@ void QuadBooleanWindow::doSmooth()
     vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalizedPerFace(booleanSmoothed);
 
     std::cout << std::endl << " >> "
-              << "Smooth along intersection curves: "
+              << "Smooth along intersection vertices: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
@@ -642,11 +730,8 @@ void QuadBooleanWindow::doGetSurfaces() {
 
     //Find preserved quads
     QuadBoolean::internal::findPreservedQuads(
-                triMesh1, triMesh2,
-                VA, VB, VR,
-                FA, FB, FR,
-                J,
-                birthQuad1, birthQuad2,
+                mesh1, mesh2,
+                booleanSmoothed,
                 isQuadMesh1, isQuadMesh2,
                 preservedQuad1, preservedQuad2);
 
@@ -729,13 +814,10 @@ void QuadBooleanWindow::doGetSurfaces() {
                 preservedSurface, preservedSurfaceLabel);
 
     //New mesh (to be decomposed in patch)
-    size_t nFirstFaces = triMesh1.face.size();
     QuadBoolean::internal::getNewSurfaceMesh(
                 booleanSmoothed,
-                nFirstFaces,
-                birthQuad1, birthQuad2,
+                mesh1, mesh2,
                 preservedQuad1, preservedQuad2,
-                J,
                 initialNewSurface);
 
     std::cout << std::endl << " >> "
@@ -919,7 +1001,7 @@ void QuadBooleanWindow::clearVisualizationData()
     ui.glArea->setQuadLayout1(nullptr);
     ui.glArea->setQuadLayout2(nullptr);
     ui.glArea->setBoolean(nullptr);
-    ui.glArea->setIntersectionCurves(nullptr);
+    ui.glArea->setIntersectionVertices(nullptr);
     ui.glArea->setPreservedSurface(nullptr);
     ui.glArea->setQuadLayoutPreserved1(nullptr);
     ui.glArea->setQuadLayoutPreserved2(nullptr);
@@ -935,8 +1017,8 @@ void QuadBooleanWindow::clearVisualizationData()
     ui.showQuadLayout1CheckBox->setChecked(true);
     ui.showQuadLayout2CheckBox->setChecked(true);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -956,7 +1038,7 @@ void QuadBooleanWindow::on_quadTracerButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(true);
     ui.showQuadLayout2CheckBox->setChecked(true);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -980,7 +1062,7 @@ void QuadBooleanWindow::on_computeBooleanButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(true);
-    ui.showIntersectionCurvesCheckBox->setChecked(true);
+    ui.showIntersectionVerticesCheckBox->setChecked(true);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -1004,7 +1086,7 @@ void QuadBooleanWindow::on_smoothButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(true);
-    ui.showIntersectionCurvesCheckBox->setChecked(true);
+    ui.showIntersectionVerticesCheckBox->setChecked(true);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -1028,7 +1110,7 @@ void QuadBooleanWindow::on_getSurfacesButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(true);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(true);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(true);
@@ -1052,7 +1134,7 @@ void QuadBooleanWindow::on_decompositionButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(true);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(true);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(true);
@@ -1078,7 +1160,7 @@ void QuadBooleanWindow::on_ilpButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(true);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(true);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(true);
@@ -1102,7 +1184,7 @@ void QuadBooleanWindow::on_quadrangulateButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -1126,7 +1208,7 @@ void QuadBooleanWindow::on_getResultButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -1159,7 +1241,7 @@ void QuadBooleanWindow::on_computeAllButton_clicked()
     ui.showQuadLayout1CheckBox->setChecked(false);
     ui.showQuadLayout2CheckBox->setChecked(false);
     ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionCurvesCheckBox->setChecked(false);
+    ui.showIntersectionVerticesCheckBox->setChecked(false);
     ui.showPreservedSurfaceCheckBox->setChecked(false);
     ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
     ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
@@ -1178,10 +1260,11 @@ void QuadBooleanWindow::on_computeAllButton_clicked()
 
 void QuadBooleanWindow::on_saveResultButton_clicked()
 {
-    QString filename = QFileDialog::getSaveFileName(this,
-                                                    tr("Open Mesh"),
-                                                    QDir::currentPath(),
-                                                    tr("Mesh (*.obj *.ply *.off)"));
+    QString filename = QFileDialog::getSaveFileName(
+                this,
+                tr("Save result"),
+                QDir::currentPath(),
+                tr("Mesh (*.obj *.ply *.off)"));
 
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);
 }
@@ -1206,9 +1289,9 @@ void QuadBooleanWindow::on_showBooleanCheckBox_stateChanged(int arg1)
     ui.glArea->updateGL();
 }
 
-void QuadBooleanWindow::on_showIntersectionCurvesCheckBox_stateChanged(int arg1)
+void QuadBooleanWindow::on_showIntersectionVerticesCheckBox_stateChanged(int arg1)
 {
-    ui.glArea->setIntersectionCurvesVisibility(arg1 == Qt::Checked);
+    ui.glArea->setIntersectionVerticesVisibility(arg1 == Qt::Checked);
     ui.glArea->updateGL();
 }
 
@@ -1304,3 +1387,4 @@ void QuadBooleanWindow::colorizeMesh(
         }
     }
 }
+

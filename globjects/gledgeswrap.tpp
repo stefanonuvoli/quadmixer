@@ -6,31 +6,27 @@
 #include <wrap/gl/space.h>
 
 template<class MeshType>
-GLEdgesWrap<MeshType>::GLEdgesWrap()
+GLSegmentsWrap<MeshType>::GLSegmentsWrap()
 {
-    this->mesh = nullptr;
-    this->edges = nullptr;
     this->visible = true;
 }
 
 template<class MeshType>
-void GLEdgesWrap<MeshType>::GLDraw()
+void GLSegmentsWrap<MeshType>::GLDraw()
 {
-    if (this->mesh != nullptr && this->edges != nullptr && this->visible) {
+    if (this->segments.size() > 0 && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
         glDepthRange(0.0,0.999999);
-        glLineWidth(4);
+        glLineWidth(6);
         glDisable(GL_LIGHTING);
 
-        for (const std::vector<size_t>& edge : *edges) {
-            for (size_t i = 0; i < edge.size() - 1; i++) {
-                vcg::glColor(vcg::Color4b(0,0,200,255));
-                glBegin(GL_LINES);
-                vcg::glVertex(mesh->vert[edge[i]].P());
-                vcg::glVertex(mesh->vert[edge[i+1]].P());
-                glEnd();
-            }
+        for (const std::pair<typename MeshType::CoordType, typename MeshType::CoordType>& edge : segments) {
+            vcg::glColor(vcg::Color4b(200,200,0,255));
+            glBegin(GL_LINES);
+            vcg::glVertex(edge.first);
+            vcg::glVertex(edge.second);
+            glEnd();
         }
 
         //glEnd();

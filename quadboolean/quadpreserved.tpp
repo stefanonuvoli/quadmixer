@@ -10,49 +10,66 @@ namespace internal {
 
 int maxHist(const std::vector<int>& row, int& startColumn, int& endColumn);
 
-template<class TriangleMeshType>
+template<class PolyMeshType, class TriangleMeshType>
 void computePreservedQuadForMesh(
-        TriangleMeshType& triMesh,
-        const Eigen::MatrixXd& V,
-        const Eigen::MatrixXi& F,
-        const Eigen::MatrixXd& VR,
-        const Eigen::MatrixXi& FR,
-        const Eigen::VectorXi& J,
-        const std::vector<int>& birthQuad,
-        const size_t offset,
+        PolyMeshType& mesh,
+        TriangleMeshType& triResult,
         const bool isQuadMesh,
         std::vector<bool>& preservedQuad)
 {
-    preservedQuad.resize(triMesh.face.size(), false);
+    preservedQuad.resize(mesh.face.size(), false);
 
     if (!isQuadMesh) {
         return;
     }
 
-    for (int i = 0; i < J.rows(); i++) {
-        int birthFace = J[i] - offset;
+    vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(triResult);
 
-        //If the birth face is in the current mesh
-        if (birthFace < triMesh.face.size()) {
-            preservedQuad[birthQuad[birthFace]] = true;
-        }
+    std::map<std::set<typename PolyMeshType::CoordType>, size_t> quadMap;
+
+    for (size_t i = 0; i < mesh.face.size(); i++) {
+        std::set<typename PolyMeshType::CoordType> coordSet;
+
+        for (int j = 0; j < mesh.face[i].VN(); j++)
+            coordSet.insert(mesh.face[i].V(j)->P());
+
+        quadMap.insert(std::make_pair(coordSet, i));
     }
 
-    for (int i = 0; i < J.rows(); i++) {
-        int birthFace = J[i] - offset;
 
-        //If the birth face is in the current mesh
-        if (birthFace < triMesh.face.size()) {
-            bool isNew = false;
+    std::vector<bool> isNewSurface(triResult.face.size(), true);
+    for (size_t i = 0; i < triResult.face.size(); i++) {
+        if (isNewSurface[i]) {
+            std::set<typename TriangleMeshType::CoordType> coordSet;
 
-            for (int j = 0; j < 3; j++) {
-                if (V(F(birthFace, j)) != VR(FR(i, j))) {
-                    isNew = true;
-                }
+            for (int k = 0; k < triResult.face[i].VN(); k++) {
+                coordSet.insert(triResult.face[i].V(k)->P());
             }
 
-            if (isNew) {
-                preservedQuad[birthQuad[birthFace]] = false;
+            for (int k = 0; k < triResult.face[i].VN() && isNewSurface[i]; k++) {
+                typename TriangleMeshType::FacePointer fp = triResult.face[i].FFp(k);
+
+                if (fp == &triResult.face[i])
+                    continue;
+
+                std::set<typename PolyMeshType::CoordType> coordSetComplete = coordSet;
+
+                int otherFaceEdge = triResult.face[i].FFi(k);
+                int oppositeVert = (otherFaceEdge + 2) % 3;
+
+                coordSetComplete.insert(fp->V(oppositeVert)->P());
+
+                typename std::map<std::set<typename PolyMeshType::CoordType>, size_t>::iterator findIt = quadMap.find(coordSetComplete);
+                if (findIt != quadMap.end()) {
+                    quadMap.erase(findIt);
+
+                    size_t adjFaceId = vcg::tri::Index(triResult, fp);
+
+                    isNewSurface[adjFaceId] = false;
+                    isNewSurface[i] = false;
+
+                    preservedQuad[findIt->second] = true;
+                }
             }
         }
     }

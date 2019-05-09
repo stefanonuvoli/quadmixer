@@ -19,6 +19,12 @@ typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh, const st
 template<class PolyMeshType>
 typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh);
 
+bool findVertexChainPathRecursive(
+        const size_t& vCurrentId,
+        const size_t& vStartId,
+        const std::vector<std::vector<size_t>>& vertexNextMap,
+        std::vector<size_t>& nextConfiguration);
+
 }
 }
 

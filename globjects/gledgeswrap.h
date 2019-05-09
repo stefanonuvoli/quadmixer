@@ -4,15 +4,14 @@
 #include <vector>
 
 template<class MeshType>
-class GLEdgesWrap
+class GLSegmentsWrap
 {
 public:
-    GLEdgesWrap();
+    GLSegmentsWrap();
 
     void GLDraw();
 
-    MeshType* mesh;
-    std::vector<std::vector<size_t>>* edges;
+    std::vector<std::pair<typename MeshType::CoordType, typename MeshType::CoordType>> segments;
 
     bool visible;
 };

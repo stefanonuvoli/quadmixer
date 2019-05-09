@@ -57,7 +57,8 @@ SOURCES += \
     quadboolean/quadutils.tpp \
     globjects/gledgeswrap.tpp \
     triangulatedataset.cpp \
-    quadboolean/quadilp.tpp
+    quadboolean/quadilp.tpp \
+    globjects/glverticeswrap.tpp
 
 HEADERS += \
     quadboolean.h \
@@ -76,6 +77,7 @@ HEADERS += \
     quadboolean/patch_decomposer.h \
     quadboolean/patch_assembler.h \
     quadboolean/field_tracer.h \
+    quadboolean/envelope_generator.h \
     quadboolean/quadbooleansteps.h \
     quadboolean/quadbooleanoperation.h \
     globjects/glpolywrap.h \
@@ -83,7 +85,8 @@ HEADERS += \
     globjects/glchartsideswrap.h \
     globjects/gldrawtext.h \
     meshtypes.h \
-    globjects/gledgeswrap.h
+    globjects/gledgeswrap.h \
+    globjects/glverticeswrap.h
 
 FORMS += \
     quadbooleanwindow.ui

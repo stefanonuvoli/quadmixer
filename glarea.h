@@ -17,6 +17,7 @@
 #include "globjects/glpolywrap.h"
 #include "globjects/glquadlayoutwrap.h"
 #include "globjects/glchartsideswrap.h"
+#include "globjects/glverticeswrap.h"
 #include "globjects/gledgeswrap.h"
 
 
@@ -48,7 +49,10 @@ public:
     void applySelectedMeshTransformation();
 
     void setTrackballVisibility(bool visible);
-    void setWireframe(bool visible);
+    void setWireframe(bool visible);    
+
+    bool getDetachMode() const;
+    void setDetachMode(bool value);
 
     vcg::Point3f sceneCenter;
     float sceneRadius;
@@ -59,6 +63,8 @@ public:
 
     GLPolyWrap<PolyMesh>* targetMesh1;
     GLPolyWrap<PolyMesh>* targetMesh2;
+
+    GLSegmentsWrap<PolyMesh> envelopeWrap;
 
 private:
 
@@ -71,6 +77,8 @@ private:
     vcg::Trackball transformationMeshTrackball;
 
     void initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh);
+
+    bool detachMode;
 
 protected:
 
@@ -93,7 +101,7 @@ public:
     void setQuadLayout1(QuadLayoutData* quadLayoutData1);
     void setQuadLayout2(QuadLayoutData* quadLayoutData2);
     void setBoolean(TriangleMesh* boolean);
-    void setIntersectionCurves(std::vector<std::vector<size_t>>* intersectionCurves);
+    void setIntersectionVertices(std::vector<size_t>* intersectionCurves);
     void setPreservedSurface(PolyMesh* boolean);
     void setQuadLayoutPreserved1(QuadLayoutData* quadLayoutData2);
     void setQuadLayoutPreserved2(QuadLayoutData* quadLayoutData2);
@@ -111,7 +119,7 @@ public:
     void setQuadLayoutPreserved1Visibility(bool visible);
     void setQuadLayoutPreserved2Visibility(bool visible);
     void setBooleanVisibility(bool visible);
-    void setIntersectionCurvesVisibility(bool visible);
+    void setIntersectionVerticesVisibility(bool visible);
     void setPreservedSurfaceVisibility(bool visible);
     void setNewSurfaceVisibility(bool visible);
     void setChartSidesVisibility(bool visible);
@@ -132,7 +140,7 @@ private:
     GLPolyWrap<PolyMesh> glWrapMesh1;
     GLPolyWrap<PolyMesh> glWrapMesh2;
     GLPolyWrap<TriangleMesh> glWrapBoolean;
-    GLEdgesWrap<TriangleMesh> glWrapIntersectionCurves;
+    GLVerticesWrap<TriangleMesh> glWrapIntersectionVertices;
     GLPolyWrap<PolyMesh> glWrapPreservedSurface;
     GLPolyWrap<TriangleMesh> glWrapNewSurface;
     GLPolyWrap<PolyMesh> glWrapQuadrangulation;

@@ -60,14 +60,15 @@ private:
 
 private slots:
 
-    void on_loadMeshButton_clicked();
+    void on_loadMeshButton_clicked();    
+    void on_deleteMeshButton_clicked();
+    void on_deleteAllButton_clicked();
+    void on_saveMeshButton_clicked();
 
     void on_booleanOperationButton_clicked();
     void on_detachButton_clicked();
+    void on_abortDetachButton_clicked();
     void on_undoButton_clicked();
-
-    void on_deleteMeshButton_clicked();
-    void on_deleteAllButton_clicked();
 
     void on_resetSceneButton_clicked();
     void on_trackballCheckBox_stateChanged(int arg1);
@@ -104,7 +105,7 @@ private slots:
     void on_showMesh1CheckBox_stateChanged(int arg1);
     void on_showMesh2CheckBox_stateChanged(int arg1);
     void on_showBooleanCheckBox_stateChanged(int arg1);
-    void on_showIntersectionCurvesCheckBox_stateChanged(int arg1);
+    void on_showIntersectionVerticesCheckBox_stateChanged(int arg1);
     void on_showPreservedSurfaceCheckBox_stateChanged(int arg1);
     void on_showNewSurfaceCheckBox_stateChanged(int arg1);
     void on_showQuadLayoutPreserved1CheckBox_stateChanged(int arg1);
@@ -136,7 +137,7 @@ private:
     std::vector<int> birthQuad1;
     std::vector<int> birthQuad2;
 
-    std::vector<std::vector<size_t>> intersectionCurves;
+    std::vector<size_t> intersectionVertices;
 
     TriangleMesh booleanSmoothed;
 

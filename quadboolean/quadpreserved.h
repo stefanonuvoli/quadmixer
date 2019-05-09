@@ -11,17 +11,10 @@
 namespace QuadBoolean {
 namespace internal {
 
-
-template<class PolyMeshType>
+template<class PolyMeshType, class TriangleMeshType>
 void computePreservedQuadForMesh(
-        PolyMeshType& triMesh,
-        const Eigen::MatrixXd& V,
-        const Eigen::MatrixXi& F,
-        const Eigen::MatrixXd& VR,
-        const Eigen::MatrixXi& FR,
-        const Eigen::VectorXi& J,
-        const std::vector<int>& birthQuad,
-        const size_t offset,
+        PolyMeshType& mesh,
+        TriangleMeshType& triResult,
         const bool isQuadMesh,
         std::vector<bool>& preservedQuad);
 

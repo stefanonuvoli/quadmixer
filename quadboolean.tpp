@@ -64,7 +64,7 @@ void quadBoolean(
      Eigen::MatrixXi FA, FB, FR;
      Eigen::VectorXi J;
 
-     std::vector<std::vector<size_t>> intersectionCurves;
+     std::vector<size_t> intersectionVertices;
 
      std::vector<int> birthQuad1;
      std::vector<int> birthQuad2;
@@ -125,20 +125,19 @@ void quadBoolean(
                  J);
 
      //Get intersection curves
-     intersectionCurves =
-             QuadBoolean::internal::getIntersectionCurves(
-                 triMesh1, triMesh2,
+     intersectionVertices =
+             QuadBoolean::internal::getIntersectionVertices(
                  VA, VB, VR,
                  FA, FB, FR,
                  J);
 
 
      //Smooth along intersection curves
-     QuadBoolean::internal::smoothAlongIntersectionCurves(
+     QuadBoolean::internal::smoothAlongIntersectionVertices(
                  boolean,
                  VR,
                  FR,
-                 intersectionCurves,
+                 intersectionVertices,
                  parameters.intersectionSmoothingIterations,
                  parameters.intersectionSmoothingNRing,
                  parameters.intersectionSmoothingMaxBB);
@@ -149,11 +148,8 @@ void quadBoolean(
 
      //Find preserved quads
      internal::findPreservedQuads(
-                 triMesh1, triMesh2,
-                 VA, VB, VR,
-                 FA, FB, FR,
-                 J,
-                 birthQuad1, birthQuad2,
+                 mesh1, mesh2,
+                 boolean,
                  isQuadMesh1, isQuadMesh2,
                  preservedQuad1, preservedQuad2);
 
@@ -190,14 +186,12 @@ void quadBoolean(
 
 
      //New mesh (to be decomposed in patch)
-     size_t nFirstFaces = triMesh1.face.size();
-
      internal::getNewSurfaceMesh(
                  boolean,
-                 nFirstFaces,
-                 birthQuad1, birthQuad2,
-                 preservedQuad1, preservedQuad2,
-                 J,
+                 mesh1,
+                 mesh2,
+                 preservedQuad1,
+                 preservedQuad2,
                  newSurface);
 
 

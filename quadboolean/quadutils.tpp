@@ -14,6 +14,10 @@ namespace QuadBoolean {
 namespace internal {
 
 
+std::vector<size_t> findVertexChainPath(
+        const size_t& vCurrentId,
+        const std::vector<std::vector<size_t>>& vertexNextMap);
+
 template <class PolyMeshType>
 bool isTriangleMesh(PolyMeshType& mesh) {
     for (size_t i = 0; i < mesh.face.size(); i++) {
@@ -220,6 +224,37 @@ public:
     }
 
 };
+
+
+inline bool findVertexChainPathRecursive(
+        const size_t& vCurrentId,
+        const size_t& vStartId,
+        const std::vector<std::vector<size_t>>& vertexNextMap,
+        std::vector<size_t>& nextConfiguration)
+{
+    if (vCurrentId == vStartId)
+        return true;
+
+    for (size_t i = 0; i < vertexNextMap[vCurrentId].size(); i++) {
+        nextConfiguration[vCurrentId] = i;
+        if (findVertexChainPathRecursive(vertexNextMap[vCurrentId][i], vStartId, vertexNextMap, nextConfiguration)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline std::vector<size_t> findVertexChainPath(
+        const size_t& vCurrentId,
+        const std::vector<std::vector<size_t>>& vertexNextMap)
+{
+    std::vector<size_t> nextConfiguration(vertexNextMap.size());
+
+    findVertexChainPathRecursive(vCurrentId, vCurrentId, vertexNextMap, nextConfiguration);
+
+    return nextConfiguration;
+}
+
 
 }
 }

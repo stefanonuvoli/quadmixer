@@ -37,7 +37,8 @@ class PolyFace : public vcg::Face<
         vcg::face::PFFAdj,
         vcg::face::PVFAdj,
         vcg::face::CurvatureDird,
-        vcg::face::Mark> {};
+        vcg::face::Mark,
+        vcg::face::WedgeTexCoord2d> {};
 
 class PolyEdge : public vcg::Edge<
         MyPolyTypes,
@@ -78,7 +79,8 @@ class TriangleFace : public vcg::Face<
         vcg::face::FFAdj,
         vcg::face::VFAdj,
         vcg::face::CurvatureDird,
-        vcg::face::Mark> {};
+        vcg::face::Mark,
+        vcg::face::WedgeTexCoord2d> {};
 
 class TriangleMesh : public vcg::tri::TriMesh<
         std::vector<TriangleVertex>,

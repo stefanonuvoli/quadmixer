@@ -78,7 +78,7 @@
              <item>
               <widget class="QPushButton" name="loadMeshButton">
                <property name="text">
-                <string>Load</string>
+                <string>Load mesh</string>
                </property>
               </widget>
              </item>
@@ -117,6 +117,13 @@
               <widget class="QPushButton" name="deleteAllButton">
                <property name="text">
                 <string>Delete All</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="saveMeshButton">
+               <property name="text">
+                <string>Save mesh</string>
                </property>
               </widget>
              </item>
@@ -188,6 +195,13 @@
               <widget class="QPushButton" name="detachButton">
                <property name="text">
                 <string>Detach</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="abortDetachButton">
+               <property name="text">
+                <string>Abort detach</string>
                </property>
               </widget>
              </item>
@@ -465,9 +479,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="showIntersectionCurvesCheckBox">
+                 <widget class="QCheckBox" name="showIntersectionVerticesCheckBox">
                   <property name="text">
-                   <string>Intersection curves</string>
+                   <string>Intersection vertices</string>
                   </property>
                  </widget>
                 </item>
