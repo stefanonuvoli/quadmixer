@@ -204,7 +204,8 @@ class EnvelopeGenerator
     }
 
     static void ExpandSelected(MeshType &curr_mesh,
-                               size_t smooth_steps)
+                               size_t smooth_steps,
+                               bool External)
     {
         UpdateAttributes(curr_mesh);
 
@@ -240,7 +241,10 @@ class EnvelopeGenerator
             if (!curr_mesh.vert[i].IsS())continue;
             ScalarType Dist=MaxRad-curr_mesh.vert[i].Q();
             ScalarType H=sqrt(MaxRad*MaxRad-Dist*Dist);
-            curr_mesh.vert[i].P()+=curr_mesh.vert[i].N()*H;
+            if (External)
+                curr_mesh.vert[i].P()+=curr_mesh.vert[i].N()*H;
+            else
+                curr_mesh.vert[i].P()-=curr_mesh.vert[i].N()*H;
         }
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceStrict(curr_mesh);
         vcg::tri::Smooth<MeshType>::VertexCoordLaplacian(curr_mesh,smooth_steps,true);
@@ -325,7 +329,8 @@ public:
                                  const std::vector<size_t> &Vert,
                                  MeshType &envelope0,
                                  MeshType &envelope1,
-                                 size_t smooth_steps=5)
+                                 size_t smooth_steps=5,
+                                 bool External=false)
     {
         MeshType mesh;
         vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,input_mesh);
@@ -432,8 +437,8 @@ public:
         for (size_t i=numF1;i<envelope1.face.size();i++)
             envelope1.face[i].SetS();
 
-        ExpandSelected(envelope0,smooth_steps);
-        ExpandSelected(envelope1,smooth_steps);
+        ExpandSelected(envelope0,smooth_steps,External);
+        ExpandSelected(envelope1,smooth_steps,External);
 
     }
 
@@ -441,7 +446,8 @@ public:
                                  const std::vector<CoordType> &Pos,
                                  MeshType &envelope0,
                                  MeshType &envelope1,
-                                 size_t smooth_steps=5)
+                                 size_t smooth_steps=5,
+                                 bool External=false)
     {
         MeshType mesh;
         vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,input_mesh);
@@ -479,7 +485,7 @@ public:
             mesh.vert.back().P()=Pos;
             IndexV.push_back(mesh.vert.size()-1);
         }
-        GenerateEnvelope(mesh,IndexV,envelope0,envelope1,smooth_steps);
+        GenerateEnvelope(mesh,IndexV,envelope0,envelope1,smooth_steps,External);
         return true;
     }
 };
