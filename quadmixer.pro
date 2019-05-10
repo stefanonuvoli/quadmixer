@@ -7,15 +7,12 @@ CGALPATH = /usr/include/CGAL
 GUROBIPATH = /usr/include/gurobi
 GLPATH = /usr/include/GL
 
-#bin directory
-DESTDIR = $$PWD/../bin
-
 #######################################################################
 
 # ----- We suggest to not modify anything under this line -----
 
 #App config
-TARGET = quadboolean
+TARGET = quadmixer
 
 TEMPLATE        = app
 QT             += core gui opengl widgets
@@ -46,5 +43,27 @@ FINAL_RELEASE {
 #Load libraries
 include(libs/libs.pri)
 
+#Project files
 SOURCES += \
-    src/mainquadboolean.cpp
+    src/mainquadmixer.cpp \
+    src/interface/quadmixerwindow.cpp \
+    src/interface/glarea.cpp \
+    src/interface/globjects/glpolywrap.tpp \
+    src/interface/globjects/glquadlayoutwrap.tpp \
+    src/interface/globjects/glchartsideswrap.tpp \
+    src/interface/globjects/gldrawtext.cpp \
+    src/interface/globjects/gledgeswrap.tpp \
+    src/interface/globjects/glverticeswrap.tpp
+
+HEADERS += \
+    src/interface/quadmixerwindow.h \
+    src/interface/glarea.h \
+    src/interface/globjects/glpolywrap.h \
+    src/interface/globjects/glquadlayoutwrap.h \
+    src/interface/globjects/glchartsideswrap.h \
+    src/interface/globjects/gldrawtext.h \
+    src/interface/globjects/gledgeswrap.h \
+    src/interface/globjects/glverticeswrap.h
+
+FORMS += \
+    src/interface/quadmixerwindow.ui
