@@ -242,7 +242,7 @@ class EnvelopeGenerator
         vcg::Box3<ScalarType> bb = curr_mesh.bbox;
         //ScalarType offsetVal=bb.Diag()*Offset;
         bb.Offset(offsetVal);
-        ScalarType cell_side = bb.Diag()/100.0;
+        ScalarType cell_side = bb.Diag()/50.0;
         bb.Offset(cell_side);
         vcg::Point3i box_size(bb.DimX()/cell_side,bb.DimY()/cell_side,bb.DimZ()/cell_side);
         vcg::tri::Resampler<MeshType,MeshType>::Resample(curr_mesh,expand_mesh,bb,box_size,cell_side*5,offsetVal);
@@ -624,7 +624,7 @@ public:
                                  size_t smooth_steps=5,
                                  int Inflate_dir=0,
                                  bool Implicit=true,
-                                 ScalarType offsetval=0.01)
+                                 ScalarType offsetval=0.02)
     {
         MeshType mesh;
         std::vector<size_t> IndexV;
