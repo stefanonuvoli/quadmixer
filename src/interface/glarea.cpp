@@ -279,7 +279,7 @@ void GLArea::applySelectedMeshTransformation()
         quat.ToMatrix(rot);
 
 
-        vcg::Point3f translateCenter(
+        vcg::Point3f initialCenter(
                     transformationMeshCenter.X(),
                     transformationMeshCenter.Y(),
                     transformationMeshCenter.Z());
@@ -291,10 +291,10 @@ void GLArea::applySelectedMeshTransformation()
                 static_cast<float>(this->transformationMeshVertices[i].P().Z()));
 
             vcg::Point3f point = initialPoint;
-            point -= translateCenter;
-            point += tra;
+            point -= initialCenter + tra;
             point = rot * point;
-            point += translateCenter;
+            point += initialCenter + tra;
+            point += rot * tra;
             point *= scaleFactor;
 
             this->transformationMesh->mesh->vert[i].P() = vcg::Point3d(
