@@ -205,22 +205,12 @@ void QuadMixerWindow::setLastOperation(
 void QuadMixerWindow::undoLastOperation()
 {
     if (lastTarget1 != nullptr) {
-        int id = addMesh(lastTarget1);
+        addMesh(lastTarget1);
         lastTarget1 = nullptr;
-
-        if (id >= 0) {
-            ui.glArea->targetMesh1->mesh = meshes[id];
-            ui.glArea->targetMesh1->target1 = true;
-        }
     }
     if (lastTarget2 != nullptr) {
-        int id = addMesh(lastTarget2);
+        addMesh(lastTarget2);
         lastTarget2 = nullptr;
-
-        if (id >= 0) {
-            ui.glArea->targetMesh2->mesh = meshes[id];
-            ui.glArea->targetMesh2->target1 = true;
-        }
     }
     if (lastResult1 != nullptr) {
         hideMesh(lastResult1);
@@ -314,8 +304,10 @@ QuadBoolean::Operation QuadMixerWindow::getOperationFromUI()
 
 std::string QuadMixerWindow::chooseMeshFile()
 {
+
+    std::cout << std::string(QDir::currentPath().toStdString() + "/../../QuadMixer/dataset") << std::endl;
     QString filename = QFileDialog::getOpenFileName(this,
-                                                    tr("Open Mesh"), QDir::currentPath() + "/../dataset",
+                                                    tr("Open Mesh"), QDir::currentPath() + "/../../QuadMixer/dataset",
                                                     tr("Mesh (*.obj *.ply *.off)"));
     return filename.toStdString();
 }
@@ -432,7 +424,7 @@ void QuadMixerWindow::on_saveMeshButton_clicked()
         else {
             QString filename = QFileDialog::getSaveFileName(this,
                                                             tr("Save Mesh"),
-                                                            QDir::currentPath() + "/../dataset",
+                                                            QDir::currentPath() + "/../../QuadMixer/dataset",
                                                             tr("Mesh (*.obj *.ply *.off)"));
 
             vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*ui.glArea->targetMesh1->mesh, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);
@@ -1274,7 +1266,7 @@ void QuadMixerWindow::on_saveResultButton_clicked()
     QString filename = QFileDialog::getSaveFileName(
                 this,
                 tr("Save result"),
-                QDir::currentPath() + "/../dataset",
+                QDir::currentPath() + "/../../QuadMixer/dataset",
                 tr("Mesh (*.obj *.ply *.off)"));
 
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);

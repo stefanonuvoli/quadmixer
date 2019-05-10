@@ -497,8 +497,10 @@ void quadrangulate(
                 ilpSolvedForAll = false;
         }
 
-        if (!ilpSolvedForAll)
+        if (!ilpSolvedForAll) {
+            std::cout << "Chart " << cId << " not computed. ILP was not solved." << std::endl;
             continue;
+        }
 
         //Input mesh
         Eigen::MatrixXd chartV;
