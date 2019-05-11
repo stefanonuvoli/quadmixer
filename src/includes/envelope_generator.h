@@ -379,7 +379,7 @@ class EnvelopeGenerator
             ScalarType tot_val=bary.X()+bary.Y();
             ScalarType ratio=remain/tot_val;
             bary.Y()*=ratio;
-            bary.Z()*=ratio;
+            bary.X()*=ratio;
         }
     }
 
