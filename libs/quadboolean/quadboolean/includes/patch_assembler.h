@@ -2347,6 +2347,7 @@ private:
 
     void FixCorners()
     {
+        std::cout<<"fixing corners"<<std::endl;
         CheckVertQuality();
         for (size_t i=0;i<Patches.size();i++)
         {
@@ -2426,6 +2427,7 @@ private:
                         if (DifferenceV==0)break;
                     }
                     assert(DifferenceV==0);//otherwise not possible fix (should be aloways possible)
+                    assert(Patches[i].ConvexVertIndex.size()<7);
                 }
             std::vector<size_t> Vertx(Patches[i].ConvexVertIndex.begin(),
                                       Patches[i].ConvexVertIndex.end());
@@ -2517,6 +2519,7 @@ private:
 
     void FixSmallCC()
     {
+        std::cout<<"** fixing small connected components"<<std::endl;
 
         std::vector<std::vector<size_t> > ComponentsVect;
         FindConnectedComponents(ComponentsVect);
@@ -2588,6 +2591,7 @@ private:
                     ForceSplit(IndexPatch);
             }
         }
+        std::cout<<"End"<<std::endl;
         //        std::vector<std::set<size_t> > PatchComponent;
         //        for (size_t i=0;i<)
     }
@@ -2709,7 +2713,11 @@ private:
                 //assert(BorderEdges.back().size()==Patches[i].ConvexVertIndex.size());
             }
         }
-
+        for (size_t i=0;i<Corners.size();i++)
+        {
+            assert(Corners[i].size()>=3);
+            assert(Corners[i].size()<7);
+        }
     }
 
 public:
@@ -2883,8 +2891,8 @@ public:
         std::cout<<"*****************************"<<std::endl;
 
         RemoveNotTopologicallyOKPartitions();
+        //FixSmallCC();
         FixCorners();
-        FixSmallCC();
 
         FixedVert.clear();
         if (Param.FinalSmooth)
@@ -2901,6 +2909,12 @@ public:
         RetrievePathesInfo(Partitions,Corners,BorderEdges);
 
         ColorPatches();
+
+        nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
+        nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
+        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+
     }
 
     PatchAssembler(MeshType &_mesh):mesh(_mesh)
