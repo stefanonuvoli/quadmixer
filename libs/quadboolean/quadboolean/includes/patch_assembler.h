@@ -9,7 +9,7 @@
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 #include <wrap/igl/smooth_field.h>
 #include <vcg/complex/algorithms/hole.h>
-
+#include <vcg/complex/algorithms/update/curvature.h>
 #include "field_tracer.h"
 
 #define CONVEX 8.0
@@ -731,14 +731,14 @@ public:
             if (VertPatchCount[i].size()>=4)
             {
 
-//                size_t IndexPatch0=VertPatchCount[i][0];
-//                size_t IndexPatch1=VertPatchCount[i][1];
-//                size_t IndexPatch2=VertPatchCount[i][2];
-//                size_t IndexPatch3=VertPatchCount[i][3];
-//                ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
-//                ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
-//                ConvexPatchVert[IndexPatch2].push_back(IndexOriginal);
-//                ConvexPatchVert[IndexPatch3].push_back(IndexOriginal);
+                //                size_t IndexPatch0=VertPatchCount[i][0];
+                //                size_t IndexPatch1=VertPatchCount[i][1];
+                //                size_t IndexPatch2=VertPatchCount[i][2];
+                //                size_t IndexPatch3=VertPatchCount[i][3];
+                //                ConvexPatchVert[IndexPatch0].push_back(IndexOriginal);
+                //                ConvexPatchVert[IndexPatch1].push_back(IndexOriginal);
+                //                ConvexPatchVert[IndexPatch2].push_back(IndexOriginal);
+                //                ConvexPatchVert[IndexPatch3].push_back(IndexOriginal);
                 for (size_t j=0;j<VertPatchCount[i].size();j++)
                 {
                     size_t IndexPatch=VertPatchCount[i][j];
@@ -1109,13 +1109,14 @@ private:
         }
     }
 
-    ScalarType AverageEdgeSize()
+    ScalarType AverageEdgeSize(bool OnlyBorder=true)
     {
         ScalarType AVGEdge=0;
         size_t Num=0;
         for (size_t i=0;i<mesh.face.size();i++)
             for (size_t j=0;j<mesh.face[i].VN();j++)
             {
+                if (OnlyBorder && (!vcg::face::IsBorder(mesh.face[i],j)))continue;
                 size_t IndexV0=vcg::tri::Index(mesh,mesh.face[i].V0(j));
                 size_t IndexV1=vcg::tri::Index(mesh,mesh.face[i].V1(j));
                 CoordType P0=mesh.vert[IndexV0].P();
@@ -1125,6 +1126,20 @@ private:
             }
         AVGEdge/=Num;
         return (AVGEdge);
+    }
+
+    ScalarType SmallestBorderEdge()
+    {
+        ScalarType SmallE=std::numeric_limits<ScalarType>::max();
+        for (size_t i=0;i<mesh.face.size();i++)
+            for (size_t j=0;j<mesh.face[i].VN();j++)
+            {
+                if(!vcg::face::IsBorder(mesh.face[i],j))continue;
+                CoordType P0=mesh.face[i].P0(j);
+                CoordType P1=mesh.face[i].P1(j);
+                SmallE=std::min(SmallE,(P0-P1).Norm());
+            }
+        return (SmallE);
     }
 
     void SmoothMesh()
@@ -1142,7 +1157,7 @@ private:
     void RemeshMesh()
     {
 
-        ScalarType EdgeStep=AverageEdgeSize();
+        ScalarType EdgeStep=AverageEdgeSize()/2;
 
         typename vcg::tri::IsotropicRemeshing<MeshType>::Params Par;
 
@@ -1153,8 +1168,26 @@ private:
         Par.SetFeatureAngleDeg(100);
         Par.SetTargetLen(EdgeStep/Param.EdgeSizeFactor);
         Par.selectedOnly=true;
-
+        Par.adapt=false;
         Par.iter=20;
+
+        UpdateAttributes(mesh);
+        //vcg::tri::Smooth<MeshType>::VertexCoordLaplacian(mesh,3);
+        //vcg::tri::UpdateCurvature<MeshType>::MeanAndGaussian(mesh);
+//        vcg::tri::UpdateCurvature<MeshType>::PerVertex(mesh);
+//        vcg::tri::FieldSmoother<MeshType>::InitByCurvature(mesh,2,true);
+//        for (size_t i=0;i<mesh.vert.size();i++)
+//        {
+//           mesh.vert[i].Q()=i;
+//        }
+//        vcg::tri::UpdateColor<MeshType>::PerVertexQualityRamp(mesh);
+//        for (size_t i=0;i<mesh.vert.size();i++)
+//        {
+//           vcg::Color4b col=mesh.vert[i].C();
+//           std::cout<<"Col "<<col[0]<<" "<<col[1]<<" "<<col[2]<<std::endl;
+//        }
+//        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"colored.ply",vcg::tri::io::Mask::IOM_VERTCOLOR);
+        //exit(0);
 
         SelectFacesWithBorderEdge();
         //SelectFacesWithBorderVertex();
@@ -1166,12 +1199,15 @@ private:
         UpdateAttributes(Reproject);
 
         vcg::tri::IsotropicRemeshing<MeshType>::Do(mesh,Reproject,Par);
-        vcg::tri::UpdateColor<MeshType>::PerFaceConstant(mesh,vcg::Color4b::LightGray);
+        //vcg::tri::UpdateColor<MeshType>::PerFaceConstant(mesh,vcg::Color4b::LightGray);
 
         vcg::tri::UpdateFlags<MeshType>::Clear(mesh);
         UpdateAttributes(mesh);
 
-        std::cout<<std::flush;
+
+//        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"remeshed.ply");
+//        exit(0);
+//        std::cout<<std::flush;
     }
 
     void GetGeometricCorners(std::vector<CoordType> &ConvexV,
@@ -2049,10 +2085,10 @@ private:
         return true;
     }
 
-//    bool SplitSingleFacePatch(size_t IndexPatch)
-//    {
+    //    bool SplitSingleFacePatch(size_t IndexPatch)
+    //    {
 
-//    }
+    //    }
 
     bool ForceSplit(size_t IndexPatch)
     {
@@ -2067,9 +2103,9 @@ private:
 
         std::vector<std::vector<size_t> > LocalPatches,NewPatches;
         bool splitted=PSplit.SplitByBorders(Patches[IndexPatch].ConvexVertIndex,
-                              Patches[IndexPatch].TracingVert,
-                              Patches[IndexPatch].TracingDir,
-                              LocalPatches,NewPatches,4);
+                                            Patches[IndexPatch].TracingVert,
+                                            Patches[IndexPatch].TracingDir,
+                                            LocalPatches,NewPatches,4);
 
         std::vector<size_t> NewIndexes;
         SplitPatchIntoSubPatches(IndexPatch,NewPatches,NewIndexes);
@@ -2081,18 +2117,18 @@ private:
         UpdateFacePatches();
         UpdateBorderPatches();
 
-//        if (Param.InterleaveSmooth)
-//        {
-//            UpdateSmoothFixedVert(NewPatches);
-//            SmoothPatches(0.9,20,Param.Reproject);
-//        }
+        //        if (Param.InterleaveSmooth)
+        //        {
+        //            UpdateSmoothFixedVert(NewPatches);
+        //            SmoothPatches(0.9,20,Param.Reproject);
+        //        }
 
         //get new vertex topology
         std::vector<std::vector<size_t> > NewConvexPatchOriginalVert;
         std::vector<std::vector<size_t> > NewConcavePatchOriginalVert;
 
         if (Param.PrintDebug)
-                std::cout<<"Get Topology Step"<<std::endl;
+            std::cout<<"Get Topology Step"<<std::endl;
 
         PSplit.CopyPositionsFrom(mesh);
         PSplit.GetVertexTopology(LocalPatches,
@@ -2100,23 +2136,23 @@ private:
                                  Patches[IndexPatch].ConcaveVertIndex,
                                  NewConvexPatchOriginalVert,
                                  NewConcavePatchOriginalVert);
-//        }
+        //        }
 
-//        //and recompute the field if had changed
-//        if (Param.InterleaveSmooth)
-//            InitField();
+        //        //and recompute the field if had changed
+        //        if (Param.InterleaveSmooth)
+        //            InitField();
 
-         InitIndexOnQ();
+        InitIndexOnQ();
 
         if (Param.PrintDebug)
-                std::cout<<"Update Topology Step"<<std::endl;
+            std::cout<<"Update Topology Step"<<std::endl;
 
         UpdateSubPatchesVertexType(NewIndexes,
                                    NewConvexPatchOriginalVert,
                                    NewConcavePatchOriginalVert);
 
-         if (Param.PrintDebug)
-                std::cout<<"Done"<<std::endl;
+        if (Param.PrintDebug)
+            std::cout<<"Done"<<std::endl;
 
 
         if (Param.PrintDebug)
@@ -2405,11 +2441,10 @@ private:
         }
     }
 
-    void FixSmallCC()
+    void FindConnectedComponents(std::vector<std::vector<size_t> > &Components)
     {
+        Components.clear();
         std::set<size_t> explored;
-        std::vector<std::set<size_t> > Components;
-
         //get connected components
         for (size_t i=0;i<mesh.face.size();i++)
         {
@@ -2425,7 +2460,7 @@ private:
                 size_t currF=stack.back();
                 stack.pop_back();
 
-                Components.back().insert(currF);
+                Components.back().push_back(currF);
                 for (size_t i=0;i<mesh.face[currF].VN();i++)
                 {
                     if (vcg::face::IsBorder(mesh.face[currF],i))continue;
@@ -2439,6 +2474,87 @@ private:
                 }
             }while (!stack.empty());
         }
+        //sort and make unique
+        for (size_t i=0;i<Components.size();i++)
+        {
+            std::sort(Components[i].begin(),Components[i].end());
+            auto last=std::unique(Components[i].begin(),Components[i].end());
+            Components[i].erase(last, Components[i].end());
+        }
+    }
+
+    void RemoveSmallCC(ScalarType MinSize=0.001)
+    {
+        std::vector<std::vector<size_t> > ComponentsVect;
+        FindConnectedComponents(ComponentsVect);
+        ScalarType BBsize=mesh.bbox.Diag();
+        bool has_deleted=false;
+        for (size_t i=0;i<ComponentsVect.size();i++)
+        {
+            vcg::Box3<ScalarType> BBox;
+            for (size_t j=0;j<ComponentsVect[i].size();j++)
+            {
+                size_t IndexF=ComponentsVect[i][j];
+                BBox.Add(mesh.face[IndexF].P(0));
+                BBox.Add(mesh.face[IndexF].P(1));
+                BBox.Add(mesh.face[IndexF].P(2));
+            }
+            if (BBox.Diag()>MinSize)continue;
+            has_deleted=true;
+            for (size_t j=0;j<ComponentsVect[i].size();j++)
+                vcg::tri::Allocator<MeshType>::DeleteFace(mesh,mesh.face[ComponentsVect[i][j]]);
+        }
+
+        if (has_deleted)
+        {
+            std::cout<<"WARNING: Removed Components"<<std::endl;
+            vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
+            vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+            UpdateAttributes(mesh);
+        }
+
+    }
+
+    void FixSmallCC()
+    {
+
+        std::vector<std::vector<size_t> > ComponentsVect;
+        FindConnectedComponents(ComponentsVect);
+
+        std::vector<std::set<size_t> > Components;
+        for (size_t i=0;i<ComponentsVect.size();i++)
+            Components.push_back(std::set<size_t>(ComponentsVect[i].begin(),
+                                                  ComponentsVect[i].end()));
+
+        //        //get connected components
+        //        for (size_t i=0;i<mesh.face.size();i++)
+        //        {
+        //            std::vector<size_t> stack;
+        //            size_t IndexF=i;
+        //            if (explored.count(IndexF)>0)continue;
+
+        //            stack.push_back(IndexF);
+        //            explored.insert(IndexF);
+        //            Components.resize(Components.size()+1);
+        //            do
+        //            {
+        //                size_t currF=stack.back();
+        //                stack.pop_back();
+
+        //                Components.back().insert(currF);
+        //                for (size_t i=0;i<mesh.face[currF].VN();i++)
+        //                {
+        //                    if (vcg::face::IsBorder(mesh.face[currF],i))continue;
+
+        //                    int NextFIndex=vcg::tri::Index(mesh,mesh.face[currF].FFp(i));
+
+        //                    if (explored.count(NextFIndex)>0)continue;
+
+        //                    explored.insert(NextFIndex);
+        //                    stack.push_back(NextFIndex);
+        //                }
+        //            }while (!stack.empty());
+        //        }
         if (Param.PrintDebug)
             std::cout<<"There are "<<Components.size()<<" components"<<std::endl;
 
@@ -2467,7 +2583,7 @@ private:
                 size_t IndexPatch=ComponentPatches[i][j];
                 if (Patches[IndexPatch].IndexF.size()==1)
                     assert(0);
-                    //SplitSingleFacePatch(IndexPatch);
+                //SplitSingleFacePatch(IndexPatch);
                 else
                     ForceSplit(IndexPatch);
             }
@@ -2629,12 +2745,12 @@ public:
             }
         }
         glPopAttrib();
-        for (size_t i=0;i<Patches.size();i++)
-        {
-            if (!Patches[i].Active)continue;
-            GLDrawPatch(i);
-            //GLDrawPatchDir(i);
-        }
+//        for (size_t i=0;i<Patches.size();i++)
+//        {
+//            if (!Patches[i].Active)continue;
+//            GLDrawPatch(i);
+//            //GLDrawPatchDir(i);
+//        }
     }
 #endif
 
@@ -2671,6 +2787,8 @@ public:
 
         if (Param.InitialRemesh)
             RemeshMesh();
+
+        RemoveSmallCC();
         //    else
         //        SmoothMesh();
 
@@ -2781,6 +2899,8 @@ public:
         std::cout<<"*****************************"<<std::endl;
 
         RetrievePathesInfo(Partitions,Corners,BorderEdges);
+
+        ColorPatches();
     }
 
     PatchAssembler(MeshType &_mesh):mesh(_mesh)
