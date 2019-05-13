@@ -79,7 +79,6 @@ private slots:
 
 private:
 
-    void doTraceQuads();
     void doComputeBooleans();
     void doSmooth();
     void doGetSurfaces();
@@ -92,7 +91,6 @@ private:
 
 private slots:
 
-    void on_quadTracerButton_clicked();
     void on_computeBooleanButton_clicked();
     void on_smoothButton_clicked();
     void on_getSurfacesButton_clicked();
@@ -119,6 +117,10 @@ private slots:
     void on_showQuadrangulationLayoutCheckBox_stateChanged(int arg1);
     void on_showResultCheckBox_stateChanged(int arg1);
 
+
+    void on_colorResultComboBox_currentIndexChanged(int index);
+
+    void on_colorMeshesComboBox_currentIndexChanged(int index);
 
 private:
 
@@ -174,12 +176,18 @@ private:
     QuadLayoutData quadLayoutDataQuadrangulatedSurface;
 
     PolyMesh result;
+    std::vector<size_t> preservedFaceIds;
+    std::vector<size_t> newFaceIds;
 
 
     template<class MeshType>
     void colorizeMesh(
             MeshType& mesh,
             const std::vector<int>& faceLabel);
+    template<class MeshType>
+    void colorResultByComboBox(MeshType& mesh, int index);
+    template<class MeshType>
+    void colorMeshByComboBox(MeshType& mesh, int index, const std::vector<bool>& preservedQuad);
 };
 
 #endif //QUADBOOLEANWINDOW_H

@@ -22,7 +22,7 @@ inline Parameters::Parameters()
     splitConcaves = DEFAULTSPLITCONCAVES;
     finalSmoothing = DEFAULTFINALSMOOTHING;
     chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
-    quadrangulationSmoothingIterations = DEFAULTMESHSMOOTHINGITERATIONS;
+    quadrangulationSmoothingIterations = DEFAULTQUADRANGULATIONSMOOTHINGITERATIONS;
     resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
     resultSmoothingNRing = DEFAULTRESULTSMOOTHINGNRING;
     resultSmoothingLaplacianIterations = DEFAULTRESULTSMOOTHINGLAPLACIANITERATIONS;
@@ -105,10 +105,6 @@ void quadBoolean(
          return;
      }
 
-     //Trace quads following singularities
-     internal::traceQuads(mesh1, quadTracerLabel1, parameters.motorcycle);
-     internal::traceQuads(mesh2, quadTracerLabel2, parameters.motorcycle);
-
      //Triangulate
      internal::triangulateQuadMesh(mesh1, isQuadMesh1, trimesh1, birthQuad1);
      internal::triangulateQuadMesh(mesh2, isQuadMesh2, trimesh2, birthQuad2);
@@ -140,6 +136,12 @@ void quadBoolean(
                  parameters.intersectionSmoothingIterations,
                  parameters.intersectionSmoothingNRing,
                  parameters.intersectionSmoothingMaxBB);
+
+
+     //Trace quads following singularities
+     internal::traceQuads(mesh1, quadTracerLabel1, parameters.motorcycle);
+     internal::traceQuads(mesh2, quadTracerLabel2, parameters.motorcycle);
+
 
      //Face labels
      preservedFaceLabel1 = quadTracerLabel1;
@@ -186,18 +188,20 @@ void quadBoolean(
                  preservedQuad2,
                  newSurface);
 
-
-     //Get patch decomposition of the new surface
-     std::vector<std::vector<size_t>> newSurfacePartitions;
-     std::vector<std::vector<size_t>> newSurfaceCorners;
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.initialRemeshingEdgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
-
      //Get mesh of the preserved surface
      internal::getPreservedSurfaceMesh(
                  mesh1, mesh2,
                  preservedQuad1, preservedQuad2,
                  preservedFaceLabel1, preservedFaceLabel2,
                  preservedSurface, preservedSurfaceLabel);
+
+     //Make ILP feasible
+     internal::makeILPFeasible(preservedSurface, newSurface);
+
+     //Get patch decomposition of the new surface
+     std::vector<std::vector<size_t>> newSurfacePartitions;
+     std::vector<std::vector<size_t>> newSurfaceCorners;
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.initialRemeshingEdgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
 
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);

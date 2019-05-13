@@ -360,6 +360,40 @@ void getNewSurfaceMesh(
     vcg::tri::Clean<TriangleMeshType>::RemoveUnreferencedVertex(newSurface);
 }
 
+template<class PolyMeshType, class TriangleMeshType>
+void makeILPFeasible(
+        PolyMeshType& preservedSurface,
+        TriangleMeshType& newSurface)
+{
+//    std::vector<pair<size_t, size_t>> newSurfaceBorderEdgesConnectedComponents;
+
+//    std::set<size_t> remainingFaces;
+//    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(newSurface);
+//    for (size_t i = 0; i < newSurface.face.size(); i++) {
+//        if (!newSurface.face[i].IsD()) {
+//            remainingFaces.insert(i);
+//        }
+//    }
+
+//    while (!remainingFaces.empty()) {
+//        size_t face = *remainingFaces.begin();
+
+//        std::stack<size_t> stack;
+//        stack.push(face);
+
+//        while (!stack.empty()) {
+//            if (currentFace)
+
+//            for (size_t i = 0; i < newSurface.face.size(); i++) {
+//                for (int j = 0; newSurface.face[i].VN(); j++) {
+
+//                    stack.push()
+//                }
+//            }
+//        }
+//    }
+}
+
 template<class TriangleMeshType>
 std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,

@@ -339,10 +339,42 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="quadTracerButton">
-                  <property name="text">
-                   <string>Quad tracer</string>
-                  </property>
+                 <widget class="QComboBox" name="colorMeshesComboBox">
+                  <item>
+                   <property name="text">
+                    <string>No color</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Preserved/New</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Tracer motorcycle</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Tracer</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Angle</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Planar</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Template</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                 <item>
@@ -392,6 +424,45 @@
                   <property name="text">
                    <string>Get result</string>
                   </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="colorResultComboBox">
+                  <item>
+                   <property name="text">
+                    <string>No color</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Preserved/New</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Tracer motorcycle</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Tracer</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Angle</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Planar</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Template</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                 <item>
@@ -639,7 +710,7 @@
                    <number>20</number>
                   </property>
                   <property name="value">
-                   <number>5</number>
+                   <number>3</number>
                   </property>
                  </widget>
                 </item>
@@ -959,7 +1030,7 @@
                    <number>20</number>
                   </property>
                   <property name="value">
-                   <number>5</number>
+                   <number>3</number>
                   </property>
                  </widget>
                 </item>
@@ -976,7 +1047,7 @@
                    <number>200</number>
                   </property>
                   <property name="value">
-                   <number>5</number>
+                   <number>2</number>
                   </property>
                  </widget>
                 </item>
@@ -1001,6 +1072,16 @@
                  </widget>
                 </item>
                </layout>
+              </widget>
+             </item>
+             <item>
+              <widget class="QFrame" name="frame">
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
               </widget>
              </item>
             </layout>

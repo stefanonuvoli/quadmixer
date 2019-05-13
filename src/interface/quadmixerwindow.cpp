@@ -541,6 +541,12 @@ void QuadMixerWindow::on_debugModeButton_clicked()
             vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(mesh1, *ui.glArea->targetMesh1->mesh);
             vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(mesh2, *ui.glArea->targetMesh2->mesh);
 
+            isQuadMesh1 = QuadBoolean::internal::isQuadMesh(mesh1);
+            isQuadMesh2 = QuadBoolean::internal::isQuadMesh(mesh2);
+
+            colorResultByComboBox(mesh1, ui.colorResultComboBox->currentIndex());
+            colorResultByComboBox(mesh2, ui.colorResultComboBox->currentIndex());
+
             ui.glArea->setMesh1(&mesh1);
             ui.glArea->setMesh2(&mesh2);
             ui.glArea->debugMode = true;
@@ -560,54 +566,13 @@ void QuadMixerWindow::on_debugModeButton_clicked()
 
 
 
-
-
-
-
-void QuadMixerWindow::doTraceQuads() {
-    //Clear data
-    quadTracerLabel1.clear();
-    quadTracerLabel2.clear();
-
-    chrono::steady_clock::time_point start;
-
-    start = chrono::steady_clock::now();
-
-    isQuadMesh1 = QuadBoolean::internal::isQuadMesh(mesh1);
-    isQuadMesh2 = QuadBoolean::internal::isQuadMesh(mesh2);
-
-    bool motorcycle = ui.motorcycleCheckBox->isChecked();
-
-    //Trace quads following singularities
-    QuadBoolean::internal::traceQuads(mesh1, quadTracerLabel1, motorcycle);
-    QuadBoolean::internal::traceQuads(mesh2, quadTracerLabel2, motorcycle);
-
-    std::cout << std::endl << " >> "
-              << "Quad tracer: "
-              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
-              << " ms" << std::endl;
-
-    quadLayoutData1 = QuadBoolean::internal::getQuadLayoutData(mesh1, isQuadMesh1, quadTracerLabel1);
-    ui.glArea->setQuadLayout1(&quadLayoutData1);
-
-    if (isQuadMesh1) {
-        colorizeMesh(mesh1, quadTracerLabel1);
-    }
-
-    quadLayoutData2 = QuadBoolean::internal::getQuadLayoutData(mesh2, isQuadMesh2, quadTracerLabel2);
-    ui.glArea->setQuadLayout2(&quadLayoutData2);
-
-    if (isQuadMesh2) {
-        colorizeMesh(mesh2, quadTracerLabel2);
-    }
+void QuadMixerWindow::doComputeBooleans() {
 
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh1, "res/mesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, "res/mesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
-}
 
-void QuadMixerWindow::doComputeBooleans() {
     //Clear meshes
     trimesh1.Clear();
     trimesh2.Clear();
@@ -723,6 +688,10 @@ void QuadMixerWindow::doSmooth()
 
 
 void QuadMixerWindow::doGetSurfaces() {
+    //Clear data
+    quadTracerLabel1.clear();
+    quadTracerLabel2.clear();
+
     preservedSurface.Clear();
     preservedSurfaceLabel.clear();
     preservedQuad1.clear();
@@ -732,13 +701,36 @@ void QuadMixerWindow::doGetSurfaces() {
     newSurface.Clear();
     initialNewSurface.Clear();
 
+    chrono::steady_clock::time_point start;
+
+    start = chrono::steady_clock::now();
+
+    bool motorcycle = ui.motorcycleCheckBox->isChecked();
     int minRectangleArea = ui.minRectangleAreaSpinBox->value();
     int minPatchArea = ui.minPatchAreaSpinBox->value();
     bool mergeQuads = ui.mergeCheckBox->isChecked();
     bool deleteSmall = ui.deleteSmallCheckBox->isChecked();
     bool deleteNonConnected = ui.deleteNonConnectedCheckBox->isChecked();
 
-    chrono::steady_clock::time_point start;
+    //Trace quads following singularities
+    QuadBoolean::internal::traceQuads(mesh1, quadTracerLabel1, motorcycle);
+    QuadBoolean::internal::traceQuads(mesh2, quadTracerLabel2, motorcycle);
+
+    std::cout << std::endl << " >> "
+              << "Quad tracer: "
+              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
+              << " ms" << std::endl;
+
+    quadLayoutData1 = QuadBoolean::internal::getQuadLayoutData(mesh1, isQuadMesh1, quadTracerLabel1);
+    ui.glArea->setQuadLayout1(&quadLayoutData1);
+
+    quadLayoutData2 = QuadBoolean::internal::getQuadLayoutData(mesh2, isQuadMesh2, quadTracerLabel2);
+    ui.glArea->setQuadLayout2(&quadLayoutData2);
+
+
+    preservedFaceLabel1 = quadTracerLabel1;
+    preservedFaceLabel2 = quadTracerLabel2;
+
 
     start = chrono::steady_clock::now();
 
@@ -748,9 +740,6 @@ void QuadMixerWindow::doGetSurfaces() {
                 booleanSmoothed,
                 isQuadMesh1, isQuadMesh2,
                 preservedQuad1, preservedQuad2);
-
-    preservedFaceLabel1 = quadTracerLabel1;
-    preservedFaceLabel2 = quadTracerLabel2;
 
     std::cout << std::endl << " >> "
               << "Find preserved quads: "
@@ -834,6 +823,19 @@ void QuadMixerWindow::doGetSurfaces() {
                 mesh1, mesh2,
                 preservedQuad1, preservedQuad2,
                 initialNewSurface);
+
+    std::cout << std::endl << " >> "
+              << "Get new surface: "
+              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
+              << " ms" << std::endl;
+
+
+
+
+    start = chrono::steady_clock::now();
+
+    //Make ILP feasible
+    QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface);
 
     std::cout << std::endl << " >> "
               << "Get new surface: "
@@ -991,8 +993,6 @@ void QuadMixerWindow::doGetResult()
     start = chrono::steady_clock::now();
 
     //Get results
-    std::vector<size_t> preservedFaceIds;
-    std::vector<size_t> newFaceIds;
     QuadBoolean::internal::getResult(preservedSurface, quadrangulation, result, booleanSmoothed, resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing, preservedFaceIds, newFaceIds);
 
     std::cout << std::endl << " >> "
@@ -1000,16 +1000,14 @@ void QuadMixerWindow::doGetResult()
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
-    for (size_t& preservedFaceId : preservedFaceIds) {
-        result.face[preservedFaceId].C() = vcg::Color4b(200,255,200,255);
-    }
-    for (size_t& newFaceId : newFaceIds) {
-        result.face[newFaceId].C() = vcg::Color4b(255,255,200,255);
-    }
-
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
+    for (size_t i = 0; i < result.face.size(); i++) {
+        result.face[i].C() = vcg::Color4b(255,255,255,255);
+    }
+
+    colorResultByComboBox(result, ui.colorResultComboBox->currentIndex());
 
     ui.glArea->setResult(&result);
 }
@@ -1048,30 +1046,6 @@ void QuadMixerWindow::clearVisualizationData()
     ui.showResultCheckBox->setChecked(false);
 }
 
-
-void QuadMixerWindow::on_quadTracerButton_clicked()
-{
-    doTraceQuads();
-
-    ui.showMesh1CheckBox->setChecked(true);
-    ui.showMesh2CheckBox->setChecked(true);
-    ui.showQuadLayout1CheckBox->setChecked(true);
-    ui.showQuadLayout2CheckBox->setChecked(true);
-    ui.showBooleanCheckBox->setChecked(false);
-    ui.showIntersectionVerticesCheckBox->setChecked(false);
-    ui.showPreservedSurfaceCheckBox->setChecked(false);
-    ui.showQuadLayoutPreserved1CheckBox->setChecked(false);
-    ui.showQuadLayoutPreserved2CheckBox->setChecked(false);
-    ui.showNewSurfaceCheckBox->setChecked(false);
-    ui.showChartSidesCheckBox->setChecked(false);
-    ui.showILPCheckBox->setChecked(false);
-    ui.showQuadrangulationCheckBox->setChecked(false);
-    ui.showQuadrangulationLayoutCheckBox->setChecked(false);
-    ui.showResultCheckBox->setChecked(false);
-
-    updateVisibility();
-    ui.glArea->updateGL();
-}
 
 void QuadMixerWindow::on_computeBooleanButton_clicked()
 {
@@ -1247,7 +1221,6 @@ void QuadMixerWindow::on_getResultButton_clicked()
 
 void QuadMixerWindow::on_computeAllButton_clicked()
 {
-    doTraceQuads();
     doComputeBooleans();
     doSmooth();
     doGetSurfaces();
@@ -1408,3 +1381,104 @@ void QuadMixerWindow::colorizeMesh(
     }
 }
 
+
+template<class MeshType>
+void QuadMixerWindow::colorMeshByComboBox(MeshType& mesh, int index, const std::vector<bool>& preservedQuad) {
+    QuadBoolean::internal::QuadMeshTracer<MeshType> quadTracer(mesh);
+    switch (index) {
+    case 1:
+        for (size_t i = 0; i < mesh.face.size(); i++) {
+            if (preservedQuad.empty() || !preservedQuad[i])
+                mesh.face[i].C() = vcg::Color4b(255,255,255,255);
+            else
+                mesh.face[i].C() = vcg::Color4b(200,255,200,255);
+        }
+        break;
+    case 2:
+        quadTracer.MotorCycle=true;
+        quadTracer.updatePolymeshAttributes();
+        quadTracer.TracePartitions();
+        colorizeMesh(mesh, quadTracer.FacePatch);
+        break;
+    case 3:
+        quadTracer.MotorCycle=false;
+        quadTracer.updatePolymeshAttributes();
+        quadTracer.TracePartitions();
+        colorizeMesh(mesh, quadTracer.FacePatch);
+        break;
+    case 4:
+        vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QAngle);
+        vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+    case 5:
+        vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QPlanar);
+        vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+    case 6:
+        vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QTemplate);
+        vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+
+    default:
+        for (size_t i = 0; i < mesh.face.size(); i++) {
+            mesh.face[i].C() = vcg::Color4b(255,255,255,255);
+        }
+    }
+}
+
+template<class MeshType>
+void QuadMixerWindow::colorResultByComboBox(MeshType& mesh, int index) {
+    QuadBoolean::internal::QuadMeshTracer<MeshType> quadTracer(mesh);
+    switch (index) {
+    case 1:
+        for (size_t& preservedFaceId : preservedFaceIds) {
+            mesh.face[preservedFaceId].C() = vcg::Color4b(200,255,200,255);
+        }
+        for (size_t& newFaceId : newFaceIds) {
+            mesh.face[newFaceId].C() = vcg::Color4b(255,255,255,255);
+        }
+        break;
+    case 2:
+        quadTracer.MotorCycle=true;
+        quadTracer.updatePolymeshAttributes();
+        quadTracer.TracePartitions();
+        colorizeMesh(mesh, quadTracer.FacePatch);
+        break;
+    case 3:
+        quadTracer.MotorCycle=false;
+        quadTracer.updatePolymeshAttributes();
+        quadTracer.TracePartitions();
+        colorizeMesh(mesh, quadTracer.FacePatch);
+        break;
+    case 4:
+        vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QAngle);
+        vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+    case 5:
+        vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QPlanar);
+        vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+    case 6:
+        vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QTemplate);
+        vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+
+    default:
+        for (size_t i = 0; i < mesh.face.size(); i++) {
+            mesh.face[i].C() = vcg::Color4b(255,255,255,255);
+        }
+    }
+}
+
+void QuadMixerWindow::on_colorResultComboBox_currentIndexChanged(int index)
+{
+    colorResultByComboBox(result, index);
+    ui.glArea->updateGL();
+}
+
+void QuadMixerWindow::on_colorMeshesComboBox_currentIndexChanged(int index)
+{
+    colorMeshByComboBox(mesh1, index, preservedQuad1);
+    colorMeshByComboBox(mesh2, index, preservedQuad2);
+    ui.glArea->updateGL();
+}

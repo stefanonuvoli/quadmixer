@@ -98,6 +98,11 @@ void getNewSurfaceMesh(
         const std::vector<bool>& preservedQuad2,
         TriangleMeshType& newSurface);
 
+template<class PolyMeshType, class TriangleMeshType>
+void makeILPFeasible(
+        PolyMeshType& preservedSurface,
+        TriangleMeshType& newSurface);
+
 template<class TriangleMeshType>
 std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,
