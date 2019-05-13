@@ -79,7 +79,6 @@ QuadLayoutData<PolyMeshType> getQuadLayoutData(
         startPos.FlipF();
         if (faceLabel[vcg::tri::Index(mesh, startPos.F())] != pId) {
             startPos.FlipF();
-            startPos.FlipE();
             startPos.FlipV();
         }
         else {

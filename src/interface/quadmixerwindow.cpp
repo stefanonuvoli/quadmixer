@@ -89,7 +89,7 @@ void QuadMixerWindow::detachOperation()
 
     TriangleMesh detachedTriangleMesh1;
     TriangleMesh detachedTriangleMesh2;
-    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 2, 1, true, 0.02);
+    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 5, 1, true, 0.02);
 
     if (result) {
         PolyMesh detachedPolyMesh1;
@@ -104,9 +104,9 @@ void QuadMixerWindow::detachOperation()
     #endif
 
         QuadBoolean::Parameters parameters = getParametersFromUI();
-        parameters.intersectionSmoothingMaxBB = 1;
+        parameters.intersectionSmoothingMaxBB = 0.005;
         parameters.intersectionSmoothingNRing = 1;
-        parameters.intersectionSmoothingIterations = 2;
+        parameters.intersectionSmoothingIterations = 0;
         parameters.resultSmoothingLaplacianNRing = 1;
         parameters.resultSmoothingLaplacianIterations = 2;
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh1, QuadBoolean::Operation::INTERSECTION, *detachResult1, parameters);
@@ -123,7 +123,7 @@ void QuadMixerWindow::detachOperation()
         QMessageBox::warning(this, QString("Error"), QString("Detach points too close."));
     }
 
-    ui.glArea->setDetachMode(true);
+    ui.glArea->setDetachMode(false);
 
     ui.glArea->updateGL();
 }
@@ -304,8 +304,6 @@ QuadBoolean::Operation QuadMixerWindow::getOperationFromUI()
 
 std::string QuadMixerWindow::chooseMeshFile()
 {
-
-    std::cout << std::string(QDir::currentPath().toStdString() + "/../../QuadMixer/dataset") << std::endl;
     QString filename = QFileDialog::getOpenFileName(this,
                                                     tr("Open Mesh"), QDir::currentPath() + "/../../QuadMixer/dataset",
                                                     tr("Mesh (*.obj *.ply *.off)"));
@@ -383,27 +381,38 @@ void QuadMixerWindow::on_loadMeshButton_clicked()
 }
 void QuadMixerWindow::on_deleteMeshButton_clicked()
 {
-    if (ui.glArea->targetMesh1 != nullptr) {
-        if (ui.glArea->targetMesh2 != nullptr) {
-            QMessageBox::warning(this, QString("Error"), QString("Please select a single mesh to be deleted.."));
+    if (!ui.glArea->debugMode) {
+        if (ui.glArea->targetMesh1 != nullptr) {
+            if (ui.glArea->targetMesh2 != nullptr) {
+                QMessageBox::warning(this, QString("Error"), QString("Please select a single mesh to be deleted.."));
+            }
+            else {
+                if (ui.glArea->targetMesh1->mesh == lastResult1 || ui.glArea->targetMesh1->mesh == lastResult2) {
+                    setLastOperation(nullptr, nullptr, nullptr, nullptr);
+                }
+
+                PolyMesh* mesh = ui.glArea->targetMesh1->mesh;
+                hideMesh(ui.glArea->targetMesh1->mesh);
+                delete mesh;
+            }
         }
         else {
-            if (ui.glArea->targetMesh1->mesh == lastResult1 || ui.glArea->targetMesh1->mesh == lastResult2) {
-                setLastOperation(nullptr, nullptr, nullptr, nullptr);
-            }
-
-            PolyMesh* mesh = ui.glArea->targetMesh1->mesh;
-            hideMesh(ui.glArea->targetMesh1->mesh);
-            delete mesh;
+            QMessageBox::warning(this, QString("Error"), QString("Please select the mesh to be deleted."));
         }
-    }
-    else {
-        QMessageBox::warning(this, QString("Error"), QString("Please select the mesh to be deleted."));
     }
 }
 
 void QuadMixerWindow::on_deleteAllButton_clicked()
 {
+    if (ui.glArea->debugMode) {
+        clearVisualizationData();
+
+        mesh1.Clear();
+        mesh2.Clear();
+
+        ui.glArea->debugMode = false;
+    }
+
     setLastOperation(nullptr, nullptr, nullptr, nullptr);
     for (size_t id = 0; id < meshes.size(); id++) {
         if (meshes[id] != nullptr) {
@@ -412,6 +421,8 @@ void QuadMixerWindow::on_deleteAllButton_clicked()
         }
     }
     ui.glArea->setDetachMode(false);
+
+    ui.glArea->deselectTransformationMesh();
 }
 
 
@@ -598,8 +609,8 @@ void QuadMixerWindow::doTraceQuads() {
 
 void QuadMixerWindow::doComputeBooleans() {
     //Clear meshes
-    triMesh1.Clear();
-    triMesh2.Clear();
+    trimesh1.Clear();
+    trimesh2.Clear();
     boolean.Clear();
     birthQuad1.clear();
     birthQuad2.clear();
@@ -609,8 +620,8 @@ void QuadMixerWindow::doComputeBooleans() {
     start = chrono::steady_clock::now();
 
     //Triangulate
-    QuadBoolean::internal::triangulateQuadMesh(mesh1, isQuadMesh1, triMesh1, birthQuad1);
-    QuadBoolean::internal::triangulateQuadMesh(mesh2, isQuadMesh2, triMesh2, birthQuad2);
+    QuadBoolean::internal::triangulateQuadMesh(mesh1, isQuadMesh1, trimesh1, birthQuad1);
+    QuadBoolean::internal::triangulateQuadMesh(mesh2, isQuadMesh2, trimesh2, birthQuad2);
 
     std::cout << std::endl << " >> "
               << "Triangulation: "
@@ -633,8 +644,8 @@ void QuadMixerWindow::doComputeBooleans() {
 
     //Boolean operation on trimeshes
     QuadBoolean::internal::computeBooleanOperation(
-                triMesh1,
-                triMesh2,
+                trimesh1,
+                trimesh2,
                 operation,
                 boolean,
                 VA, VB, VR,
@@ -807,14 +818,15 @@ void QuadMixerWindow::doGetSurfaces() {
 
 
 
-    start = chrono::steady_clock::now();
-
     //Get mesh of the preserved surface
     QuadBoolean::internal::getPreservedSurfaceMesh(
                 mesh1, mesh2,
                 preservedQuad1, preservedQuad2,
                 preservedFaceLabel1, preservedFaceLabel2,
                 preservedSurface, preservedSurfaceLabel);
+
+
+    start = chrono::steady_clock::now();
 
     //New mesh (to be decomposed in patch)
     QuadBoolean::internal::getNewSurfaceMesh(
@@ -824,7 +836,7 @@ void QuadMixerWindow::doGetSurfaces() {
                 initialNewSurface);
 
     std::cout << std::endl << " >> "
-              << "Get surfaces: "
+              << "Get new surface: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
@@ -912,7 +924,12 @@ void QuadMixerWindow::doSolveILP() {
         ilpMethod = QuadBoolean::ILPMethod::ABS;
     }
 
-    ilpResult = QuadBoolean::internal::findBestSideSize(newSurface, chartData, alpha, beta, ilpMethod);
+    ilpResult = QuadBoolean::internal::findBestSideSize(
+                newSurface,
+                chartData,
+                alpha,
+                beta,
+                ilpMethod);
 
     std::cout << std::endl << " >> "
               << "ILP: "
@@ -961,17 +978,6 @@ void QuadMixerWindow::doGetResult()
 {
     chrono::steady_clock::time_point start;
 
-    PolyMesh coloredPreservedSurface;
-    PolyMesh coloredQuadrangulation;
-    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredPreservedSurface, preservedSurface);
-    for (size_t i = 0; i < coloredPreservedSurface.face.size(); i++) {
-        coloredPreservedSurface.face[i].C() = vcg::Color4b(200,255,200,255);
-    }
-    vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(coloredQuadrangulation, quadrangulation);
-    for (size_t i = 0; i < coloredQuadrangulation.face.size(); i++) {
-        coloredQuadrangulation.face[i].C() = vcg::Color4b(255,255,255,255);
-    }
-
     //Clear data
     result.Clear();
 
@@ -981,14 +987,25 @@ void QuadMixerWindow::doGetResult()
     int resultSmoothingLaplacianIterations = ui.resultSmoothingLaplacianSpinBox->value();
     int resultSmoothingLaplacianNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
 
+
     start = chrono::steady_clock::now();
 
-    QuadBoolean::internal::getResult(coloredPreservedSurface, coloredQuadrangulation, result, booleanSmoothed, resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing);
+    //Get results
+    std::vector<size_t> preservedFaceIds;
+    std::vector<size_t> newFaceIds;
+    QuadBoolean::internal::getResult(preservedSurface, quadrangulation, result, booleanSmoothed, resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing, preservedFaceIds, newFaceIds);
 
     std::cout << std::endl << " >> "
               << "Get result: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
+
+    for (size_t& preservedFaceId : preservedFaceIds) {
+        result.face[preservedFaceId].C() = vcg::Color4b(200,255,200,255);
+    }
+    for (size_t& newFaceId : newFaceIds) {
+        result.face[newFaceId].C() = vcg::Color4b(255,255,200,255);
+    }
 
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);

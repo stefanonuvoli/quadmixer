@@ -16,7 +16,7 @@
 #include "globjects/glquadlayoutwrap.h"
 #include "globjects/glchartsideswrap.h"
 #include "globjects/glverticeswrap.h"
-#include "globjects/gledgeswrap.h"
+#include "globjects/glsegmentswrap.h"
 
 #include <quadboolean/quadboolean.h>
 

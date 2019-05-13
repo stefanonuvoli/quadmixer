@@ -52,8 +52,8 @@ SOURCES += \
     src/interface/globjects/glquadlayoutwrap.tpp \
     src/interface/globjects/glchartsideswrap.tpp \
     src/interface/globjects/gldrawtext.cpp \
-    src/interface/globjects/gledgeswrap.tpp \
-    src/interface/globjects/glverticeswrap.tpp
+    src/interface/globjects/glverticeswrap.tpp \
+    src/interface/globjects/glsegmentswrap.tpp
 
 HEADERS += \
     src/interface/quadmixerwindow.h \
@@ -62,8 +62,8 @@ HEADERS += \
     src/interface/globjects/glquadlayoutwrap.h \
     src/interface/globjects/glchartsideswrap.h \
     src/interface/globjects/gldrawtext.h \
-    src/interface/globjects/gledgeswrap.h \
-    src/interface/globjects/glverticeswrap.h
+    src/interface/globjects/glverticeswrap.h \
+    src/interface/globjects/glsegmentswrap.h
 
 FORMS += \
     src/interface/quadmixerwindow.ui

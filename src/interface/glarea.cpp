@@ -319,7 +319,7 @@ void GLArea::setTrackballVisibility(bool visible)
 
 void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
     if (mesh != nullptr) {
-        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(*mesh);
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
 //        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*mesh);
 

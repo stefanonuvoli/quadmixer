@@ -58,7 +58,7 @@ void quadBoolean(
      std::vector<int> quadTracerLabel1;
      std::vector<int> quadTracerLabel2;
 
-     TriangleMeshType triMesh1, triMesh2, boolean;
+     TriangleMeshType trimesh1, trimesh2, boolean;
      Eigen::MatrixXd VA, VB, VR;
      Eigen::MatrixXi FA, FB, FR;
      Eigen::VectorXi J;
@@ -110,13 +110,13 @@ void quadBoolean(
      internal::traceQuads(mesh2, quadTracerLabel2, parameters.motorcycle);
 
      //Triangulate
-     internal::triangulateQuadMesh(mesh1, isQuadMesh1, triMesh1, birthQuad1);
-     internal::triangulateQuadMesh(mesh2, isQuadMesh2, triMesh2, birthQuad2);
+     internal::triangulateQuadMesh(mesh1, isQuadMesh1, trimesh1, birthQuad1);
+     internal::triangulateQuadMesh(mesh2, isQuadMesh2, trimesh2, birthQuad2);
 
      //Compute boolean operation
      internal::computeBooleanOperation(
-                 triMesh1,
-                 triMesh2,
+                 trimesh1,
+                 trimesh2,
                  operation,
                  boolean,
                  VA, VB, VR,
@@ -176,13 +176,6 @@ void quadBoolean(
          int nNonConnected2 = internal::deleteNonConnectedQuadPatches(mesh2, isQuadMesh2, preservedFaceLabel2, preservedQuad2);
      }
 
-     //Get mesh of the preserved surface
-     internal::getPreservedSurfaceMesh(
-                 mesh1, mesh2,
-                 preservedQuad1, preservedQuad2,
-                 preservedFaceLabel1, preservedFaceLabel2,
-                 preservedSurface, preservedSurfaceLabel);
-
 
      //New mesh (to be decomposed in patch)
      internal::getNewSurfaceMesh(
@@ -199,11 +192,23 @@ void quadBoolean(
      std::vector<std::vector<size_t>> newSurfaceCorners;
      newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.initialRemeshingEdgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
 
+     //Get mesh of the preserved surface
+     internal::getPreservedSurfaceMesh(
+                 mesh1, mesh2,
+                 preservedQuad1, preservedQuad2,
+                 preservedFaceLabel1, preservedFaceLabel2,
+                 preservedSurface, preservedSurfaceLabel);
+
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
      //Solve ILP to find best side size
-     ilpResult = internal::findBestSideSize(newSurface, chartData, parameters.alpha, parameters.beta, parameters.ilpMethod);
+     ilpResult = internal::findBestSideSize(
+                 newSurface,
+                 chartData,
+                 parameters.alpha,
+                 parameters.beta,
+                 parameters.ilpMethod);
 
      //Quadrangulate
      internal::quadrangulate(
@@ -215,26 +220,22 @@ void quadBoolean(
                  quadrangulation,
                  quadrangulationLabel);
 
-     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
-     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(quadrangulation);
-     vcg::tri::UpdateBounding<PolyMeshType>::Box(quadrangulation);
-     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(quadrangulation);
-
-     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(preservedSurface);
-     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(preservedSurface);
-     vcg::tri::UpdateBounding<PolyMeshType>::Box(preservedSurface);
-     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(preservedSurface);
-
      //Get the result
      result.Clear();
-     QuadBoolean::internal::getResult(preservedSurface, quadrangulation, result, boolean, parameters.resultSmoothingIterations, parameters.resultSmoothingNRing, parameters.resultSmoothingLaplacianIterations, parameters.resultSmoothingLaplacianNRing);
+     std::vector<size_t> preservedFaceIds;
+     std::vector<size_t> newFaceIds;
+     QuadBoolean::internal::getResult(
+                 preservedSurface,
+                 quadrangulation,
+                 result,
+                 boolean,
+                 parameters.resultSmoothingIterations,
+                 parameters.resultSmoothingNRing,
+                 parameters.resultSmoothingLaplacianIterations,
+                 parameters.resultSmoothingLaplacianNRing,
+                 preservedFaceIds,
+                 newFaceIds);
 
-
-
-     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
-     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(result);
-     vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
-     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(result);
 }
 
 }

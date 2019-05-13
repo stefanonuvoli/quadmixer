@@ -125,40 +125,40 @@ template <class PolyMeshType>
 std::vector<int> splitQuadInTriangle(PolyMeshType& mesh) {
     typedef typename PolyMeshType::VertexType VertexType;
 
+
+
+    size_t numFaces = mesh.face.size();
     std::vector<int> birthQuad(mesh.face.size()*2, -1);
 
-    for (size_t i = 0; i < mesh.face.size(); i++) {
-        size_t vSize = mesh.face[i].VN();
+    for (size_t i = 0; i < numFaces; i++) {
+        assert(mesh.face[i].VN() == 4);
+        VertexType* v[4];
+        v[0] = mesh.face[i].V(0);
+        v[1] = mesh.face[i].V(1);
+        v[2] = mesh.face[i].V(2);
+        v[3] = mesh.face[i].V(3);
 
-        if (vSize == 4) {
-            VertexType* v[4];
-            v[0] = mesh.face[i].V(0);
-            v[1] = mesh.face[i].V(1);
-            v[2] = mesh.face[i].V(2);
-            v[3] = mesh.face[i].V(3);
-
-            size_t startIndex = 0;
-            if ((v[0]->P() - v[2]->P()).Norm() > (v[1]->P() - v[3]->P()).Norm()) {
-                startIndex++;
-            }
-
-            size_t newFaceId = mesh.face.size();
-
-            vcg::tri::Allocator<PolyMeshType>::AddFaces(mesh,1);
-            mesh.face.back().Alloc(3);
-            mesh.face.back().V(0) = v[startIndex];
-            mesh.face.back().V(1) = v[(startIndex + 1)%4];
-            mesh.face.back().V(2) = v[(startIndex + 2)%4];
-
-            mesh.face[i].Dealloc();
-            mesh.face[i].Alloc(3);
-            mesh.face[i].V(0)=v[(startIndex + 2)%4];
-            mesh.face[i].V(1)=v[(startIndex + 3)%4];
-            mesh.face[i].V(2)=v[(startIndex + 4)%4];
-
-            birthQuad[i] = i;
-            birthQuad[newFaceId] = i;
+        size_t startIndex = 0;
+        if ((v[0]->P() - v[2]->P()).Norm() > (v[1]->P() - v[3]->P()).Norm()) {
+            startIndex++;
         }
+
+        size_t newFaceId = mesh.face.size();
+
+        vcg::tri::Allocator<PolyMeshType>::AddFaces(mesh,1);
+        mesh.face.back().Alloc(3);
+        mesh.face.back().V(0) = v[startIndex];
+        mesh.face.back().V(1) = v[(startIndex + 1)%4];
+        mesh.face.back().V(2) = v[(startIndex + 2)%4];
+
+        mesh.face[i].Dealloc();
+        mesh.face[i].Alloc(3);
+        mesh.face[i].V(0)=v[(startIndex + 2)%4];
+        mesh.face[i].V(1)=v[(startIndex + 3)%4];
+        mesh.face[i].V(2)=v[(startIndex + 4)%4];
+
+        birthQuad[i] = i;
+        birthQuad[newFaceId] = i;
     }
 
     return birthQuad;

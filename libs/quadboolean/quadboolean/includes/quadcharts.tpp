@@ -36,6 +36,8 @@ ChartData getPatchDecompositionChartData(
     if (mesh.face.size() == 0)
         return chartData;
 
+    vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(mesh);
+
     //Region growing algorithm for getting charts
     findChartFacesAndBorderFaces(mesh, faceLabel, chartData);
 
@@ -50,6 +52,12 @@ ChartData getPatchDecompositionChartData(
             continue;
 
         std::unordered_set<size_t> cornerSet(corners[pId].begin(), corners[pId].end());
+
+#ifndef NDEBUG
+        if (cornerSet.size() < 3 || cornerSet.size() > 6) {
+            std::cout << "Warning 3: Given as input for " << pId << ": " << chart.chartSides.size() << " sides." << std::endl;
+        }
+#endif
 
         EdgeLabelMap edgeLabelMap;
         std::vector<std::vector<size_t>> vertexNextMap(mesh.vert.size());
@@ -387,7 +395,7 @@ void findChartFacesAndBorderFaces(
     std::vector<Chart>& charts = chartData.charts;
 
     for (size_t fId = 0; fId < mesh.face.size(); fId++) {
-        if (faceLabel.at(fId) >= 0)
+        if (!mesh.face[fId].IsD() && faceLabel.at(fId) >= 0)
             labels.insert(faceLabel.at(fId));
     }
 
@@ -397,7 +405,7 @@ void findChartFacesAndBorderFaces(
     std::vector<bool> visited(mesh.face.size(), false);
 
     for (size_t i = 0; i < mesh.face.size(); i++) {
-        if (!visited[i]) {
+        if (!mesh.face[i].IsD() && !visited[i]) {
             //Region growing to get chart
             std::stack<size_t> stack;
             stack.push(i);

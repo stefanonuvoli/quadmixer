@@ -131,7 +131,7 @@ private:
     std::vector<int> quadTracerLabel1;
     std::vector<int> quadTracerLabel2;
 
-    TriangleMesh triMesh1, triMesh2, boolean;
+    TriangleMesh trimesh1, trimesh2, boolean;
     Eigen::MatrixXd VA, VB, VR;
     Eigen::MatrixXi FA, FB, FR;
     Eigen::VectorXi J;

@@ -109,14 +109,13 @@ std::vector<int> getPatchDecomposition(
         const bool splitConcaves,
         const bool finalSmoothing);
 
-
 template<class TriangleMeshType>
 std::vector<int> findBestSideSize(
-        TriangleMeshType& mesh,
-        const ChartData& chartData,
-        const double& alpha,
-        const double& beta,
-        const ILPMethod& ilpMethod);
+        TriangleMeshType& newSurface,
+        ChartData& chartData,
+        const double alpha,
+        const double beta,
+        const ILPMethod& method);
 
 template<class TriangleMeshType, class PolyMeshType>
 void quadrangulate(
@@ -138,7 +137,9 @@ void getResult(
         const int resultSmoothingIterations,
         const int resultSmoothingAvgNRing,
         const int resultSmoothingLaplacianIterations,
-        const int resultSmoothingLaplacianAvgNRing);
+        const int resultSmoothingLaplacianAvgNRing,
+        std::vector<size_t>& preservedFacesId,
+        std::vector<size_t>& newFacesIds);
 
 }
 }

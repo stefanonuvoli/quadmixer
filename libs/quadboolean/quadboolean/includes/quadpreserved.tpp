@@ -23,6 +23,9 @@ void computePreservedQuadForMesh(
         return;
     }
 
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(mesh);
+    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(triResult);
+
     vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(triResult);
 
     std::map<std::set<typename PolyMeshType::CoordType>, size_t> quadMap;
@@ -61,14 +64,17 @@ void computePreservedQuadForMesh(
 
                 typename std::map<std::set<typename PolyMeshType::CoordType>, size_t>::iterator findIt = quadMap.find(coordSetComplete);
                 if (findIt != quadMap.end()) {
-                    quadMap.erase(findIt);
+                    size_t quadId = findIt->second;
+                    if (mesh.face[quadId].N().dot(triResult.face[i].N()) > 0) {
+                        quadMap.erase(findIt);
 
-                    size_t adjFaceId = vcg::tri::Index(triResult, fp);
+                        size_t adjFaceId = vcg::tri::Index(triResult, fp);
 
-                    isNewSurface[adjFaceId] = false;
-                    isNewSurface[i] = false;
+                        isNewSurface[adjFaceId] = false;
+                        isNewSurface[i] = false;
 
-                    preservedQuad[findIt->second] = true;
+                        preservedQuad[quadId] = true;
+                    }
                 }
             }
         }
