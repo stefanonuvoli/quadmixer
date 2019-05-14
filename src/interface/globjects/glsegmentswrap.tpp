@@ -17,7 +17,7 @@ void GLSegmentsWrap<MeshType>::GLDraw()
     if (this->segments.size() > 0 && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-        glDepthRange(0.0,0.999999);
+        glDepthRange(0.0,0.99999);
         glLineWidth(10);
         glDisable(GL_LIGHTING);
 

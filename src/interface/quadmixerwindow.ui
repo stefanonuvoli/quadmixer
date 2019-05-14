@@ -391,6 +391,11 @@
                     <string>Template</string>
                    </property>
                   </item>
+                  <item>
+                   <property name="text">
+                    <string>Two colors</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                 <item>
@@ -914,7 +919,7 @@
                    <double>0.100000000000000</double>
                   </property>
                   <property name="value">
-                   <double>0.700000000000000</double>
+                   <double>1.000000000000000</double>
                   </property>
                  </widget>
                 </item>

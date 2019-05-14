@@ -5,7 +5,7 @@
 #include "quadutils.h"
 
 #define MINSIDEVALUE 1
-#define AVERAGELENGTHSMOOTHITERATIONS 3
+#define AVERAGELENGTHSMOOTHITERATIONS 1
 #define MAXCOST 1000000.0
 
 namespace QuadBoolean {
@@ -273,7 +273,7 @@ std::vector<int> solveChartSideILPFixedBorders(
         model.set(GRB_DoubleParam_TimeLimit, timeLimit);
 
         // Create variables
-        GRBQuadExpr obj;
+        GRBQuadExpr obj = 0;
 
         vector<GRBVar> vars(chartData.subSides.size());
         vector<GRBVar> diff;
@@ -295,7 +295,8 @@ std::vector<int> solveChartSideILPFixedBorders(
         }
 
         if (regularity) {
-            const double cost = alpha;
+            GRBQuadExpr regExpr = 0;
+            const double regCost = alpha;
             //Regularity
             for (size_t i = 0; i < chartData.subSides.size(); i++) {
                 const ChartSubSide& subside = chartData.subSides[i];
@@ -312,7 +313,7 @@ std::vector<int> solveChartSideILPFixedBorders(
                     size_t aId = abs.size();
 
                     if (method == LEASTSQUARES) {
-                        obj += cost * (vars[i] - sideSubdivision) * (vars[i] - sideSubdivision);
+                        regExpr += (vars[i] - sideSubdivision) * (vars[i] - sideSubdivision);
                     }
                     else {
                         diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
@@ -321,12 +322,15 @@ std::vector<int> solveChartSideILPFixedBorders(
                         model.addConstr(diff[dId] == vars[i] - sideSubdivision, "dc" + to_string(dId));
                         model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                        obj += cost * abs[aId];
+                        regExpr += abs[aId];
                     }
                 }
             }
+            obj += regCost * regExpr;
         }
 
+        GRBQuadExpr isoExpr = 0;
+        const double isoCost = (1-alpha);
         for (size_t i = 0; i < chartData.charts.size(); i++) {
             const Chart& chart = chartData.charts[i];
             if (chart.faces.size() > 0) {
@@ -334,7 +338,6 @@ std::vector<int> solveChartSideILPFixedBorders(
 
                 //Quad case
                 if (nSides == 4) {
-                    const double quadCost = (1-alpha)/2;
 
                     for (size_t j = 0; j <= 1; j++) {
                         bool areBorders = true;
@@ -367,7 +370,7 @@ std::vector<int> solveChartSideILPFixedBorders(
 
                         if (!areBorders) {
                             if (method == LEASTSQUARES) {
-                                obj += quadCost * (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
+                                isoExpr += (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
                             }
                             else {
                                 size_t dId = diff.size();
@@ -379,7 +382,7 @@ std::vector<int> solveChartSideILPFixedBorders(
                                 model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
                                 model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                                obj += quadCost * abs[aId];
+                                isoExpr += abs[aId];
                             }
                         }
 
@@ -387,7 +390,6 @@ std::vector<int> solveChartSideILPFixedBorders(
                 }
                 //Other cases
                 else {
-                    const double patchCost = (1-alpha)/((nSides * (nSides-1))/2.0);
                     for (size_t j1 = 0; j1 < nSides; j1++) {
                         for (size_t j2 = j1+1; j2 < nSides; j2++) {
                             const ChartSide& side1 = chart.chartSides[j1];
@@ -421,7 +423,7 @@ std::vector<int> solveChartSideILPFixedBorders(
 
                             if (!areBorders) {
                                 if (method == LEASTSQUARES) {
-                                    obj += patchCost * (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
+                                    isoExpr += (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
                                 }
                                 else {
                                     size_t dId = diff.size();
@@ -433,7 +435,7 @@ std::vector<int> solveChartSideILPFixedBorders(
                                     model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
                                     model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                                    obj += patchCost * abs[aId];
+                                    isoExpr += abs[aId];
                                 }
                             }
 
@@ -466,6 +468,7 @@ std::vector<int> solveChartSideILPFixedBorders(
                 }
             }
         }
+        obj += isoCost * isoExpr;
 
 
 //        model.update();

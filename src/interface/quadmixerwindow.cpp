@@ -87,7 +87,7 @@ void QuadMixerWindow::detachOperation()
 
     TriangleMesh detachedTriangleMesh1;
     TriangleMesh detachedTriangleMesh2;
-    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 5, 1, true, 0.02);
+    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 5, 0, true, 0.02);
 
     if (result) {
         PolyMesh detachedPolyMesh1;
@@ -104,9 +104,9 @@ void QuadMixerWindow::detachOperation()
         QuadBoolean::Parameters parameters = getParametersFromUI();
         parameters.intersectionSmoothingMaxBB = 0.005;
         parameters.intersectionSmoothingNRing = 1;
-        parameters.intersectionSmoothingIterations = 0;
-        parameters.resultSmoothingLaplacianNRing = 1;
-        parameters.resultSmoothingLaplacianIterations = 2;
+        parameters.intersectionSmoothingIterations = 3;
+        parameters.resultSmoothingLaplacianNRing = 2;
+        parameters.resultSmoothingLaplacianIterations = 5;
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh1, QuadBoolean::Operation::INTERSECTION, *detachResult1, parameters);
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh2, QuadBoolean::Operation::INTERSECTION, *detachResult2, parameters);
 
@@ -688,6 +688,10 @@ void QuadMixerWindow::doSmooth()
               << " ms" << std::endl;
 
     ui.glArea->setBoolean(&booleanSmoothed);
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(booleanSmoothed, "res/booleanSmoothed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 }
 
 
@@ -835,7 +839,7 @@ void QuadMixerWindow::doGetSurfaces() {
 
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/initialNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
@@ -1424,6 +1428,18 @@ void QuadMixerWindow::colorMeshByComboBox(MeshType& mesh, int index, const std::
     case 6:
         vcg::PolygonalAlgorithm<MeshType>::UpdateQuality(mesh, vcg::PolygonalAlgorithm<PolyMesh>::QTemplate);
         vcg::tri::UpdateColor<MeshType>::UpdateColor::PerFaceQualityRamp(mesh, 1, 0);
+        break;
+    case 7:
+        if (&mesh1 == &mesh) {
+            for (size_t i = 0; i < mesh.face.size(); i++) {
+                vcg::glColor(vcg::Color4b(200,255,200,255));
+            }
+        }
+        else {
+            for (size_t i = 0; i < mesh.face.size(); i++) {
+                vcg::glColor(vcg::Color4b(200,200,255,255));
+            }
+        }
         break;
 
     default:

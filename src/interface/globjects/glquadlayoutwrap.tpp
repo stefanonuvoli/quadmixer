@@ -19,7 +19,7 @@ void GLQuadLayoutWrap<MeshType>::GLDraw()
     if (this->mesh != nullptr && this->quadLayoutData != nullptr && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-        glDepthRange(0.0,0.999999);
+        glDepthRange(0.0,0.99999);
         glLineWidth(6);
         glDisable(GL_LIGHTING);
 

@@ -19,13 +19,13 @@ void GLVerticesWrap<MeshType>::GLDraw()
     if (this->mesh != nullptr && this->vertices != nullptr && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-        glDepthRange(0.0,0.999999);
-        glPointSize(6);
+        glDepthRange(0.0,0.99999);
+        glPointSize(10);
         glDisable(GL_LIGHTING);
 
         glBegin(GL_POINTS);
         for (const size_t& vId : *vertices) {
-            vcg::glColor(vcg::Color4b(0,0,200,255));
+            vcg::glColor(vcg::Color4b(0,255,0,255));
             vcg::glVertex(mesh->vert[vId].P());
         }
         glEnd();

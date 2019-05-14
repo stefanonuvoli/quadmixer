@@ -24,7 +24,7 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
     if (mesh != nullptr && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-        glDepthRange(0.000001,1);
+        glDepthRange(0.00001,1);
 
         glEnable(GL_LIGHTING);
 
@@ -62,7 +62,7 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
         }
 
         if (wireframe) {
-            glDepthRange(0.0,0.999999);
+            glDepthRange(0.0,0.99999);
             glLineWidth(wireframeSize);
             glDisable(GL_LIGHTING);
             for(unsigned int i=0; i<face.size(); i++)
