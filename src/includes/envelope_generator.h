@@ -13,7 +13,7 @@
 #include <vcg/complex/algorithms/create/resampler.h>
 #include <vcg/complex/algorithms/local_optimization.h>
 #include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
-#include <common_mesh_functions.h>
+#include "common_mesh_functions.h"
 
 // The class prototypes.
 class DeciVertex;
