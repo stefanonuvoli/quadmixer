@@ -12,6 +12,7 @@
 #include <vcg/complex/algorithms/update/curvature.h>
 #include "field_tracer.h"
 #include "common_mesh_functions.h"
+#include "quadutils.h"
 
 #define CONVEX 8.0
 #define CONCAVE 8.0
@@ -29,6 +30,7 @@ class PatchSplitter
     typedef typename MeshType::VertexType VertexType;
 
     MeshType &patchMesh;
+
     bool printMsg;
     VertexFieldTracer<MeshType> &VFTracer;
     std::vector<std::vector<size_t> > TraceVertCandidates,TraceDirCandidates;
@@ -871,7 +873,7 @@ public:
     {printMsg=_printMsg;}
 };
 
-template <class MeshType>
+template <class MeshType,class QuadMeshType>
 class PatchAssembler
 {
     typedef typename MeshType::CoordType CoordType;
@@ -909,6 +911,7 @@ public:
 private:
 
     MeshType &mesh;
+    QuadMeshType &quadMesh;
 
     //the original mesh to reproject to
     MeshType OriginalMesh;
@@ -2590,6 +2593,9 @@ private:
                             std::vector<std::vector<size_t> > &Corners,
                             std::vector<std::vector<std::vector<std::pair<size_t,size_t> > > > &BorderEdges)
     {
+        UpdateFacePatches();
+        UpdateBorderPatches();
+
         //set all faux
         for (size_t i=0;i<mesh.face.size();i++)
             for (size_t j=0;j<mesh.face[i].VN();j++)
@@ -2708,6 +2714,85 @@ private:
             assert(Corners[i].size()>=3);
             assert(Corners[i].size()<7);
         }
+    }
+
+    void FixHoles()
+    {
+        //transform the quad mesh into tris
+        std::vector<int> ret=QuadBoolean::internal::splitQuadInTriangle(quadMesh);
+        MeshType externalBound;
+        vcg::tri::Append<MeshType,QuadMeshType>::Mesh(externalBound,quadMesh);
+        UpdateAttributes(externalBound);
+        MeshType TotalMesh;
+        vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,externalBound);
+        vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,mesh);
+        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(TotalMesh);
+        UpdateAttributes(TotalMesh);
+        size_t num_holes=vcg::tri::Clean<MeshType>::CountHoles(TotalMesh);
+        if (num_holes==0)return;
+        std::cout<<"*** There are "<<num_holes<<" HOLES to be fixed!"<<std::endl;
+
+        //first smooth around borders
+        //vcg::tri::Smooth<MeshType>::VertexCoordLaplacian()
+        std::cout<<"*** filling holes"<<std::endl;
+        size_t FNum0=TotalMesh.face.size();
+        vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(TotalMesh,TotalMesh.face.size(),false);
+        size_t FNum1=TotalMesh.face.size();
+        std::cout<<"*** Done"<<std::endl;
+        //create a new mesh only with the new
+        vcg::tri::UpdateSelection<MeshType>::Clear(TotalMesh);
+        for (size_t i=FNum0;i<FNum1;i++)
+            TotalMesh.face[i].SetS();
+        vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(TotalMesh);
+
+
+        MeshType NewHoles;
+        vcg::tri::Append<MeshType,MeshType>::Mesh(NewHoles,TotalMesh,true);
+        UpdateAttributes(NewHoles);
+        vcg::tri::io::ExporterPLY<MeshType>::Save(NewHoles,"test_holes.ply");
+
+        std::vector<std::vector<size_t> > Components;
+        QuadBoolean::internal::FindConnectedComponents(NewHoles,Components);
+        std::cout<<"*** Components "<<Components.size()<<std::endl;
+
+        assert(Components.size()==num_holes);
+
+        for (size_t i=0;i<Components.size();i++)
+        {
+            Patches.resize(Patches.size()+1);
+            for (size_t j=0;j<Components[i].size();j++)
+            {
+                size_t IndexF=Components[i][j];
+                CoordType pos0=NewHoles.face[IndexF].P(0);
+                CoordType pos1=NewHoles.face[IndexF].P(1);
+                CoordType pos2=NewHoles.face[IndexF].P(2);
+                size_t num0=mesh.vert.size();
+                vcg::tri::Allocator<MeshType>::AddVertices(mesh,3);
+                mesh.vert[num0].P()=pos0;
+                //mesh.vert[num0].Q()=num0;
+                mesh.vert[num0+1].P()=pos1;
+                //mesh.vert[num0+1].Q()=num0+1;
+                mesh.vert[num0+2].P()=pos2;
+                //mesh.vert[num0+2].Q()=num0+2;
+                vcg::tri::Allocator<MeshType>::AddFace(mesh,&mesh.vert[num0],
+                                                       &mesh.vert[num0+1],
+                                                       &mesh.vert[num0+2]);
+                mesh.face.back().Q()=mesh.face.size()-1;
+                Patches.back().IndexF.push_back(mesh.face.size()-1);
+                Patches.back().Active=true;
+            }
+            InitPatchMesh(Patches.size()-1);
+        }
+        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
+        vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
+
+        UpdateAttributes(mesh);
+
+        size_t num_split=vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
+        if (num_split>0)
+            UpdateAttributes(mesh);
+
+        InitIndexOnQ();
     }
 
 public:
@@ -2882,6 +2967,8 @@ public:
 
         RemoveNotTopologicallyOKPartitions();
         //FixSmallCC();
+        FixHoles();
+
         FixCorners();
 
         FixedVert.clear();
@@ -2907,7 +2994,7 @@ public:
 
     }
 
-    PatchAssembler(MeshType &_mesh):mesh(_mesh)
+    PatchAssembler(MeshType &_mesh,QuadMeshType &_quadMesh):mesh(_mesh),quadMesh(_quadMesh)
     {}
 
     ~PatchAssembler()

@@ -3,6 +3,7 @@
 
 #include"common_mesh_functions.h"
 #include<vcg/complex/algorithms/polygon_polychord_collapse.h>
+#include"quadutils.h"
 
 namespace QuadBoolean {
 namespace internal {
@@ -85,7 +86,7 @@ public:
         vcg::tri::UpdateFlags<PolyMeshType>::VertexBorderFromFaceAdj(meshQuad);
 
         if(checkPair)
-            CheckConsistency();
+            if (!CheckConsistency())assert(0);
 
         //first find the connected components
         std::cout<<"finding connected components"<<std::endl;
