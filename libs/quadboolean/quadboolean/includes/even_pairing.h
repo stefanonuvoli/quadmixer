@@ -1,23 +1,25 @@
 #ifndef EVEN_PAIRING
 #define EVEN_PAIRING
 
-#include<common_mesh_functions.h>
+#include"common_mesh_functions.h"
 #include<vcg/complex/algorithms/polygon_polychord_collapse.h>
 
 namespace QuadBoolean {
 namespace internal {
 
-template <class MeshType>
+template <class TriMeshType,class PolyMeshType>
 class EvenPairing
 {
-    typedef typename MeshType::CoordType CoordType;
-    typedef typename MeshType::ScalarType ScalarType;
-    typedef typename MeshType::FaceType FaceType;
-    typedef typename MeshType::VertexType VertexType;
+    typedef typename TriMeshType::CoordType CoordType;
+    typedef typename TriMeshType::ScalarType ScalarType;
+    typedef typename PolyMeshType::FaceType PolyFaceType;
+    typedef typename PolyMeshType::VertexType PolyVertexType;
+    typedef typename TriMeshType::FaceType TriFaceType;
+    typedef typename TriMeshType::VertexType TriVertexType;
 
     //the input mesh to trace
-    MeshType &meshTri;
-    MeshType &meshQuad;
+    TriMeshType &meshTri;
+    PolyMeshType &meshQuad;
     std::vector<std::vector<size_t> > Components;
     std::vector<std::set<CoordType> > BorderV;
     std::vector<bool> EvenSubd;
@@ -29,16 +31,16 @@ private:
     //std::deque< vcg::face::Pos<FaceType> > polychords;
     std::vector<std::vector<std::pair<size_t,size_t > > > PolyChoordsQuad;
 
-    std::vector<std::vector<vcg::face::Pos<FaceType> > > PolyChoords;
+    std::vector<std::vector<vcg::face::Pos<PolyFaceType> > > PolyChoords;
     std::vector<std::pair<ScalarType,size_t> > PolyCoordLenght;
 
-    ScalarType PolyChLength(std::vector<vcg::face::Pos<FaceType> > &PolyCh)
-    {
-        ScalarType len=0;
-        for (size_t i=0;i<PolyCh.size();i++)
-            len+=(PolyCh[i].V()->P()-PolyCh[i].VFlip()->P()).Norm();
-        return len;
-    }
+//    ScalarType PolyChLength(std::vector<vcg::face::Pos<FaceType> > &PolyCh)
+//    {
+//        ScalarType len=0;
+//        for (size_t i=0;i<PolyCh.size();i++)
+//            len+=(PolyCh[i].V()->P()-PolyCh[i].VFlip()->P()).Norm();
+//        return len;
+//    }
 
     bool CheckConsistency()
     {
@@ -72,20 +74,20 @@ public:
 
         //update attributes
         std::cout<<"udpate Attr"<<std::endl;
-        vcg::tri::UpdateTopology<MeshType>::FaceFace(meshTri);
-        vcg::tri::UpdateTopology<MeshType>::FaceFace(meshQuad);
+        vcg::tri::UpdateTopology<TriMeshType>::FaceFace(meshTri);
+        vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(meshQuad);
 
-        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(meshTri);
-        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromFaceAdj(meshTri);
-        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(meshQuad);
-        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromFaceAdj(meshQuad);
+        vcg::tri::UpdateFlags<TriMeshType>::FaceBorderFromFF(meshTri);
+        vcg::tri::UpdateFlags<TriMeshType>::VertexBorderFromFaceAdj(meshTri);
+        vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(meshQuad);
+        vcg::tri::UpdateFlags<PolyMeshType>::VertexBorderFromFaceAdj(meshQuad);
 
         if(checkPair)
             CheckConsistency();
 
         //first find the connected components
         std::cout<<"finding connected components"<<std::endl;
-        FindConnectedComponents<MeshType>(meshTri,Components);
+        FindConnectedComponents<TriMeshType>(meshTri,Components);
         std::cout<<"there are "<< Components.size()<<" conn components"<<std::endl;
 
         //if there is only one connected component is ok
@@ -142,11 +144,11 @@ public:
                {
                    size_t CurrFI=PolyChoordsQuad.back().back().first;
                    size_t CurrFE=PolyChoordsQuad.back().back().second;
-                   FaceType *CurrF=&meshQuad.face[CurrFI];
+                   PolyFaceType *CurrF=&meshQuad.face[CurrFI];
                    size_t NextE0=(CurrFE+2)%4;
                    if (vcg::face::IsBorder(*CurrF,NextE0))break;
 
-                   FaceType *NextF=CurrF->FFp(NextE0);
+                   PolyFaceType *NextF=CurrF->FFp(NextE0);
                    size_t NextE=CurrF->FFi(NextE0);
                    size_t IndexNextF=vcg::tri::Index(meshQuad,NextF);
                    PolyChoordsQuad.back().push_back(std::pair<size_t,size_t>(IndexNextF,NextE));
@@ -185,8 +187,8 @@ public:
             //std::cout<<"E1 "<<IndexE1<<std::endl;
             assert(vcg::face::IsBorder(meshQuad.face[IndexF1],IndexE1));
 
-            VertexType *v0=meshQuad.face[IndexF0].V(IndexE0);
-            VertexType *v1=meshQuad.face[IndexF1].V(IndexE1);
+            PolyVertexType *v0=meshQuad.face[IndexF0].V(IndexE0);
+            PolyVertexType *v1=meshQuad.face[IndexF1].V(IndexE1);
             assert(v0->IsB());
             assert(v1->IsB());
             CoordType Pos0=v0->P();
@@ -234,7 +236,7 @@ public:
             size_t IndexTrace=Choosen[j];
             size_t IndexF0=PolyChoordsQuad[IndexTrace][0].first;
             size_t IndexE0=PolyChoordsQuad[IndexTrace][0].second;
-            vcg::face::Pos<FaceType> StartPos(&meshQuad.face[IndexF0],IndexE0);
+            vcg::face::Pos<PolyFaceType> StartPos(&meshQuad.face[IndexF0],IndexE0);
 
             CoordType Pos0Start=meshQuad.face[IndexF0].P0(IndexE0);
             CoordType Pos1Start=meshQuad.face[IndexF0].P1(IndexE0);
@@ -247,7 +249,7 @@ public:
             CoordType Pos1End=meshQuad.face[IndexF1].P1(IndexE1);
 
             size_t IndexV0=meshQuad.vert.size();
-            vcg::tri::PolychordCollapse<MeshType>::SplitPolychord(meshQuad,StartPos,2);
+            vcg::tri::PolychordCollapse<PolyMeshType>::SplitPolychord(meshQuad,StartPos,2);
             size_t IndexV1=meshQuad.vert.size()-1;
 
             std::pair<CoordType,CoordType> key0(std::min(Pos0Start,Pos1Start),
@@ -277,11 +279,11 @@ public:
 
                //split the triangle
                CoordType Pos=SplittedBoundary[key];
-               vcg::tri::Allocator<MeshType>::AddVertex(meshTri,Pos);
-               vcg::tri::Allocator<MeshType>::AddFaces(meshTri,1);
-               meshTri.face.back().Alloc(3);
-               VertexType *OldV1=meshTri.face[i].V1(j);
-               VertexType *OldV2=meshTri.face[i].V2(j);
+               vcg::tri::Allocator<TriMeshType>::AddVertex(meshTri,Pos);
+               vcg::tri::Allocator<TriMeshType>::AddFaces(meshTri,1);
+               //meshTri.face.back().Alloc(3);
+               TriVertexType *OldV1=meshTri.face[i].V1(j);
+               TriVertexType *OldV2=meshTri.face[i].V2(j);
                meshTri.face[i].V1(j)=&meshTri.vert.back();
                meshTri.face.back().V0(j)=&meshTri.vert.back();
                meshTri.face.back().V1(j)=OldV1;
@@ -296,7 +298,7 @@ public:
         return Solved;
     }
 
-    EvenPairing(MeshType &_meshTri,MeshType &_meshQuad):meshTri(_meshTri),meshQuad(_meshQuad)
+    EvenPairing(TriMeshType &_meshTri,PolyMeshType &_meshQuad):meshTri(_meshTri),meshQuad(_meshQuad)
     {}
 };
 
