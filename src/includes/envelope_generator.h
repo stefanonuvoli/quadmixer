@@ -248,30 +248,32 @@ class EnvelopeGenerator
         vcg::Point3i box_size(bb.DimX()/cell_side,bb.DimY()/cell_side,bb.DimZ()/cell_side);
         vcg::tri::Resampler<MeshType,MeshType>::Resample(curr_mesh,expand_mesh,bb,box_size,cell_side*5,offsetVal);
 
-//        //remove the small connected components
-//        std::vector<std::vector<size_t> > Components;
-//        QuadBoolean::internal::FindConnectedComponents<MeshType>(expand_mesh,Components);
-//        if (Components.size()>1)
-//        {
-//            size_t BiggestCompSize=0;
-//            int BiggestCompSizeIndex=-1;
-//            for (size_t i=0;i<Components.size();i++)
-//            {
-//                if (Components[i].size()>BiggestCompSize)
-//                {
-//                    BiggestCompSize=Components[i].size();
-//                    BiggestCompSizeIndex=i;
-//                }
-//            }
-//            for (size_t i=0;i<Components.size();i++)
-//            {
-//                if (i==BiggestCompSizeIndex)continue;
-//                for (size_t j=0;j<Components.size();j++)
-//                {
-//                   if
-//                }
-//            }
-//        }
+        //remove the small connected components
+        std::vector<std::vector<size_t> > Components;
+        QuadBoolean::internal::FindConnectedComponents<MeshType>(expand_mesh,Components);
+        if (Components.size()>1)
+        {
+            size_t BiggestCompSize=0;
+            int BiggestCompSizeIndex=-1;
+            for (size_t i=0;i<Components.size();i++)
+            {
+                if (Components[i].size()>BiggestCompSize)
+                {
+                    BiggestCompSize=Components[i].size();
+                    BiggestCompSizeIndex=i;
+                }
+            }
+            for (size_t i=0;i<Components.size();i++)
+            {
+                if (i==BiggestCompSizeIndex)continue;
+                for (size_t j=0;j<Components.size();j++)
+                   vcg::tri::Allocator<MeshType>::DeleteFace(expand_mesh,expand_mesh.face[Components[i][j]]);
+            }
+            vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(expand_mesh);
+            vcg::tri::Allocator<MeshType>::CompactEveryVector(expand_mesh);
+            UpdateAttributes(expand_mesh);
+        }
+
         //decimate
         DeciMesh decimated;
         vcg::tri::Append<DeciMesh,MeshType>::Mesh(decimated,expand_mesh);
