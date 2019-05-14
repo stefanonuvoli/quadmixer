@@ -13,6 +13,7 @@
 #include <vcg/complex/algorithms/create/resampler.h>
 #include <vcg/complex/algorithms/local_optimization.h>
 #include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
+#include <common_mesh_functions.h>
 
 // The class prototypes.
 class DeciVertex;
@@ -247,6 +248,30 @@ class EnvelopeGenerator
         vcg::Point3i box_size(bb.DimX()/cell_side,bb.DimY()/cell_side,bb.DimZ()/cell_side);
         vcg::tri::Resampler<MeshType,MeshType>::Resample(curr_mesh,expand_mesh,bb,box_size,cell_side*5,offsetVal);
 
+//        //remove the small connected components
+//        std::vector<std::vector<size_t> > Components;
+//        QuadBoolean::internal::FindConnectedComponents<MeshType>(expand_mesh,Components);
+//        if (Components.size()>1)
+//        {
+//            size_t BiggestCompSize=0;
+//            int BiggestCompSizeIndex=-1;
+//            for (size_t i=0;i<Components.size();i++)
+//            {
+//                if (Components[i].size()>BiggestCompSize)
+//                {
+//                    BiggestCompSize=Components[i].size();
+//                    BiggestCompSizeIndex=i;
+//                }
+//            }
+//            for (size_t i=0;i<Components.size();i++)
+//            {
+//                if (i==BiggestCompSizeIndex)continue;
+//                for (size_t j=0;j<Components.size();j++)
+//                {
+//                   if
+//                }
+//            }
+//        }
         //decimate
         DeciMesh decimated;
         vcg::tri::Append<DeciMesh,MeshType>::Mesh(decimated,expand_mesh);
@@ -635,8 +660,8 @@ public:
     }
 
     static bool GetPolyline(MeshType &input_mesh,
-                     const std::vector<CoordType> &Pos,
-                     std::vector<std::pair<CoordType,CoordType> > &Segments)
+                            const std::vector<CoordType> &Pos,
+                            std::vector<std::pair<CoordType,CoordType> > &Segments)
     {
         MeshType mesh;
         std::vector<size_t> IndexV;
