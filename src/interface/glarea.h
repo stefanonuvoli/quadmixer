@@ -48,7 +48,8 @@ public:
     void applySelectedMeshTransformation();
 
     void setTrackballVisibility(bool visible);
-    void setWireframe(bool visible);    
+    void setWireframe(bool visible);
+    void setWireframeSize(int size);
 
     bool getDetachMode() const;
     void setDetachMode(bool value);
@@ -59,6 +60,7 @@ public:
     bool debugMode;
 
     bool wireframe;
+    int wireframeSize;
 
     GLPolyWrap<PolyMesh>* targetMesh1;
     GLPolyWrap<PolyMesh>* targetMesh2;

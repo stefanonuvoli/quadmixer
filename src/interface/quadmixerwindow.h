@@ -74,6 +74,7 @@ private slots:
     void on_resetSceneButton_clicked();
     void on_trackballCheckBox_stateChanged(int arg1);
     void on_showWireframe_stateChanged(int arg1);
+    void on_wireframeSlider_valueChanged(int value);
     void on_showParametersCheckBox_stateChanged(int arg1);    
     void on_debugModeButton_clicked();
 
@@ -121,6 +122,11 @@ private slots:
     void on_colorResultComboBox_currentIndexChanged(int index);
 
     void on_colorMeshesComboBox_currentIndexChanged(int index);
+
+
+    void on_saveMesh1Button_clicked();
+
+    void on_saveMesh2Button_clicked();
 
 private:
 

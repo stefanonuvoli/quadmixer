@@ -9,7 +9,7 @@ class GLPolyWrap
 public:
     GLPolyWrap();
 
-    void GLDraw(bool wireframe);
+    void GLDraw(bool wireframe = true, int wireframeSize = 1);
 
     MeshType* mesh;
     bool visible;

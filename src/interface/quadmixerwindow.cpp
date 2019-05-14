@@ -6,13 +6,11 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
-#include <quadboolean/includes/quadlibiglbooleaninterface.h>
+#include <quadboolean/includes/envelope_generator.h>
 
 #include <vcg/complex/complex.h>
 #include <wrap/io_trimesh/import.h>
 #include <wrap/io_trimesh/export.h>
-
-#include "src/includes/envelope_generator.h"
 
 #ifndef NDEBUG
 #define SAVEMESHES
@@ -360,6 +358,7 @@ void QuadMixerWindow::updateVisibility()
     ui.glArea->setResultVisibility(ui.showResultCheckBox->isChecked());
 
     ui.glArea->setWireframe(ui.showWireframe->isChecked());
+    ui.glArea->setWireframeSize(ui.wireframeSlider->value());
 
     ui.parametersFrame->setVisible(ui.showParametersCheckBox->isChecked());
     ui.debugFrame->setVisible(ui.glArea->debugMode);
@@ -517,7 +516,12 @@ void QuadMixerWindow::on_trackballCheckBox_stateChanged(int arg1)
 void QuadMixerWindow::on_showWireframe_stateChanged(int arg1)
 {
     ui.glArea->setWireframe(arg1 == Qt::Checked);
+    ui.glArea->updateGL();
+}
 
+void QuadMixerWindow::on_wireframeSlider_valueChanged(int value)
+{
+    ui.glArea->setWireframeSize(value);
     ui.glArea->updateGL();
 }
 
@@ -830,18 +834,10 @@ void QuadMixerWindow::doGetSurfaces() {
               << " ms" << std::endl;
 
 
-
-
-    start = chrono::steady_clock::now();
-
-    //Make ILP feasible
-    QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface);
-
-    std::cout << std::endl << " >> "
-              << "Get new surface: "
-              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
-              << " ms" << std::endl;
-
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 
     quadLayoutDataPreserved1 = QuadBoolean::internal::getQuadLayoutData(mesh1, isQuadMesh1, preservedFaceLabel1);
     ui.glArea->setQuadLayoutPreserved1(&quadLayoutDataPreserved1);
@@ -856,11 +852,6 @@ void QuadMixerWindow::doGetSurfaces() {
     ui.glArea->setNewSurface(&newSurface);
 
     colorizeMesh(preservedSurface, preservedSurfaceLabel);
-
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 }
 
 void QuadMixerWindow::doPatchDecomposition() {
@@ -871,6 +862,21 @@ void QuadMixerWindow::doPatchDecomposition() {
     newSurfaceLabel.clear();
     newSurface.Clear();
     vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
+
+    start = chrono::steady_clock::now();
+
+    //Make ILP feasible
+    QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface);
+
+    std::cout << std::endl << " >> "
+              << "Solve even pairing: "
+              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
+              << " ms" << std::endl;
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurfaceFixed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurfaceFixed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 
     bool initialRemeshing = ui.initialRemeshingCheckBox->isChecked();
     double initialRemeshingEdgeFactor = ui.edgeFactorSpinBox->value();
@@ -912,8 +918,6 @@ void QuadMixerWindow::doPatchDecomposition() {
 void QuadMixerWindow::doSolveILP() {
     chrono::steady_clock::time_point start;
 
-    start = chrono::steady_clock::now();
-
     //Solve ILP
     double alpha = ui.alphaSpinBox->value();
     double beta = ui.betaSpinBox->value();
@@ -925,6 +929,9 @@ void QuadMixerWindow::doSolveILP() {
     else if (ui.ilpMethodABSRadio->isChecked()) {
         ilpMethod = QuadBoolean::ILPMethod::ABS;
     }
+
+
+    start = chrono::steady_clock::now();
 
     ilpResult = QuadBoolean::internal::findBestSideSize(
                 newSurface,
@@ -1481,4 +1488,27 @@ void QuadMixerWindow::on_colorMeshesComboBox_currentIndexChanged(int index)
     colorMeshByComboBox(mesh1, index, preservedQuad1);
     colorMeshByComboBox(mesh2, index, preservedQuad2);
     ui.glArea->updateGL();
+}
+
+
+void QuadMixerWindow::on_saveMesh1Button_clicked()
+{
+    QString filename = QFileDialog::getSaveFileName(
+                this,
+                tr("Save result"),
+                QDir::currentPath() + "/../../QuadMixer/dataset",
+                tr("Mesh (*.obj *.ply *.off)"));
+
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh1, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);
+}
+
+void QuadMixerWindow::on_saveMesh2Button_clicked()
+{
+    QString filename = QFileDialog::getSaveFileName(
+                this,
+                tr("Save result"),
+                QDir::currentPath() + "/../../QuadMixer/dataset",
+                tr("Mesh (*.obj *.ply *.off)"));
+
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);
 }

@@ -7,6 +7,7 @@
 #include "quadpatterns.h"
 #include "quadquadmapping.h"
 #include "quadlibiglbooleaninterface.h"
+#include "even_pairing.h"
 
 #include <map>
 
@@ -361,37 +362,36 @@ void getNewSurfaceMesh(
 }
 
 template<class PolyMeshType, class TriangleMeshType>
-void makeILPFeasible(
+bool makeILPFeasible(
         PolyMeshType& preservedSurface,
         TriangleMeshType& newSurface)
 {
-//    std::vector<pair<size_t, size_t>> newSurfaceBorderEdgesConnectedComponents;
+    internal::EvenPairing<TriangleMeshType, PolyMeshType> evenPairing(newSurface, preservedSurface);
 
-//    std::set<size_t> remainingFaces;
-//    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(newSurface);
-//    for (size_t i = 0; i < newSurface.face.size(); i++) {
-//        if (!newSurface.face[i].IsD()) {
-//            remainingFaces.insert(i);
-//        }
-//    }
+    typename internal::EvenPairing<TriangleMeshType, PolyMeshType>::ResultType result;
 
-//    while (!remainingFaces.empty()) {
-//        size_t face = *remainingFaces.begin();
+    result = evenPairing.SolvePairing(true);
 
-//        std::stack<size_t> stack;
-//        stack.push(face);
-
-//        while (!stack.empty()) {
-//            if (currentFace)
-
-//            for (size_t i = 0; i < newSurface.face.size(); i++) {
-//                for (int j = 0; newSurface.face[i].VN(); j++) {
-
-//                    stack.push()
-//                }
-//            }
-//        }
-//    }
+    if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::Solved) {
+        std::cout << "Even pairing solved!" << std::endl;
+        return true;
+    }
+    if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::AlreadyOk) {
+        std::cout << "Even pairing was already okay!" << std::endl;
+        return true;
+    }
+    else if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::NonConsistent) {
+        std::cout << "Error: even pairing was not consistent!" << std::endl;
+        return false;
+    }
+    else if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::NonSolved) {
+        std::cout << "Error: even pairing was not solved!" << std::endl;
+        return false;
+    }
+    else {
+        std::cout << "Error: undefined return value by even pairing!" << std::endl;
+        return false;
+    }
 }
 
 template<class TriangleMeshType>
@@ -758,8 +758,12 @@ std::vector<int> findBestSideSize(
     if (chartData.charts.size() <= 0)
         return std::vector<int>();
 
+#ifndef NDEBUG
+    const double timeLimit = 10.0;
+#else
     const double timeLimit = 5.0;
-    const double gapLimit = 30.0;
+#endif
+    const double gapLimit = 0.15;
 
     double gap;
     ILPStatus status;
@@ -771,12 +775,20 @@ std::vector<int> findBestSideSize(
         std::cout << "Solution found! Gap: " << gap << std::endl;
     }
     else if (status == ILPStatus::SOLUTIONWRONG || gap >= gapLimit) {
-        std::vector<int> ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
+        std::vector<int> ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
 
-        std::cout << "Solution found (avoid regularity term)! Gap: " << gap << std::endl;
+        if (status == ILPStatus::SOLUTIONFOUND) {
+            std::cout << "Solution found (ABS)! Gap: " << gap << std::endl;
+        }
+        else {
+            assert(status == ILPStatus::SOLUTIONWRONG);
+            std::vector<int> ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
+            std::cout << "Solution found? (ABS without regularity)! Gap: " << gap << std::endl;
+        }
     }
     else {
         assert(status == ILPStatus::INFEASIBLE);
+        std::cout << "Error! Model was infeasible!" << std::endl;
     }
     return ilpResult;
 }

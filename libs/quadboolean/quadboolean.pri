@@ -16,6 +16,8 @@ HEADERS += \
     $$PWD/quadboolean/quadboolean.h \
     $$PWD/quadboolean/defaultmeshtypes.h \
     $$PWD/quadboolean/includes/quadpatchtracer.h \
+    $$PWD/quadboolean/includes/even_pairing.h \
+    $$PWD/quadboolean/includes/envelope_generator.h \
     $$PWD/quadboolean/includes/quadilp.h \
     $$PWD/quadboolean/includes/quadconvert.h \
     $$PWD/quadboolean/includes/quadutils.h \

@@ -11,7 +11,7 @@
 
 #include <wrap/gl/picking.h>
 
-#include "src/includes/envelope_generator.h"
+#include <quadboolean/includes/envelope_generator.h>
 
 GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
 {
@@ -379,17 +379,17 @@ void GLArea::paintGL()
 
     if (!debugMode) {
         for (GLPolyWrap<PolyMesh>& glWrap : glWrapMeshes) {
-            glWrap.GLDraw(wireframe);
+            glWrap.GLDraw(wireframe, wireframeSize);
         }
         envelopeWrap.GLDraw();
     }
     else {
-        glWrapMesh1.GLDraw(wireframe);
-        glWrapMesh2.GLDraw(wireframe);
-        glWrapBoolean.GLDraw(wireframe);
+        glWrapMesh1.GLDraw(wireframe, wireframeSize);
+        glWrapMesh2.GLDraw(wireframe, wireframeSize);
+        glWrapBoolean.GLDraw(wireframe, wireframeSize);
         glWrapIntersectionVertices.GLDraw();
-        glWrapPreservedSurface.GLDraw(wireframe);
-        glWrapNewSurface.GLDraw(wireframe);
+        glWrapPreservedSurface.GLDraw(wireframe, wireframeSize);
+        glWrapNewSurface.GLDraw(wireframe, wireframeSize);
         glWrapQuadLayout1.GLDraw();
         glWrapQuadLayout2.GLDraw();
         glWrapQuadLayoutPreserved1.GLDraw();
@@ -397,7 +397,7 @@ void GLArea::paintGL()
         glWrapChartSides.GLDraw();
         glWrapQuadrangulation.GLDraw(wireframe);
         glWrapQuadLayoutQuadrangulation.GLDraw();
-        glWrapResult.GLDraw(wireframe);
+        glWrapResult.GLDraw(wireframe, wireframeSize);
     }
 
     glPopMatrix();
@@ -711,6 +711,10 @@ void GLArea::setResultVisibility(bool visible)
 void GLArea::setWireframe(bool visible)
 {
     this->wireframe = visible;
+}
+
+void GLArea::setWireframeSize(const int size) {
+    this->wireframeSize = size;
 }
 
 

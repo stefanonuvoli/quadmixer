@@ -62,6 +62,8 @@ private:
         std::cout<<"Size 0 "<<Pos0.size()<<std::endl;
         std::cout<<"Size 1 "<<Pos1.size()<<std::endl;
         std::cout<<"Test "<<result.size()<<std::endl;
+
+        return result.size() == 0;
     }
 
 public:

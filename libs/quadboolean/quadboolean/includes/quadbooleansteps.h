@@ -99,7 +99,7 @@ void getNewSurfaceMesh(
         TriangleMeshType& newSurface);
 
 template<class PolyMeshType, class TriangleMeshType>
-void makeILPFeasible(
+bool makeILPFeasible(
         PolyMeshType& preservedSurface,
         TriangleMeshType& newSurface);
 
