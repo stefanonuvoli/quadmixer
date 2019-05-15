@@ -2734,7 +2734,7 @@ private:
         vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,mesh);
         vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(TotalMesh);
         UpdateAttributes(TotalMesh);
-        //vcg::tri::io::ExporterPLY<MeshType>::Save(TotalMesh,"total.ply");
+        vcg::tri::io::ExporterPLY<MeshType>::Save(TotalMesh,"total.ply");
 
         size_t num_holes=vcg::tri::Clean<MeshType>::CountHoles(TotalMesh);
         if (num_holes==0)return;
