@@ -2732,9 +2732,10 @@ private:
         MeshType TotalMesh;
         vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,externalBound);
         vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,mesh);
-        vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(TotalMesh);
+        //vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(TotalMesh);
+        vcg::tri::Clean<MeshType>::MergeCloseVertex(TotalMesh,0.000001);
         UpdateAttributes(TotalMesh);
-        vcg::tri::io::ExporterPLY<MeshType>::Save(TotalMesh,"total.ply");
+        //vcg::tri::io::ExporterPLY<MeshType>::Save(TotalMesh,"total.ply");
 
         size_t num_holes=vcg::tri::Clean<MeshType>::CountHoles(TotalMesh);
         if (num_holes==0)return;
@@ -2757,7 +2758,7 @@ private:
         MeshType NewHoles;
         vcg::tri::Append<MeshType,MeshType>::Mesh(NewHoles,TotalMesh,true);
         UpdateAttributes(NewHoles);
-        vcg::tri::io::ExporterPLY<MeshType>::Save(NewHoles,"test_holes.ply");
+        //vcg::tri::io::ExporterPLY<MeshType>::Save(NewHoles,"test_holes.ply");
 
         std::vector<std::vector<size_t> > Components;
         QuadBoolean::internal::FindConnectedComponents(NewHoles,Components);
