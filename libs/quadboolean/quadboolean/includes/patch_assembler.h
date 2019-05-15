@@ -2718,10 +2718,14 @@ private:
 
     void FixHoles()
     {
+        QuadMeshType SwapQuad;
+        vcg::tri::Append<QuadMeshType,QuadMeshType>::Mesh(SwapQuad,quadMesh);
+
         //transform the quad mesh into tris
-        std::vector<int> ret=QuadBoolean::internal::splitQuadInTriangle(quadMesh);
+        //UpdateAttributes()
+        std::vector<int> ret=QuadBoolean::internal::splitQuadInTriangle(SwapQuad);
         MeshType externalBound;
-        vcg::tri::Append<MeshType,QuadMeshType>::Mesh(externalBound,quadMesh);
+        vcg::tri::Append<MeshType,QuadMeshType>::Mesh(externalBound,SwapQuad);
         UpdateAttributes(externalBound);
         MeshType TotalMesh;
         vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,externalBound);
@@ -2749,7 +2753,7 @@ private:
         MeshType NewHoles;
         vcg::tri::Append<MeshType,MeshType>::Mesh(NewHoles,TotalMesh,true);
         UpdateAttributes(NewHoles);
-        vcg::tri::io::ExporterPLY<MeshType>::Save(NewHoles,"test_holes.ply");
+        //vcg::tri::io::ExporterPLY<MeshType>::Save(NewHoles,"test_holes.ply");
 
         std::vector<std::vector<size_t> > Components;
         QuadBoolean::internal::FindConnectedComponents(NewHoles,Components);
@@ -2871,7 +2875,7 @@ public:
         if (Param.InitialRemesh)
             RemeshMesh();
 
-        RemoveSmallCC();
+        //RemoveSmallCC();
         //    else
         //        SmoothMesh();
 

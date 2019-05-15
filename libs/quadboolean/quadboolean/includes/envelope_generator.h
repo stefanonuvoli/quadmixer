@@ -248,36 +248,39 @@ class EnvelopeGenerator
         vcg::Point3i box_size(bb.DimX()/cell_side,bb.DimY()/cell_side,bb.DimZ()/cell_side);
         vcg::tri::Resampler<MeshType,MeshType>::Resample(curr_mesh,expand_mesh,bb,box_size,cell_side*5,offsetVal);
 
-//        //remove the small connected components
-//        std::vector<std::vector<size_t> > Components;
+        //remove the small connected components
+        std::cout<<"Remove small connected components"<<std::endl;
+        std::vector<std::vector<size_t> > Components;
 
-//        vcg::tri::UpdateTopology<MeshType>::FaceFace(curr_mesh);
-//        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(curr_mesh);
-//        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromFaceAdj(curr_mesh);
+        vcg::tri::UpdateTopology<MeshType>::FaceFace(expand_mesh);
+        vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(expand_mesh);
+        vcg::tri::UpdateFlags<MeshType>::VertexBorderFromFaceAdj(expand_mesh);
 
-//        QuadBoolean::internal::FindConnectedComponents<MeshType>(expand_mesh,Components);
-//        if (Components.size()>1)
-//        {
-//            size_t BiggestCompSize=0;
-//            int BiggestCompSizeIndex=-1;
-//            for (size_t i=0;i<Components.size();i++)
-//            {
-//                if (Components[i].size()>BiggestCompSize)
-//                {
-//                    BiggestCompSize=Components[i].size();
-//                    BiggestCompSizeIndex=i;
-//                }
-//            }
-//            for (size_t i=0;i<Components.size();i++)
-//            {
-//                if (i==BiggestCompSizeIndex)continue;
-//                for (size_t j=0;j<Components.size();j++)
-//                   vcg::tri::Allocator<MeshType>::DeleteFace(expand_mesh,expand_mesh.face[Components[i][j]]);
-//            }
-//            vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(expand_mesh);
-//            vcg::tri::Allocator<MeshType>::CompactEveryVector(expand_mesh);
-//            UpdateAttributes(expand_mesh);
-//        }
+        QuadBoolean::internal::FindConnectedComponents<MeshType>(expand_mesh,Components);
+        std::cout<<"de"<<std::endl;
+
+        if (Components.size()>1)
+        {
+            size_t BiggestCompSize=0;
+            int BiggestCompSizeIndex=-1;
+            for (size_t i=0;i<Components.size();i++)
+            {
+                if (Components[i].size()>BiggestCompSize)
+                {
+                    BiggestCompSize=Components[i].size();
+                    BiggestCompSizeIndex=i;
+                }
+            }
+            for (size_t i=0;i<Components.size();i++)
+            {
+                if (i==BiggestCompSizeIndex)continue;
+                for (size_t j=0;j<Components.size();j++)
+                   vcg::tri::Allocator<MeshType>::DeleteFace(expand_mesh,expand_mesh.face[Components[i][j]]);
+            }
+            vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(expand_mesh);
+            vcg::tri::Allocator<MeshType>::CompactEveryVector(expand_mesh);
+            UpdateAttributes(expand_mesh);
+        }
 
         //decimate
         DeciMesh decimated;
@@ -593,6 +596,9 @@ public:
 
         vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(part0,part0.face.size(),false);
         vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(part1,part1.face.size(),false);
+//        vcg::tri::Hole<MeshType>::template EarCuttingIntersectionFill<tri::SelfIntersectionEar< MeshType> >(part0,part0.face.size(),false);
+//        vcg::tri::Hole<MeshType>::template EarCuttingIntersectionFill<tri::SelfIntersectionEar< MeshType> >(part1,part1.face.size(),false);
+
         size_t numF0_after=part0.face.size();
         size_t numF1_after=part1.face.size();
 
@@ -606,6 +612,7 @@ public:
         RemeshSelected(part0,AvgEdge0);
         RemeshSelected(part1,AvgEdge1);
 
+        std::cout<<"Remeshing if needed"<<std::endl;
 
         for (size_t i=numF0;i<part0.face.size();i++)
             part0.face[i].SetS();
@@ -629,12 +636,16 @@ public:
                 ExpandSelected(part1,smooth_steps,false);
             }
         }
+        std::cout<<"Expand if needed"<<std::endl;
 
         ScalarType OffsetVal=input_mesh.bbox.Diag()*offset;
         if (Implicit)
         {
             ExpandImplicit(part0,envelope0,OffsetVal);
             ExpandImplicit(part1,envelope1,OffsetVal);
+            //close the holes in case
+            vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(envelope0,envelope0.face.size(),false);
+            vcg::tri::Hole<MeshType>::template EarCuttingFill<vcg::tri::TrivialEar<MeshType> >(envelope1,envelope1.face.size(),false);
         }
         else
         {
