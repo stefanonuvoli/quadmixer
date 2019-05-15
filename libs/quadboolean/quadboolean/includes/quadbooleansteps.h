@@ -103,9 +103,10 @@ bool makeILPFeasible(
         PolyMeshType& preservedSurface,
         TriangleMeshType& newSurface);
 
-template<class TriangleMeshType>
+template<class TriangleMeshType, class PolyMeshType>
 std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,
+        PolyMeshType& preservedSurface,
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners,
         const bool initialRemeshing,

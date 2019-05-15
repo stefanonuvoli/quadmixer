@@ -3,6 +3,7 @@
 
 #include <GL/glew.h>
 #include <QGLWidget>
+#include <QTimer>
 
 #include <vcg/complex/complex.h>
 #include <vcg/complex/algorithms/update/bounding.h>
@@ -19,6 +20,9 @@
 #include "globjects/glsegmentswrap.h"
 
 #include <quadboolean/quadboolean.h>
+
+#define ROTATION_TIME 5000
+#define ROTATION_ITERATIONS 100
 
 class GLArea : public QGLWidget
 {
@@ -54,6 +58,8 @@ public:
     bool getDetachMode() const;
     void setDetachMode(bool value);
 
+    void autoRotate();
+
     vcg::Point3f sceneCenter;
     float sceneRadius;
 
@@ -68,6 +74,10 @@ public:
     GLSegmentsWrap<PolyMesh> envelopeWrap;
 
 private:
+    QTimer rotationTimer;
+    int rotationIteration;
+    double rotationAngle;
+    double currentAngle;
 
     vcg::Trackball sceneTrackball;
     bool sceneTrackballVisible;
@@ -94,6 +104,13 @@ protected:
     void mouseReleaseEvent(QMouseEvent* e);
     void wheelEvent(QWheelEvent* e);
     void mouseDoubleClickEvent(QMouseEvent* e);
+
+private slots:
+    void updateRotate();
+
+
+
+
 
 public:
 
@@ -131,8 +148,6 @@ public:
 
     void resetSceneOnDebugMeshes();
 
-signals:
-    void setStatusBar(QString message);
 
 
 private:

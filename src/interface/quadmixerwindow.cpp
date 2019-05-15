@@ -856,16 +856,6 @@ void QuadMixerWindow::doGetSurfaces() {
     ui.glArea->setNewSurface(&newSurface);
 
     colorizeMesh(preservedSurface, preservedSurfaceLabel);
-}
-
-void QuadMixerWindow::doPatchDecomposition() {
-    chrono::steady_clock::time_point start;
-
-    newSurfacePartitions.clear();
-    newSurfaceCorners.clear();
-    newSurfaceLabel.clear();
-    newSurface.Clear();
-    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
 
     start = chrono::steady_clock::now();
 
@@ -881,6 +871,17 @@ void QuadMixerWindow::doPatchDecomposition() {
     vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurfaceFixed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurfaceFixed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
+}
+
+void QuadMixerWindow::doPatchDecomposition() {
+    chrono::steady_clock::time_point start;
+
+    newSurfacePartitions.clear();
+    newSurfaceCorners.clear();
+    newSurfaceLabel.clear();
+    newSurface.Clear();
+    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
+
 
     bool initialRemeshing = ui.initialRemeshingCheckBox->isChecked();
     double initialRemeshingEdgeFactor = ui.edgeFactorSpinBox->value();
@@ -890,7 +891,7 @@ void QuadMixerWindow::doPatchDecomposition() {
 
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, initialRemeshingEdgeFactor, reproject, splitConcaves, finalSmoothing);
+    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, preservedSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, initialRemeshingEdgeFactor, reproject, splitConcaves, finalSmoothing);
 
     //-----------
 
@@ -904,6 +905,7 @@ void QuadMixerWindow::doPatchDecomposition() {
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
+
 
     start = chrono::steady_clock::now();
 
@@ -1527,4 +1529,9 @@ void QuadMixerWindow::on_saveMesh2Button_clicked()
                 tr("Mesh (*.obj *.ply *.off)"));
 
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, filename.toStdString().c_str(), vcg::tri::io::Mask::IOM_FACECOLOR);
+}
+
+void QuadMixerWindow::on_autoRotateButton_clicked()
+{
+    ui.glArea->autoRotate();
 }

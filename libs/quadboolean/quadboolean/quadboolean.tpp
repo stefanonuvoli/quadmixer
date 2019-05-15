@@ -201,7 +201,7 @@ void quadBoolean(
      //Get patch decomposition of the new surface
      std::vector<std::vector<size_t>> newSurfacePartitions;
      std::vector<std::vector<size_t>> newSurfaceCorners;
-     newSurfaceLabel = internal::getPatchDecomposition(newSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.initialRemeshingEdgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
+     newSurfaceLabel = internal::getPatchDecomposition(newSurface, preservedSurface, newSurfacePartitions, newSurfaceCorners, parameters.initialRemeshing, parameters.initialRemeshingEdgeFactor, parameters.reproject, parameters.splitConcaves, parameters.finalSmoothing);
 
      //Get chart data
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);

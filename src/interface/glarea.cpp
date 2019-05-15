@@ -5,7 +5,6 @@
 #include <QKeyEvent>
 #include <QKeyEvent>
 #include <QWheelEvent>
-
 #include <wrap/qt/trackball.h>
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 
@@ -23,6 +22,7 @@ GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
     this->targetMesh2 = nullptr;
     this->debugMode = false;
     this->detachMode = false;
+    connect(&rotationTimer, SIGNAL(timeout()), this, SLOT(updateRotate()));
 }
 
 size_t GLArea::addMesh(GLArea::PolyMesh *mesh)
@@ -377,6 +377,8 @@ void GLArea::paintGL()
 
     glPushMatrix();
 
+    glRotated(currentAngle, 0, 1, 0);
+
     if (!debugMode) {
         for (GLPolyWrap<PolyMesh>& glWrap : glWrapMeshes) {
             glWrap.GLDraw(wireframe, wireframeSize);
@@ -536,9 +538,20 @@ void GLArea::mouseDoubleClickEvent(QMouseEvent* e)
     }
 }
 
+void GLArea::updateRotate()
+{
+    currentAngle += rotationAngle;
 
+    rotationIteration++;
 
+    if (rotationIteration >= ROTATION_ITERATIONS) {
+        rotationAngle = 0;
+        currentAngle = 0;
+        rotationTimer.stop();
+    }
 
+    updateGL();
+}
 
 
 
@@ -733,6 +746,18 @@ void GLArea::setDetachMode(bool value)
 
     detachMode = value;
 }
+
+void GLArea::autoRotate()
+{
+    int time = ROTATION_TIME/ROTATION_ITERATIONS;
+
+    rotationIteration = 0;
+    rotationAngle = 360.0/time;
+    currentAngle = 0;
+
+    rotationTimer.start(time);
+}
+
 
 void GLArea::initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh) {
     if (mesh != nullptr) {

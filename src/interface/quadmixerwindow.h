@@ -128,6 +128,8 @@ private slots:
 
     void on_saveMesh2Button_clicked();
 
+    void on_autoRotateButton_clicked();
+
 private:
 
     PolyMesh mesh1;

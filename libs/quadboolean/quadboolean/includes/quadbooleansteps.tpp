@@ -394,9 +394,10 @@ bool makeILPFeasible(
     }
 }
 
-template<class TriangleMeshType>
+template<class TriangleMeshType, class PolyMeshType>
 std::vector<int> getPatchDecomposition(
         TriangleMeshType& newSurface,
+        PolyMeshType& preservedSurface,
         std::vector<std::vector<size_t>>& partitions,
         std::vector<std::vector<size_t>>& corners,
         const bool initialRemeshing,
@@ -410,8 +411,8 @@ std::vector<int> getPatchDecomposition(
 
 #ifdef USE_NEW_DECOMPOSER
     std::vector<std::vector<std::vector<std::pair<size_t,size_t>>>> sides;
-    PatchAssembler<TriangleMeshType> patchAssembler(newSurface);
-    typename PatchAssembler<TriangleMeshType>::Parameters parameters;
+    PatchAssembler<TriangleMeshType, PolyMeshType> patchAssembler(newSurface, preservedSurface);
+    typename PatchAssembler<TriangleMeshType, PolyMeshType>::Parameters parameters;
     parameters.InitialRemesh = initialRemeshing;
     parameters.EdgeSizeFactor = edgeFactor;
     parameters.FinalSmooth = finalSmoothing;
@@ -1212,8 +1213,7 @@ void getResult(
         }
     }
 
-    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(result, 0.000001);
-    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(result);
+    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(result, 0.0000001);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(result);

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1664</width>
+    <width>1688</width>
     <height>719</height>
    </rect>
   </property>
@@ -230,6 +230,13 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_7">
+             <item>
+              <widget class="QPushButton" name="autoRotateButton">
+               <property name="text">
+                <string>Auto rotate</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <widget class="QPushButton" name="resetSceneButton">
                <property name="text">
@@ -1172,7 +1179,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1664</width>
+     <width>1688</width>
      <height>22</height>
     </rect>
    </property>
