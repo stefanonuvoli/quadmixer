@@ -22,7 +22,7 @@
 #include <quadboolean/quadboolean.h>
 
 #define ROTATION_TIME 5000
-#define ROTATION_ITERATIONS 100
+#define ROTATION_ITERATIONS 500
 
 class GLArea : public QGLWidget
 {

@@ -23,7 +23,7 @@ void computePreservedQuadForMesh(
         return;
     }
 
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(mesh);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(mesh);
     vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(triResult);
 
     vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(triResult);

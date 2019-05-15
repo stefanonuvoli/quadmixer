@@ -81,30 +81,30 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
             }
         }
 
-        if (transformation) {
-            vcg::glColor(vcg::Color4b(255,165,0,255));
-            drawTextGL(mesh->bbox.max.X(),
-                       mesh->bbox.max.Y(),
-                       mesh->bbox.max.Z(),
-                       "T",
-                       GLUT_BITMAP_TIMES_ROMAN_24);
-        }
-        if (target1) {
-            vcg::glColor(vcg::Color4b(100,200,100,255));
-            drawTextGL(mesh->bbox.min.X(),
-                       mesh->bbox.min.Y(),
-                       mesh->bbox.min.Z(),
-                       "A",
-                       GLUT_BITMAP_TIMES_ROMAN_24);
-        }
-        if (target2) {
-            vcg::glColor(vcg::Color4b(100,100,200,255));
-            drawTextGL(mesh->bbox.min.X(),
-                       mesh->bbox.min.Y(),
-                       mesh->bbox.min.Z(),
-                       "B",
-                       GLUT_BITMAP_TIMES_ROMAN_24);
-        }
+//        if (transformation) {
+//            vcg::glColor(vcg::Color4b(255,165,0,255));
+//            drawTextGL(mesh->bbox.max.X(),
+//                       mesh->bbox.max.Y(),
+//                       mesh->bbox.max.Z(),
+//                       "T",
+//                       GLUT_BITMAP_TIMES_ROMAN_24);
+//        }
+//        if (target1) {
+//            vcg::glColor(vcg::Color4b(100,200,100,255));
+//            drawTextGL(mesh->bbox.min.X(),
+//                       mesh->bbox.min.Y(),
+//                       mesh->bbox.min.Z(),
+//                       "A",
+//                       GLUT_BITMAP_TIMES_ROMAN_24);
+//        }
+//        if (target2) {
+//            vcg::glColor(vcg::Color4b(100,100,200,255));
+//            drawTextGL(mesh->bbox.min.X(),
+//                       mesh->bbox.min.Y(),
+//                       mesh->bbox.min.Z(),
+//                       "B",
+//                       GLUT_BITMAP_TIMES_ROMAN_24);
+//        }
 
         int n = 0;
         glDepthRange(0.0,0.999999);

@@ -371,7 +371,6 @@ void QuadMixerWindow::on_loadMeshButton_clicked()
     if(!filename.empty()) {
         addMesh(filename);
 
-        ui.glArea->resetSceneOnMeshes();
         ui.glArea->deselectTransformationMesh();
 
         updateVisibility();

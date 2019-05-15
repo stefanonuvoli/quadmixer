@@ -18,7 +18,7 @@ void GLSegmentsWrap<MeshType>::GLDraw()
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
         glDepthRange(0.0,0.99999);
-        glLineWidth(10);
+        glLineWidth(20);
         glDisable(GL_LIGHTING);
 
         for (const std::pair<typename MeshType::CoordType, typename MeshType::CoordType>& edge : segments) {

@@ -274,7 +274,7 @@ void getPreservedSurfaceMesh(
     }
 
     vcg::tri::Allocator<PolyMeshType>::CompactEveryVector(preservedSurface);
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(preservedSurface);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(preservedSurface);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(preservedSurface);
     vcg::tri::UpdateBounding<PolyMeshType>::Box(preservedSurface);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(preservedSurface);
@@ -1110,9 +1110,9 @@ void quadrangulate(
     }
 
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulation);
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(quadrangulation);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
     OrientFaces<PolyMeshType>::AutoOrientFaces(quadrangulation);
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(quadrangulation);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
 
     vcg::GridStaticPtr<typename TriangleMeshType::FaceType,typename TriangleMeshType::FaceType::ScalarType> Grid;
     Grid.Set(newSurface.face.begin(),newSurface.face.end());
@@ -1144,7 +1144,7 @@ void quadrangulate(
         vcg::PolygonalAlgorithm<PolyMeshType>::template LaplacianReproject<TriangleMeshType>(quadrangulation, newSurface, quadrangulationSmoothingIterations, 0.7, 0.7, true);
     }
 
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(quadrangulation);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(quadrangulation);
     vcg::tri::UpdateBounding<PolyMeshType>::Box(quadrangulation);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(quadrangulation);
@@ -1216,9 +1216,9 @@ void getResult(
     vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(result, 0.0000001);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(result);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
     OrientFaces<PolyMeshType>::AutoOrientFaces(result);
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(result);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
 
 #ifndef NDEBUG
     vcg::tri::io::ExporterOBJ<PolyMeshType>::Save(result, "res/resultbeforereproj.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
@@ -1295,7 +1295,7 @@ void getResult(
     LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.7);
 
 
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormals(result);
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(result);
     vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(result);

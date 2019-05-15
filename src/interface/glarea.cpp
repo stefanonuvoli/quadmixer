@@ -305,7 +305,7 @@ void GLArea::applySelectedMeshTransformation()
         }
 
         vcg::tri::UpdateBounding<PolyMesh>::Box(*this->transformationMesh->mesh);
-        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*this->transformationMesh->mesh);
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(*this->transformationMesh->mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*this->transformationMesh->mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(*this->transformationMesh->mesh);
     }
@@ -319,7 +319,7 @@ void GLArea::setTrackballVisibility(bool visible)
 
 void GLArea::initMeshWrapper(GLPolyWrap<PolyMesh>& glWrap, PolyMesh* mesh) {
     if (mesh != nullptr) {
-        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormalByFitting(*mesh);
 //        vcg::PolygonalAlgorithm<PolyMesh>::UpdateFaceNormals(*mesh);
         vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(*mesh);
 
@@ -752,7 +752,7 @@ void GLArea::autoRotate()
     int time = ROTATION_TIME/ROTATION_ITERATIONS;
 
     rotationIteration = 0;
-    rotationAngle = 360.0/time;
+    rotationAngle = 360.0/ROTATION_ITERATIONS;
     currentAngle = 0;
 
     rotationTimer.start(time);
