@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1688</width>
-    <height>719</height>
+    <width>1746</width>
+    <height>761</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -151,7 +151,7 @@
              <item>
               <widget class="QPushButton" name="booleanOperationButton">
                <property name="text">
-                <string>Boolean operation</string>
+                <string>Mix</string>
                </property>
               </widget>
              </item>
@@ -192,6 +192,31 @@
               </widget>
              </item>
              <item>
+              <widget class="QPushButton" name="undoButton">
+               <property name="text">
+                <string>Undo</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_8">
+             <item>
               <widget class="QPushButton" name="detachButton">
                <property name="text">
                 <string>Detach</string>
@@ -202,13 +227,6 @@
               <widget class="QPushButton" name="abortDetachButton">
                <property name="text">
                 <string>Abort detach</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="undoButton">
-               <property name="text">
-                <string>Undo</string>
                </property>
               </widget>
              </item>
@@ -732,7 +750,7 @@
                    <number>200</number>
                   </property>
                   <property name="value">
-                   <number>5</number>
+                   <number>2</number>
                   </property>
                  </widget>
                 </item>
@@ -751,6 +769,23 @@
                   <property name="maximum">
                    <number>20</number>
                   </property>
+                  <property name="value">
+                   <number>3</number>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="patchRetractionCheckBox">
+                  <property name="text">
+                   <string>Retraction</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="patchRetractionNRingSpinBox">
                   <property name="value">
                    <number>3</number>
                   </property>
@@ -1179,7 +1214,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1688</width>
+     <width>1746</width>
      <height>22</height>
     </rect>
    </property>

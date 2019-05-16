@@ -200,14 +200,35 @@ template<class PolyMeshType, class TriangleMeshType>
 void findPreservedQuads(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        TriangleMeshType& triResult,
+        TriangleMeshType& boolean,
         const bool isQuadMesh1,
         const bool isQuadMesh2,
+        const std::vector<size_t>& intersectionVertices,
+        const bool patchRetraction,
+        const int patchRetractionNRing,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2)
 {
-    computePreservedQuadForMesh(mesh1, triResult, isQuadMesh1, preservedQuad1);
-    computePreservedQuadForMesh(mesh2, triResult, isQuadMesh2, preservedQuad2);
+    typename TriangleMeshType::ScalarType minDistance = 0;
+
+    for (size_t i = 0; i < boolean.vert.size(); i++) {
+        boolean.vert[i].Q() = 0;
+    }
+
+    if (patchRetraction) {
+        std::vector<typename TriangleMeshType::VertexPointer> seedVec;
+        for (const size_t& vId : intersectionVertices) {
+            seedVec.push_back(&boolean.vert[vId]);
+        }
+        vcg::tri::EuclideanDistance<TriangleMeshType> ed;
+        vcg::tri::UpdateTopology<TriangleMeshType>::VertexFace(boolean);
+        vcg::tri::Geodesic<TriangleMeshType>::Compute(boolean, seedVec, ed);
+
+        minDistance = averageEdgeLength(boolean) * patchRetractionNRing;
+    }
+
+    computePreservedQuadForMesh(mesh1, boolean, isQuadMesh1, minDistance, preservedQuad1);
+    computePreservedQuadForMesh(mesh2, boolean, isQuadMesh2, minDistance, preservedQuad2);
 }
 
 template<class PolyMeshType>
@@ -224,7 +245,6 @@ void findAffectedPatches(
         }
     }
 }
-
 
 template<class PolyMeshType>
 void getPreservedSurfaceMesh(
@@ -760,9 +780,9 @@ std::vector<int> findBestSideSize(
         return std::vector<int>();
 
 #ifndef NDEBUG
-    const double timeLimit = 10.0;
+    const double timeLimit = 30.0;
 #else
-    const double timeLimit = 5.0;
+    const double timeLimit = 10.0;
 #endif
     const double gapLimit = 0.15;
 
@@ -1292,7 +1312,7 @@ void getResult(
         result.vert[vId].SetS();
     }
 
-    LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.7);
+    LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.8);
 
 
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);

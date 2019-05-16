@@ -23,17 +23,8 @@ INCLUDEPATH += $$LIBIGLPATH/include/
 QMAKE_CXXFLAGS += -isystem $$LIBIGLPATH/include/
 
 #vcglib
-DEFINES += VCGLIB_DEFINED
 INCLUDEPATH += $$VCGLIBPATH
 DEFINES += NOCOMISO
-HEADERS += \
-    $$VCGLIBPATH/wrap/ply/plylib.h \
-    $$VCGLIBPATH/wrap/gui/trackmode.h \
-    $$VCGLIBPATH/wrap/gui/trackball.h
-SOURCES += \
-    $$VCGLIBPATH/wrap/ply/plylib.cpp \
-    $$VCGLIBPATH/wrap/gui/trackmode.cpp \
-    $$VCGLIBPATH/wrap/gui/trackball.cpp
 
 
 # -------------- EXTERNAL LIBRARIES INCLUDES --------------

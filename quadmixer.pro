@@ -67,3 +67,13 @@ HEADERS += \
 
 FORMS += \
     src/interface/quadmixerwindow.ui
+
+
+HEADERS += \
+    $$VCGLIBPATH/wrap/ply/plylib.h \
+    $$VCGLIBPATH/wrap/gui/trackmode.h \
+    $$VCGLIBPATH/wrap/gui/trackball.h
+SOURCES += \
+    $$VCGLIBPATH/wrap/ply/plylib.cpp \
+    $$VCGLIBPATH/wrap/gui/trackmode.cpp \
+    $$VCGLIBPATH/wrap/gui/trackball.cpp

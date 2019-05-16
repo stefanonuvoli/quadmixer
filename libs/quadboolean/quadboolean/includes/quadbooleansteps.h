@@ -68,6 +68,9 @@ void findPreservedQuads(
         TriangleMeshType& triResult,
         const bool isQuadMesh1,
         const bool isQuadMesh2,
+        const std::vector<size_t>& intersectionVertices,
+        const bool patchRetraction,
+        const int patchRetractionNRing,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2);
 

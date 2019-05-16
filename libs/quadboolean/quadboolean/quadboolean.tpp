@@ -5,6 +5,8 @@ namespace QuadBoolean {
 inline Parameters::Parameters()
 {
     motorcycle = DEFAULTMOTORCYCLE;
+    patchRetraction = DEFAULTPATCHRETRACTION;
+    patchRetractionNRing = DEFAULTPATCHRETRACTIONNRING;
     intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
     intersectionSmoothingNRing = DEFAULTINTERSECTIONSMOOTHINGNRING;
     intersectionSmoothingMaxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
@@ -152,6 +154,8 @@ void quadBoolean(
                  mesh1, mesh2,
                  boolean,
                  isQuadMesh1, isQuadMesh2,
+                 intersectionVertices,
+                 parameters.patchRetraction, parameters.patchRetractionNRing,
                  preservedQuad1, preservedQuad2);
 
      //Find affected patches

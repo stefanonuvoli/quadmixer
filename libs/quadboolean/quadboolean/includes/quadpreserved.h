@@ -16,6 +16,7 @@ void computePreservedQuadForMesh(
         PolyMeshType& mesh,
         TriangleMeshType& triResult,
         const bool isQuadMesh,
+        const double minDistance,
         std::vector<bool>& preservedQuad);
 
 template<class PolyMeshType>

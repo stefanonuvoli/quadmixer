@@ -388,60 +388,60 @@ std::vector<int> solveChartSideILPFixedBorders(
 
                     }
                 }
-                //Other cases
-                else {
-                    for (size_t j1 = 0; j1 < nSides; j1++) {
-                        for (size_t j2 = j1+1; j2 < nSides; j2++) {
-                            const ChartSide& side1 = chart.chartSides[j1];
-                            const ChartSide& side2 = chart.chartSides[j2];
+//                //Other cases
+//                else {
+//                    for (size_t j1 = 0; j1 < nSides; j1++) {
+//                        for (size_t j2 = j1+1; j2 < nSides; j2++) {
+//                            const ChartSide& side1 = chart.chartSides[j1];
+//                            const ChartSide& side2 = chart.chartSides[j2];
 
-                            bool areBorders = true;
+//                            bool areBorders = true;
 
-                            GRBLinExpr subSide1Sum = 0;
-                            for (const size_t& subSideId : side1.subsides) {
-                                const ChartSubSide& subSide = chartData.subSides[subSideId];
-                                if (subSide.isOnBorder) {
-                                    subSide1Sum += subSide.size;
-                                }
-                                else {
-                                    subSide1Sum += vars[subSideId];
-                                    areBorders = false;
-                                }
-                            }
-                            GRBLinExpr subSide2Sum = 0;
-                            for (const size_t& subSideId : side2.subsides) {
-                                const ChartSubSide& subSide = chartData.subSides[subSideId];
-                                if (subSide.isOnBorder) {
-                                    subSide2Sum += subSide.size;
-                                }
-                                else {
-                                    subSide2Sum += vars[subSideId];
-                                    areBorders = false;
-                                }
-                            }
+//                            GRBLinExpr subSide1Sum = 0;
+//                            for (const size_t& subSideId : side1.subsides) {
+//                                const ChartSubSide& subSide = chartData.subSides[subSideId];
+//                                if (subSide.isOnBorder) {
+//                                    subSide1Sum += subSide.size;
+//                                }
+//                                else {
+//                                    subSide1Sum += vars[subSideId];
+//                                    areBorders = false;
+//                                }
+//                            }
+//                            GRBLinExpr subSide2Sum = 0;
+//                            for (const size_t& subSideId : side2.subsides) {
+//                                const ChartSubSide& subSide = chartData.subSides[subSideId];
+//                                if (subSide.isOnBorder) {
+//                                    subSide2Sum += subSide.size;
+//                                }
+//                                else {
+//                                    subSide2Sum += vars[subSideId];
+//                                    areBorders = false;
+//                                }
+//                            }
 
 
-                            if (!areBorders) {
-                                if (method == LEASTSQUARES) {
-                                    isoExpr += (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
-                                }
-                                else {
-                                    size_t dId = diff.size();
-                                    size_t aId = abs.size();
+//                            if (!areBorders) {
+//                                if (method == LEASTSQUARES) {
+//                                    isoExpr += (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
+//                                }
+//                                else {
+//                                    size_t dId = diff.size();
+//                                    size_t aId = abs.size();
 
-                                    diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
-                                    abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
+//                                    diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
+//                                    abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
 
-                                    model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
-                                    model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
+//                                    model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
+//                                    model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                                    isoExpr += abs[aId];
-                                }
-                            }
+//                                    isoExpr += abs[aId];
+//                                }
+//                            }
 
-                        }
-                    }
-                }
+//                        }
+//                    }
+//                }
             }
 
             //Even side size sum constraint in a chart

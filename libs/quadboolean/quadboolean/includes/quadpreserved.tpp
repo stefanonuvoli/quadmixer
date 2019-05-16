@@ -13,8 +13,9 @@ int maxHist(const std::vector<int>& row, int& startColumn, int& endColumn);
 template<class PolyMeshType, class TriangleMeshType>
 void computePreservedQuadForMesh(
         PolyMeshType& mesh,
-        TriangleMeshType& triResult,
+        TriangleMeshType& boolean,
         const bool isQuadMesh,
+        const double minDistance,
         std::vector<bool>& preservedQuad)
 {
     preservedQuad.resize(mesh.face.size(), false);
@@ -24,9 +25,9 @@ void computePreservedQuadForMesh(
     }
 
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(mesh);
-    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(triResult);
+    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(boolean);
 
-    vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(triResult);
+    vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(boolean);
 
     std::map<std::set<typename PolyMeshType::CoordType>, size_t> quadMap;
 
@@ -40,24 +41,30 @@ void computePreservedQuadForMesh(
     }
 
 
-    std::vector<bool> isNewSurface(triResult.face.size(), true);
-    for (size_t i = 0; i < triResult.face.size(); i++) {
+    std::vector<bool> isNewSurface(boolean.face.size(), true);
+    for (size_t i = 0; i < boolean.face.size(); i++) {
         if (isNewSurface[i]) {
+            bool closeToIntersectionCurve = false;
+
             std::set<typename TriangleMeshType::CoordType> coordSet;
 
-            for (int k = 0; k < triResult.face[i].VN(); k++) {
-                coordSet.insert(triResult.face[i].V(k)->P());
+            for (int k = 0; k < boolean.face[i].VN(); k++) {
+                coordSet.insert(boolean.face[i].V(k)->P());
+
+                if (boolean.face[i].V(k)->Q() < minDistance) {
+                    closeToIntersectionCurve = true;
+                }
             }
 
-            for (int k = 0; k < triResult.face[i].VN() && isNewSurface[i]; k++) {
-                typename TriangleMeshType::FacePointer fp = triResult.face[i].FFp(k);
+            for (int k = 0; k < boolean.face[i].VN() && !closeToIntersectionCurve && isNewSurface[i]; k++) {
+                typename TriangleMeshType::FacePointer fp = boolean.face[i].FFp(k);
 
-                if (fp == &triResult.face[i])
+                if (fp == &boolean.face[i])
                     continue;
 
                 std::set<typename PolyMeshType::CoordType> coordSetComplete = coordSet;
 
-                int otherFaceEdge = triResult.face[i].FFi(k);
+                int otherFaceEdge = boolean.face[i].FFi(k);
                 int oppositeVert = (otherFaceEdge + 2) % 3;
 
                 coordSetComplete.insert(fp->V(oppositeVert)->P());
@@ -65,10 +72,10 @@ void computePreservedQuadForMesh(
                 typename std::map<std::set<typename PolyMeshType::CoordType>, size_t>::iterator findIt = quadMap.find(coordSetComplete);
                 if (findIt != quadMap.end()) {
                     size_t quadId = findIt->second;
-                    if (mesh.face[quadId].N().dot(triResult.face[i].N()) > 0) {
+                    if (mesh.face[quadId].N().dot(boolean.face[i].N()) > 0) {
                         quadMap.erase(findIt);
 
-                        size_t adjFaceId = vcg::tri::Index(triResult, fp);
+                        size_t adjFaceId = vcg::tri::Index(boolean, fp);
 
                         isNewSurface[adjFaceId] = false;
                         isNewSurface[i] = false;

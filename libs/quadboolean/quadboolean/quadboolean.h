@@ -8,11 +8,13 @@
 #include "includes/quadilp.h"
 
 #define DEFAULTMOTORCYCLE false
-#define DEFAULTMINRECTANGLEAREA 2
-#define DEFAULTMINPATCHAREA 6
+#define DEFAULTPATCHRETRACTION true
+#define DEFAULTPATCHRETRACTIONNRING 3
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
 #define DEFAULTINTERSECTIONSMOOTHINGNRING 3
 #define DEFAULTINTERSECTIONSMOOTHINGMAXBB 0.025
+#define DEFAULTMINRECTANGLEAREA 2
+#define DEFAULTMINPATCHAREA 6
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED false
@@ -35,6 +37,8 @@ namespace QuadBoolean {
 
 struct Parameters {
     bool motorcycle;
+    bool patchRetraction;
+    int patchRetractionNRing;
     int intersectionSmoothingIterations;
     int intersectionSmoothingNRing;
     double intersectionSmoothingMaxBB;

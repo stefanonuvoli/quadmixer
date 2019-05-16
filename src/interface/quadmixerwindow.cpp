@@ -87,7 +87,7 @@ void QuadMixerWindow::detachOperation()
 
     TriangleMesh detachedTriangleMesh1;
     TriangleMesh detachedTriangleMesh2;
-    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 5, 0, true, 0.02);
+    bool result = EnvelopeGenerator<TriangleMesh>::GenerateEnvelope(targetTriangulated, points, detachedTriangleMesh1, detachedTriangleMesh2, 5, 1, true, 0.02);
 
     if (result) {
         PolyMesh detachedPolyMesh1;
@@ -713,6 +713,8 @@ void QuadMixerWindow::doGetSurfaces() {
     start = chrono::steady_clock::now();
 
     bool motorcycle = ui.motorcycleCheckBox->isChecked();
+    bool patchRetraction = ui.patchRetractionCheckBox->isChecked();
+    int patchRetractionAVGNRing = ui.patchRetractionNRingSpinBox->value();
     int minRectangleArea = ui.minRectangleAreaSpinBox->value();
     int minPatchArea = ui.minPatchAreaSpinBox->value();
     bool mergeQuads = ui.mergeCheckBox->isChecked();
@@ -746,6 +748,8 @@ void QuadMixerWindow::doGetSurfaces() {
                 mesh1, mesh2,
                 booleanSmoothed,
                 isQuadMesh1, isQuadMesh2,
+                intersectionVertices,
+                patchRetraction, patchRetractionAVGNRing,
                 preservedQuad1, preservedQuad2);
 
     std::cout << std::endl << " >> "
