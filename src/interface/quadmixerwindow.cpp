@@ -50,7 +50,17 @@ void QuadMixerWindow::booleanOperation()
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target2, "res/booleanoperation2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
+
+    chrono::steady_clock::time_point start;
+
+    start = chrono::steady_clock::now();
+
     QuadBoolean::quadBoolean(*target1, *target2, operation, *booleanResult, parameters);
+
+    std::cout << std::endl << " >> "
+              << "Computed in: "
+              << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
+              << " ms" << std::endl;
 
     hideMesh(target1);
     hideMesh(target2);
@@ -232,6 +242,9 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     int intersectionSmoothingNRing = ui.intersectionSmoothingNRingSpinBox->value();
     double intersectionSmoothingMaxBB = ui.intersectionSmoothingMaxBBSpinBox->value();
 
+    bool patchRetraction = ui.patchRetractionCheckBox->isChecked();
+    int patchRetractionNRing = ui.patchRetractionNRingSpinBox->value();
+
     int minRectangleArea = ui.minRectangleAreaSpinBox->value();
     int minPatchArea = ui.minPatchAreaSpinBox->value();
     bool mergeQuads = ui.mergeCheckBox->isChecked();
@@ -260,6 +273,8 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     parameters.intersectionSmoothingIterations = intersectionSmoothingIterations;
     parameters.intersectionSmoothingNRing = intersectionSmoothingNRing;
     parameters.intersectionSmoothingMaxBB = intersectionSmoothingMaxBB;
+    parameters.patchRetraction = patchRetraction;
+    parameters.patchRetractionNRing = patchRetractionNRing;
     parameters.minRectangleArea = minRectangleArea;
     parameters.minPatchArea = minPatchArea;
     parameters.mergeQuads = mergeQuads;

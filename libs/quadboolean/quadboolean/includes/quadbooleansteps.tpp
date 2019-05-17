@@ -782,9 +782,9 @@ std::vector<int> findBestSideSize(
 #ifndef NDEBUG
     const double timeLimit = 30.0;
 #else
-    const double timeLimit = 10.0;
+    const double timeLimit = 15.0;
 #endif
-    const double gapLimit = 0.2;
+    const double gapLimit = 0.3;
 
     double gap;
     ILPStatus status;
@@ -800,13 +800,13 @@ std::vector<int> findBestSideSize(
             std::cout << "Error! Model was infeasible or time limit exceeded!" << std::endl;
         }
 
-        std::vector<int> ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
+        ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
 
         if (status == ILPStatus::SOLUTIONFOUND) {
             std::cout << "Solution found (ABS)! Gap: " << gap << std::endl;
         }
         else {
-            std::vector<int> ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
+            ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
             std::cout << "Solution found? (ABS without regularity)! Gap: " << gap << std::endl;
         }
     }

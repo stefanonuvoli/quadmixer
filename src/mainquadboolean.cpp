@@ -10,7 +10,7 @@ int main(int argc, char **argv )
 {
     if(argc<5)
     {
-        std::cout << "Usage Quadrangulation <mesh1filename.obj> <+|-|*> <mesh2filename.obj> <resultfilename.obj>\n";
+        std::cout << "Usage Quadrangulation <mesh1.obj> <+|-|*> <mesh2.obj> <result.obj>\n";
         return -1;
     }
 
