@@ -7,7 +7,7 @@
 #include "includes/quadbooleansteps.h"
 #include "includes/quadilp.h"
 
-#define DEFAULTMOTORCYCLE false
+#define DEFAULTMOTORCYCLE true
 #define DEFAULTPATCHRETRACTION true
 #define DEFAULTPATCHRETRACTIONNRING 3
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
