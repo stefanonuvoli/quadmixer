@@ -36,7 +36,7 @@ INCLUDEPATH += $$EIGENPATH
 INCLUDEPATH += $$BOOSTPATH
 
 #glew
-LIBS += -lGLEW -lglut
+LIBS += -lGLEW -lglut -lGLU -lGL
 #just for Linux
 unix:!macx {
     DEFINES += GL_GLEXT_PROTOTYPES

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <random>
 
 #include "quadmixerwindow.h"
 
@@ -67,15 +68,11 @@ void QuadMixerWindow::booleanOperation()
     addMesh(booleanResult);
 
     setLastOperation(target1, target2, booleanResult, nullptr);
-
-    ui.glArea->updateGL();
 }
 
 void QuadMixerWindow::detachOperationSelect()
 {    
     ui.glArea->setDetachMode(true);
-
-    ui.glArea->updateGL();
 }
 
 void QuadMixerWindow::detachOperation()
@@ -112,7 +109,7 @@ void QuadMixerWindow::detachOperation()
     #endif
 
         QuadBoolean::Parameters parameters = getParametersFromUI();
-        parameters.intersectionSmoothingMaxBB = 0.005;
+        parameters.maxBB = 0.005;
         parameters.intersectionSmoothingNRing = 1;
         parameters.intersectionSmoothingIterations = 3;
         parameters.resultSmoothingLaplacianNRing = 2;
@@ -132,8 +129,6 @@ void QuadMixerWindow::detachOperation()
     }
 
     ui.glArea->setDetachMode(false);
-
-    ui.glArea->updateGL();
 }
 
 int QuadMixerWindow::addMesh(const string &filename)
@@ -153,15 +148,15 @@ int QuadMixerWindow::addMesh(PolyMesh* mesh)
         }
     }
 
-    bool isQuadMesh = QuadBoolean::internal::isQuadMesh(*mesh);
+//    bool isQuadMesh = QuadBoolean::internal::isQuadMesh(*mesh);
 
-    if (!isQuadMesh && !QuadBoolean::internal::isTriangleMesh(*mesh)) {
-        mesh->Clear();
-        delete mesh;
+//    if (!isQuadMesh && !QuadBoolean::internal::isTriangleMesh(*mesh)) {
+//        mesh->Clear();
+//        delete mesh;
 
-        QMessageBox::warning(this, QString("Error"), QString("Meshes must be either quad or triangle."));
-        return -1;
-    }
+//        QMessageBox::warning(this, QString("Error"), QString("Meshes must be either quad or triangle."));
+//        return -1;
+//    }
 
     size_t id = ui.glArea->addMesh(mesh);
     assert(id == meshes.size());
@@ -181,7 +176,6 @@ void QuadMixerWindow::hideMesh(const size_t& id)
 {
     ui.glArea->removeMesh(id);
     meshes[id] = nullptr;
-    ui.glArea->updateGL();
 }
 
 void QuadMixerWindow::setLastOperation(
@@ -212,12 +206,14 @@ void QuadMixerWindow::setLastOperation(
 
 void QuadMixerWindow::undoLastOperation()
 {
+    int id1 = -1;
+    int id2 = -1;
     if (lastTarget1 != nullptr) {
-        addMesh(lastTarget1);
+        id1 = addMesh(lastTarget1);
         lastTarget1 = nullptr;
     }
     if (lastTarget2 != nullptr) {
-        addMesh(lastTarget2);
+        id2 = addMesh(lastTarget2);
         lastTarget2 = nullptr;
     }
     if (lastResult1 != nullptr) {
@@ -230,6 +226,12 @@ void QuadMixerWindow::undoLastOperation()
         delete lastResult2;
         lastResult2 = nullptr;
     }
+    if (id1 >= 0) {
+        ui.glArea->selectTargetMesh(id1);
+    }
+    if (id2 >= 0) {
+        ui.glArea->selectTargetMesh(id2);
+    }
 }
 
 QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
@@ -239,11 +241,11 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     bool motorcycle = ui.motorcycleCheckBox->isChecked();
 
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
-    int intersectionSmoothingNRing = ui.intersectionSmoothingNRingSpinBox->value();
-    double intersectionSmoothingMaxBB = ui.intersectionSmoothingMaxBBSpinBox->value();
+    double intersectionSmoothingNRing = ui.intersectionSmoothingNRingSpinBox->value();
+    double maxBB = ui.maxBBSpinBox->value();
 
     bool patchRetraction = ui.patchRetractionCheckBox->isChecked();
-    int patchRetractionNRing = ui.patchRetractionNRingSpinBox->value();
+    double patchRetractionNRing = ui.patchRetractionNRingSpinBox->value();
 
     int minRectangleArea = ui.minRectangleAreaSpinBox->value();
     int minPatchArea = ui.minPatchAreaSpinBox->value();
@@ -257,6 +259,13 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     bool splitConcaves = ui.splitConcavesCheckBox->isChecked();
     bool finalSmoothing = ui.finalSmoothingCheckBox->isChecked();
 
+    QuadBoolean::ILPMethod ilpMethod;
+    if (ui.ilpMethodLSRadio->isChecked()) {
+        ilpMethod = QuadBoolean::ILPMethod::LEASTSQUARES;
+    }
+    else if (ui.ilpMethodABSRadio->isChecked()) {
+        ilpMethod = QuadBoolean::ILPMethod::ABS;
+    }
     double alpha = ui.alphaSpinBox->value();
     double beta = ui.betaSpinBox->value();
 
@@ -264,15 +273,16 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     int quadrangulationSmoothingIterations = ui.quadrangulationSmoothingSpinBox->value();
 
     int resultSmoothingIterations = ui.resultSmoothingSpinBox->value();
-    int resultSmoothingNRing = ui.resultSmoothingNRingSpinBox->value();
+    double resultSmoothingNRing = ui.resultSmoothingNRingSpinBox->value();
 
     int resultSmoothingLaplacianIterations = ui.resultSmoothingLaplacianSpinBox->value();
-    int resultSmoothingLaplacianNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
+    double resultSmoothingLaplacianNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
+
 
     parameters.motorcycle = motorcycle;
     parameters.intersectionSmoothingIterations = intersectionSmoothingIterations;
     parameters.intersectionSmoothingNRing = intersectionSmoothingNRing;
-    parameters.intersectionSmoothingMaxBB = intersectionSmoothingMaxBB;
+    parameters.maxBB = maxBB;
     parameters.patchRetraction = patchRetraction;
     parameters.patchRetractionNRing = patchRetractionNRing;
     parameters.minRectangleArea = minRectangleArea;
@@ -285,6 +295,7 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     parameters.reproject = reproject;
     parameters.splitConcaves = splitConcaves;
     parameters.finalSmoothing = finalSmoothing;
+    parameters.ilpMethod = ilpMethod;
     parameters.alpha = alpha;
     parameters.beta = beta;
     parameters.chartSmoothingIterations = chartSmoothingIterations;
@@ -413,6 +424,7 @@ void QuadMixerWindow::on_deleteMeshButton_clicked()
             QMessageBox::warning(this, QString("Error"), QString("Please select the mesh to be deleted."));
         }
     }
+    ui.glArea->updateGL();
 }
 
 void QuadMixerWindow::on_deleteAllButton_clicked()
@@ -436,6 +448,7 @@ void QuadMixerWindow::on_deleteAllButton_clicked()
     ui.glArea->setDetachMode(false);
 
     ui.glArea->deselectTransformationMesh();
+    ui.glArea->updateGL();
 }
 
 
@@ -466,6 +479,7 @@ void QuadMixerWindow::on_booleanOperationButton_clicked()
     }
     else {
         booleanOperation();
+        ui.glArea->updateGL();
     }
 }
 
@@ -495,6 +509,7 @@ void QuadMixerWindow::on_detachButton_clicked()
             QMessageBox::warning(this, QString("Error"), QString("Please select a mesh for the detach operation."));
         }
     }
+    ui.glArea->updateGL();
 }
 
 void QuadMixerWindow::on_abortDetachButton_clicked()
@@ -511,13 +526,15 @@ void QuadMixerWindow::on_undoButton_clicked()
         QMessageBox::warning(this, QString("Error"), QString("There is no operation to undo."));
     }
     else {
-        undoLastOperation();
+        undoLastOperation();        
+        ui.glArea->updateGL();
     }
 }
 
 void QuadMixerWindow::on_resetSceneButton_clicked()
 {
     ui.glArea->resetSceneOnMeshes();
+    ui.glArea->updateGL();
 }
 
 
@@ -580,6 +597,7 @@ void QuadMixerWindow::on_debugModeButton_clicked()
     }
 
     updateVisibility();
+    ui.glArea->updateGL();
 }
 
 
@@ -675,8 +693,8 @@ void QuadMixerWindow::doSmooth()
     start = chrono::steady_clock::now();
 
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
-    int intersectionNRing = ui.intersectionSmoothingNRingSpinBox->value();
-    double intersectionSmoothingMaxBB = ui.intersectionSmoothingMaxBBSpinBox->value();
+    double intersectionNRing = ui.intersectionSmoothingNRingSpinBox->value();
+    double maxBB = ui.maxBBSpinBox->value();
 
     //Copy mesh
     vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(booleanSmoothed, boolean);
@@ -689,11 +707,12 @@ void QuadMixerWindow::doSmooth()
                 intersectionVertices,
                 intersectionSmoothingIterations,
                 intersectionNRing,
-                intersectionSmoothingMaxBB);
+                maxBB);
 
     vcg::tri::UpdateNormal<TriangleMesh>::PerFaceNormalized(booleanSmoothed);
     vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalized(booleanSmoothed);
     vcg::tri::UpdateBounding<TriangleMesh>::Box(booleanSmoothed);
+    
     vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalizedPerFace(booleanSmoothed);
 
     std::cout << std::endl << " >> "
@@ -729,12 +748,13 @@ void QuadMixerWindow::doGetSurfaces() {
 
     bool motorcycle = ui.motorcycleCheckBox->isChecked();
     bool patchRetraction = ui.patchRetractionCheckBox->isChecked();
-    int patchRetractionAVGNRing = ui.patchRetractionNRingSpinBox->value();
+    double patchRetractionAVGNRing = ui.patchRetractionNRingSpinBox->value();
     int minRectangleArea = ui.minRectangleAreaSpinBox->value();
     int minPatchArea = ui.minPatchAreaSpinBox->value();
     bool mergeQuads = ui.mergeCheckBox->isChecked();
     bool deleteSmall = ui.deleteSmallCheckBox->isChecked();
     bool deleteNonConnected = ui.deleteNonConnectedCheckBox->isChecked();
+    double maxBB = ui.maxBBSpinBox->value();
 
     //Trace quads following singularities
     QuadBoolean::internal::traceQuads(mesh1, quadTracerLabel1, motorcycle);
@@ -764,7 +784,9 @@ void QuadMixerWindow::doGetSurfaces() {
                 booleanSmoothed,
                 isQuadMesh1, isQuadMesh2,
                 intersectionVertices,
-                patchRetraction, patchRetractionAVGNRing,
+                patchRetraction,
+                patchRetractionAVGNRing,
+                maxBB,
                 preservedQuad1, preservedQuad2);
 
     std::cout << std::endl << " >> "
@@ -1015,10 +1037,10 @@ void QuadMixerWindow::doGetResult()
     result.Clear();
 
     int resultSmoothingIterations = ui.resultSmoothingSpinBox->value();
-    int resultSmoothingNRing = ui.resultSmoothingNRingSpinBox->value();
+    double resultSmoothingNRing = ui.resultSmoothingNRingSpinBox->value();
 
     int resultSmoothingLaplacianIterations = ui.resultSmoothingLaplacianSpinBox->value();
-    int resultSmoothingLaplacianNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
+    double resultSmoothingLaplacianNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
 
 
     start = chrono::steady_clock::now();
@@ -1553,3 +1575,242 @@ void QuadMixerWindow::on_autoRotateButton_clicked()
 {
     ui.glArea->autoRotate();
 }
+
+void QuadMixerWindow::on_continuityTestButton_clicked()
+{
+    double dimY = ui.glArea->targetMesh1->mesh->bbox.DimY() - ui.glArea->targetMesh1->mesh->bbox.DimY()*1.3/3;
+    continuityLength = dimY;
+    continuityOffset = 0;
+
+    QTimer::singleShot(0, this, SLOT(continuityTest()));
+}
+
+void QuadMixerWindow::on_continuityTestMetricButton_clicked()
+{
+    double dimY = ui.glArea->targetMesh1->mesh->bbox.DimY() - ui.glArea->targetMesh1->mesh->bbox.DimY()*1.3/3;
+    continuityLength = dimY;
+    continuityOffset = 0;
+
+    QTimer::singleShot(0, this, SLOT(continuityTestMetric()));
+}
+
+void QuadMixerWindow::continuityTest()
+{
+    undoLastOperation();
+
+    if (continuityOffset > continuityLength || ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
+        return;
+    }
+
+    PolyMesh* target2 = ui.glArea->targetMesh2->mesh;
+
+    double continuityStep = continuityLength/40;
+    vcg::Point3d tr(0, -continuityStep, 0);
+
+    for (size_t i = 0; i < target2->vert.size(); i++) {
+        target2->vert[i].P() += tr;
+    }
+
+    booleanOperation();
+    ui.glArea->updateGL();
+
+    continuityOffset += continuityStep;
+
+    QTimer::singleShot(0, this, SLOT(continuityTest()));
+}
+
+void QuadMixerWindow::saveScreenshot(const std::string& filename) {
+    int windowWidth = ui.glArea->width();
+    int windowHeight = ui.glArea->height();
+    const int numberOfPixels = windowWidth * windowHeight * 3;
+    unsigned char pixels[numberOfPixels];
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, windowWidth, windowHeight, GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels);
+
+    FILE *outputFile = fopen(filename.c_str(), "w");
+    short header[] = {0, 2, 0, 0, 0, 0, (short) windowWidth, (short) windowHeight, 24};
+
+    fwrite(&header, sizeof(header), 1, outputFile);
+    fwrite(pixels, numberOfPixels, 1, outputFile);
+    fclose(outputFile);
+}
+
+void QuadMixerWindow::continuityTestMetric()
+{
+    if (continuityOffset > continuityLength || ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
+        undoLastOperation();
+        return;
+    }
+
+    PolyMesh* target2 = ui.glArea->targetMesh2->mesh;
+    PolyMesh* target1 = ui.glArea->targetMesh1->mesh;
+
+    double continuityStep = continuityLength/40;
+    vcg::Point3d tr(0, -continuityStep, 0);
+
+    QuadBoolean::Parameters parameters = getParametersFromUI();
+    QuadBoolean::Operation operation = getOperationFromUI();
+
+    std::vector<vcg::Point3d> translateVectors;
+
+//    for (double i = 0; i <= 0; i += 0.5) {
+//        for (double j = -3; j <= 3; j += 0.5) {
+//            for (double k = 0; k <= 0; k += 0.5) {
+//                translateVectors.push_back(continuityStep*vcg::Point3d(i, j, k));
+//            }
+//        }
+//    }
+    translateVectors.push_back(vcg::Point3d(0,0,0));
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> rand(0,1);
+    for (double i = 0; i < 20; i++) {
+        translateVectors.push_back(vcg::Point3d(rand(rng), rand(rng), rand(rng))/1000);
+    }
+
+    static int nResult = 0;
+
+    PolyMesh exactResult;    
+
+    for (size_t i = 0; i < target2->vert.size(); i++) {
+        target2->vert[i].P() += tr;
+    }
+
+    QuadBoolean::quadBoolean(*target1, *target2, operation, exactResult, parameters);
+
+
+    PolyMesh* drawMeshExact = new PolyMesh();
+    vcg::tri::Append<PolyMesh,PolyMesh>::Mesh(*drawMeshExact, exactResult);
+
+    hideMesh(target1);
+    hideMesh(target2);
+    addMesh(drawMeshExact);
+
+    setLastOperation(target1, target2, drawMeshExact, nullptr);
+
+    ui.glArea->updateGL();
+
+    std::string filenameExact("img/exactresult_" + std::to_string(nResult) + ".tga");
+    saveScreenshot(filenameExact);
+
+    undoLastOperation();
+
+    vcg::tri::UpdateNormal<PolyMesh>::PerFaceNormalized(exactResult);
+    vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalized(exactResult);
+    vcg::tri::UpdateBounding<PolyMesh>::Box(exactResult);
+    vcg::tri::UpdateNormal<PolyMesh>::PerVertexNormalizedPerFace(exactResult);
+
+    vcg::tri::UpdateBounding<PolyMesh>::Box(exactResult);
+    typename PolyMesh::ScalarType maxD=exactResult.bbox.Diag();
+    typename PolyMesh::ScalarType minD=0;
+
+    vcg::GridStaticPtr<typename PolyMesh::FaceType,typename PolyMesh::FaceType::ScalarType> Grid;
+    Grid.Set(exactResult.face.begin(),exactResult.face.end());
+
+    PolyMesh bestResult;
+    double bestScore = std::numeric_limits<double>::max();
+    int nImage = 0;
+    for (const vcg::Point3d& vec : translateVectors) {
+        PolyMesh tmpTarget1, tmpTarget2, tmpResult;
+        vcg::tri::Append<PolyMesh,PolyMesh>::Mesh(tmpTarget1, *target1);
+        vcg::tri::Append<PolyMesh,PolyMesh>::Mesh(tmpTarget2, *target2);
+
+        for (size_t i = 0; i < tmpTarget2.vert.size(); i++) {
+            tmpTarget2.vert[i].P() += vec;
+        }
+
+        QuadBoolean::quadBoolean(tmpTarget1, tmpTarget2, operation, tmpResult, parameters);
+
+
+        double qualityScore = 0;
+        vcg::PolygonalAlgorithm<PolyMesh>::UpdateQuality(tmpResult, vcg::PolygonalAlgorithm<PolyMesh>::QTemplate);
+        for (size_t i = 0; i < tmpResult.face.size(); i++) {
+            qualityScore += tmpResult.face[i].Q();
+        }
+        qualityScore /= tmpResult.face.size();
+
+        double singScore = 0;
+        vcg::tri::UpdateQuality<PolyMesh>::VertexValence(tmpResult);
+        for (size_t i = 0; i < tmpResult.vert.size(); i++) {
+            singScore += std::fabs(4.0 - tmpResult.vert[i].Q());
+        }
+        singScore /= tmpResult.vert.size();
+
+//        //Reproject
+//        for (size_t i=0;i<tmpResult.vert.size();i++)
+//        {
+//            typename PolyMesh::CoordType closestPT;
+//            typename PolyMesh::FaceType *f=
+//                    vcg::tri::GetClosestFaceBase<PolyMesh>(
+//                        exactResult,
+//                        Grid,
+//                        tmpResult.vert[i].P(),
+//                        maxD,minD,
+//                        closestPT);
+
+//            tmpResult.vert[i].P()=closestPT;
+//        }
+
+        double score = 0.3*qualityScore + 0.7*singScore;
+        if (score < bestScore) {
+            bestScore = score;
+            bestResult.Clear();
+            vcg::tri::Append<PolyMesh,PolyMesh>::Mesh(bestResult, tmpResult);
+        }
+
+        PolyMesh* drawMeshFrame = new PolyMesh();
+        vcg::tri::Append<PolyMesh,PolyMesh>::Mesh(*drawMeshFrame, tmpResult);
+
+
+        hideMesh(target1);
+        hideMesh(target2);
+        addMesh(drawMeshFrame);
+
+        setLastOperation(target1, target2, drawMeshFrame, nullptr);
+
+        ui.glArea->updateGL();
+
+        std::string filename("img/frame_" + std::to_string(nResult) + "_attempt_" + std::to_string(nImage++) + ".tga");
+        saveScreenshot(filename);
+
+        undoLastOperation();
+    }
+
+
+//    //Reproject
+//    for (size_t i=0;i<bestResult.vert.size();i++)
+//    {
+//        typename PolyMesh::CoordType closestPT;
+//        typename PolyMesh::FaceType *f=
+//                vcg::tri::GetClosestFaceBase<PolyMesh>(
+//                    exactResult,
+//                    Grid,
+//                    bestResult.vert[i].P(),
+//                    maxD,minD,
+//                    closestPT);
+
+//        bestResult.vert[i].P()=closestPT;
+//    }
+
+    PolyMesh* drawMeshResult = new PolyMesh();
+    vcg::tri::Append<PolyMesh,PolyMesh>::Mesh(*drawMeshResult, bestResult);
+
+    hideMesh(target1);
+    hideMesh(target2);
+    addMesh(drawMeshResult);
+
+    setLastOperation(target1, target2, drawMeshResult, nullptr);
+
+    ui.glArea->updateGL();
+
+    std::string filename("img/result_" + std::to_string(nResult++) + ".tga");
+    saveScreenshot(filename);
+
+    undoLastOperation();
+
+    continuityOffset += continuityStep;
+    QTimer::singleShot(0, this, SLOT(continuityTestMetric()));
+}
+

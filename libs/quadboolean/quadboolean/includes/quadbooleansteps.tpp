@@ -172,7 +172,7 @@ void smoothAlongIntersectionVertices(
         Eigen::MatrixXi& FR,
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
-        const int avgNRing,
+        const double avgNRing,
         const double maxBB)
 {
     vcg::tri::UpdateBounding<TriangleMeshType>::Box(boolean);
@@ -205,11 +205,13 @@ void findPreservedQuads(
         const bool isQuadMesh2,
         const std::vector<size_t>& intersectionVertices,
         const bool patchRetraction,
-        const int patchRetractionNRing,
+        const double patchRetractionNRing,
+        const double maxBB,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2)
 {
-    typename TriangleMeshType::ScalarType minDistance = 0;
+
+    typename TriangleMeshType::ScalarType maxDistance = 0;
 
     for (size_t i = 0; i < boolean.vert.size(); i++) {
         boolean.vert[i].Q() = 0;
@@ -224,11 +226,11 @@ void findPreservedQuads(
         vcg::tri::UpdateTopology<TriangleMeshType>::VertexFace(boolean);
         vcg::tri::Geodesic<TriangleMeshType>::Compute(boolean, seedVec, ed);
 
-        minDistance = averageEdgeLength(boolean) * patchRetractionNRing;
+        maxDistance = std::min(averageEdgeLength(boolean) * patchRetractionNRing, boolean.bbox.Diag()*maxBB);
     }
 
-    computePreservedQuadForMesh(mesh1, boolean, isQuadMesh1, minDistance, preservedQuad1);
-    computePreservedQuadForMesh(mesh2, boolean, isQuadMesh2, minDistance, preservedQuad2);
+    computePreservedQuadForMesh(mesh1, boolean, isQuadMesh1, maxDistance, preservedQuad1);
+    computePreservedQuadForMesh(mesh2, boolean, isQuadMesh2, maxDistance, preservedQuad2);
 }
 
 template<class PolyMeshType>
@@ -1178,9 +1180,9 @@ void getResult(
         PolyMeshType& result,
         TriangleMeshType& targetBoolean,
         const int resultSmoothingIterations,
-        const int resultSmoothingAvgNRing,
+        const double resultSmoothingAvgNRing,
         const int resultSmoothingLaplacianIterations,
-        const int resultSmoothingLaplacianAvgNRing,
+        const double resultSmoothingLaplacianAvgNRing,
         std::vector<size_t>& preservedFacesIds,
         std::vector<size_t>& newFacesIds)
 {

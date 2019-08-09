@@ -46,6 +46,7 @@ public:
     void resetSceneOnMeshes();
 
     void selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap);
+    void selectTargetMesh(size_t id);
     void deselectTargetMeshes();
     void selectTransformationMesh(GLPolyWrap<PolyMesh>* meshWrap);
     void deselectTransformationMesh();

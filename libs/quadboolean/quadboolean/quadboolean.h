@@ -38,10 +38,10 @@ namespace QuadBoolean {
 struct Parameters {
     bool motorcycle;
     bool patchRetraction;
-    int patchRetractionNRing;
+    double patchRetractionNRing;
     int intersectionSmoothingIterations;
-    int intersectionSmoothingNRing;
-    double intersectionSmoothingMaxBB;
+    double intersectionSmoothingNRing;
+    double maxBB;
     int minRectangleArea;
     int minPatchArea;
     bool mergeQuads;
@@ -58,9 +58,9 @@ struct Parameters {
     int chartSmoothingIterations;
     int quadrangulationSmoothingIterations;
     int resultSmoothingIterations;
-    int resultSmoothingNRing;
+    double resultSmoothingNRing;
     int resultSmoothingLaplacianIterations;
-    int resultSmoothingLaplacianNRing;
+    double resultSmoothingLaplacianNRing;
 
     Parameters();
 };

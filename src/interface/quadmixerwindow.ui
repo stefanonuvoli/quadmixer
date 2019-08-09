@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1746</width>
-    <height>761</height>
+    <width>1788</width>
+    <height>823</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -252,6 +252,20 @@
               <widget class="QPushButton" name="autoRotateButton">
                <property name="text">
                 <string>Auto rotate</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="continuityTestButton">
+               <property name="text">
+                <string>Continuity test</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="continuityTestMetricButton">
+               <property name="text">
+                <string>Metric cont test</string>
                </property>
               </widget>
              </item>
@@ -762,15 +776,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="intersectionSmoothingNRingSpinBox">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>20</number>
-                  </property>
+                 <widget class="QDoubleSpinBox" name="intersectionSmoothingNRingSpinBox">
                   <property name="value">
-                   <number>3</number>
+                   <double>2.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -785,21 +793,21 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="patchRetractionNRingSpinBox">
+                 <widget class="QDoubleSpinBox" name="patchRetractionNRingSpinBox">
                   <property name="value">
-                   <number>3</number>
+                   <double>2.000000000000000</double>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="intersectionSmoothingMaxBBLabel">
+                 <widget class="QLabel" name="maxBBLabel">
                   <property name="text">
                    <string>MaxB</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QDoubleSpinBox" name="intersectionSmoothingMaxBBSpinBox">
+                 <widget class="QDoubleSpinBox" name="maxBBSpinBox">
                   <property name="decimals">
                    <number>3</number>
                   </property>
@@ -813,7 +821,7 @@
                    <double>0.010000000000000</double>
                   </property>
                   <property name="value">
-                   <double>0.025000000000000</double>
+                   <double>0.030000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -853,7 +861,7 @@
                    <number>200</number>
                   </property>
                   <property name="value">
-                   <number>6</number>
+                   <number>4</number>
                   </property>
                  </widget>
                 </item>
@@ -1099,15 +1107,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="resultSmoothingNRingSpinBox">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>20</number>
-                  </property>
+                 <widget class="QDoubleSpinBox" name="resultSmoothingNRingSpinBox">
                   <property name="value">
-                   <number>3</number>
+                   <double>3.000000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -1136,29 +1138,13 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="resultSmoothingLaplacianNRingSpinBox">
-                  <property name="minimum">
-                   <number>1</number>
-                  </property>
-                  <property name="maximum">
-                   <number>20</number>
-                  </property>
+                 <widget class="QDoubleSpinBox" name="resultSmoothingLaplacianNRingSpinBox">
                   <property name="value">
-                   <number>3</number>
+                   <double>3.000000000000000</double>
                   </property>
                  </widget>
                 </item>
                </layout>
-              </widget>
-             </item>
-             <item>
-              <widget class="QFrame" name="frame">
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
-               </property>
-               <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
-               </property>
               </widget>
              </item>
             </layout>
@@ -1214,7 +1200,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1746</width>
+     <width>1788</width>
      <height>22</height>
     </rect>
    </property>

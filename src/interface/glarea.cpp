@@ -121,7 +121,6 @@ void GLArea::resetSceneOnMeshes()
     sceneRadius = radius*0.8f;
 
     sceneTrackball.Reset();
-    updateGL();
 }
 
 static void drawMesh(std::vector<GLPolyWrap<QuadBoolean::PolyMesh>>::value_type& meshWrap)
@@ -180,8 +179,6 @@ void GLArea::manageDoubleClick(const int &x, const int &y)
                         targetMesh1->pickedPoints.clear();
                     }
                 }
-
-                updateGL();
             }
         }
     }
@@ -211,9 +208,13 @@ void GLArea::selectTargetMesh(GLPolyWrap<PolyMesh>* meshWrap)
 
         selectTargetMesh(meshWrap);
     }
-
-    updateGL();
 }
+
+void GLArea::selectTargetMesh(size_t id)
+{
+    selectTargetMesh(&glWrapMeshes[id]);
+}
+
 
 void GLArea::deselectTargetMeshes() {
     if (targetMesh1 != nullptr) {
@@ -249,8 +250,6 @@ void GLArea::selectTransformationMesh(GLPolyWrap<PolyMesh>* meshWrap)
     transformationMeshTrackball.radius = static_cast<float>(maxDiag/2);
 
     transformationMeshTrackball.Reset();
-
-    updateGL();
 }
 
 void GLArea::deselectTransformationMesh() {
@@ -549,8 +548,6 @@ void GLArea::updateRotate()
         currentAngle = 0;
         rotationTimer.stop();
     }
-
-    updateGL();
 }
 
 

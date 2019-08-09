@@ -15,7 +15,7 @@ void computePreservedQuadForMesh(
         PolyMeshType& mesh,
         TriangleMeshType& boolean,
         const bool isQuadMesh,
-        const double minDistance,
+        const double maxDistance,
         std::vector<bool>& preservedQuad)
 {
     preservedQuad.resize(mesh.face.size(), false);
@@ -51,7 +51,7 @@ void computePreservedQuadForMesh(
             for (int k = 0; k < boolean.face[i].VN(); k++) {
                 coordSet.insert(boolean.face[i].V(k)->P());
 
-                if (boolean.face[i].V(k)->Q() < minDistance) {
+                if (boolean.face[i].V(k)->Q() < maxDistance) {
                     closeToIntersectionCurve = true;
                 }
             }

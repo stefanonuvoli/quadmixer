@@ -40,6 +40,7 @@ public:
             PolyMesh* result2);
     void undoLastOperation();
 
+    void saveScreenshot(const std::string &filename);
 private:
 
     Ui::mainWindow ui;
@@ -130,6 +131,11 @@ private slots:
 
     void on_autoRotateButton_clicked();
 
+    void on_continuityTestButton_clicked();
+    void on_continuityTestMetricButton_clicked();
+    void continuityTest();
+    void continuityTestMetric();
+
 private:
 
     PolyMesh mesh1;
@@ -187,6 +193,8 @@ private:
     std::vector<size_t> preservedFaceIds;
     std::vector<size_t> newFaceIds;
 
+    double continuityLength;
+    double continuityOffset;
 
     template<class MeshType>
     void colorizeMesh(

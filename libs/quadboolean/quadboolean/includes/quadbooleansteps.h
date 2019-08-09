@@ -58,7 +58,7 @@ void smoothAlongIntersectionVertices(
         Eigen::MatrixXi& FR,
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
-        const int avgNRing,
+        const double avgNRing,
         const double maxBB);
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -70,7 +70,8 @@ void findPreservedQuads(
         const bool isQuadMesh2,
         const std::vector<size_t>& intersectionVertices,
         const bool patchRetraction,
-        const int patchRetractionNRing,
+        const double patchRetractionNRing,
+        const double maxBB,
         std::vector<bool>& preservedQuad1,
         std::vector<bool>& preservedQuad2);
 
@@ -144,9 +145,9 @@ void getResult(
         PolyMeshType& result,
         TriangleMeshType& targetBoolean,
         const int resultSmoothingIterations,
-        const int resultSmoothingAvgNRing,
+        const double resultSmoothingAvgNRing,
         const int resultSmoothingLaplacianIterations,
-        const int resultSmoothingLaplacianAvgNRing,
+        const double resultSmoothingLaplacianAvgNRing,
         std::vector<size_t>& preservedFacesId,
         std::vector<size_t>& newFacesIds);
 

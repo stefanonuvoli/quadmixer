@@ -4,7 +4,7 @@
 EIGENPATH = /usr/include/eigen3
 BOOSTPATH = /usr/include/boost
 CGALPATH = /usr/include/CGAL
-GUROBIPATH = /usr/include/gurobi
+GUROBIPATH = /usr/include/gurobi811/linux64
 GLPATH = /usr/include/GL
 
 #######################################################################

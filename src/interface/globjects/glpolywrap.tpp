@@ -29,7 +29,10 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
         glEnable(GL_LIGHTING);
 
         glDisable(GL_CULL_FACE);
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+//        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+
+
+//        glShadeModel(GL_SMOOTH);
 
         //vcg::glColor(vcg::Color4b(200,200,200,255));
 
@@ -54,6 +57,10 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
 
             glBegin(GL_POLYGON);
 
+//            for(int j=0; j<face[i].VN(); j++) {
+//                vcg::glNormal(face[i].V(j)->N() );
+//                vcg::glVertex(face[i].V(j)->P() );
+//            }
             vcg::glNormal(face[i].N());
             for(int j=0; j<face[i].VN(); j++)
                 vcg::glVertex(face[i].V(j)->P() );

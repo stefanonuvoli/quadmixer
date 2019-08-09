@@ -9,7 +9,7 @@ inline Parameters::Parameters()
     patchRetractionNRing = DEFAULTPATCHRETRACTIONNRING;
     intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
     intersectionSmoothingNRing = DEFAULTINTERSECTIONSMOOTHINGNRING;
-    intersectionSmoothingMaxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
+    maxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
     minRectangleArea = DEFAULTMINRECTANGLEAREA;
     minPatchArea = DEFAULTMINPATCHAREA;
     mergeQuads = DEFAULTMERGEQUADS;
@@ -137,7 +137,7 @@ void quadBoolean(
                  intersectionVertices,
                  parameters.intersectionSmoothingIterations,
                  parameters.intersectionSmoothingNRing,
-                 parameters.intersectionSmoothingMaxBB);
+                 parameters.maxBB);
 
 
      //Trace quads following singularities
@@ -154,8 +154,9 @@ void quadBoolean(
                  mesh1, mesh2,
                  boolean,
                  isQuadMesh1, isQuadMesh2,
-                 intersectionVertices,
+                 intersectionVertices,                 
                  parameters.patchRetraction, parameters.patchRetractionNRing,
+                 parameters.maxBB,
                  preservedQuad1, preservedQuad2);
 
      //Find affected patches
