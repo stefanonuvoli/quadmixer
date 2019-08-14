@@ -294,6 +294,8 @@ std::vector<int> solveChartSideILPFixedBorders(
             }
         }
 
+        std::cout << chartData.subSides.size() << " subsides!" << std::endl;
+
         if (regularity) {
             GRBQuadExpr regExpr = 0;
             const double regCost = alpha;

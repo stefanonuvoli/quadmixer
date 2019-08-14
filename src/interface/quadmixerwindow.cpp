@@ -148,15 +148,22 @@ int QuadMixerWindow::addMesh(PolyMesh* mesh)
         }
     }
 
-//    bool isQuadMesh = QuadBoolean::internal::isQuadMesh(*mesh);
 
-//    if (!isQuadMesh && !QuadBoolean::internal::isTriangleMesh(*mesh)) {
+    bool isQuadMesh = QuadBoolean::internal::isQuadMesh(*mesh);
+    if (!isQuadMesh && !QuadBoolean::internal::isTriangleMesh(*mesh)) {
 //        mesh->Clear();
 //        delete mesh;
 
-//        QMessageBox::warning(this, QString("Error"), QString("Meshes must be either quad or triangle."));
+        QMessageBox::warning(this, QString("Error"), QString("Meshes must be either quad or triangle. Please don't use it for boolean operations. Red faces shows triangles"));
+
+        for (size_t fId = 0; fId < mesh->face.size(); fId++) {
+            if (mesh->face[fId].VN() != 4) {
+                mesh->face[fId].C() = vcg::Color4b(255,0,0,255);
+                std::cout << "Non quad: " << fId << std::endl;
+            }
+        }
 //        return -1;
-//    }
+    }
 
     size_t id = ui.glArea->addMesh(mesh);
     assert(id == meshes.size());
@@ -1585,39 +1592,6 @@ void QuadMixerWindow::on_continuityTestButton_clicked()
     QTimer::singleShot(0, this, SLOT(continuityTest()));
 }
 
-void QuadMixerWindow::on_continuityTestMetricButton_clicked()
-{
-    double dimY = ui.glArea->targetMesh1->mesh->bbox.DimY() - ui.glArea->targetMesh1->mesh->bbox.DimY()*1.3/3;
-    continuityLength = dimY;
-    continuityOffset = 0;
-
-    QTimer::singleShot(0, this, SLOT(continuityTestMetric()));
-}
-
-void QuadMixerWindow::continuityTest()
-{
-    undoLastOperation();
-
-    if (continuityOffset > continuityLength || ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
-        return;
-    }
-
-    PolyMesh* target2 = ui.glArea->targetMesh2->mesh;
-
-    double continuityStep = continuityLength/40;
-    vcg::Point3d tr(0, -continuityStep, 0);
-
-    for (size_t i = 0; i < target2->vert.size(); i++) {
-        target2->vert[i].P() += tr;
-    }
-
-    booleanOperation();
-    ui.glArea->updateGL();
-
-    continuityOffset += continuityStep;
-
-    QTimer::singleShot(0, this, SLOT(continuityTest()));
-}
 
 void QuadMixerWindow::saveScreenshot(const std::string& filename) {
     int windowWidth = ui.glArea->width();
@@ -1637,7 +1611,7 @@ void QuadMixerWindow::saveScreenshot(const std::string& filename) {
     fclose(outputFile);
 }
 
-void QuadMixerWindow::continuityTestMetric()
+void QuadMixerWindow::continuityTest()
 {
     if (continuityOffset > continuityLength || ui.glArea->targetMesh1 == nullptr || ui.glArea->targetMesh2 == nullptr) {
         undoLastOperation();

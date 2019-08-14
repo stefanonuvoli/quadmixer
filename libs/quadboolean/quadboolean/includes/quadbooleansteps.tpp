@@ -784,7 +784,7 @@ std::vector<int> findBestSideSize(
 #ifndef NDEBUG
     const double timeLimit = 30.0;
 #else
-    const double timeLimit = 15.0;
+    const double timeLimit = 5.0;
 #endif
     const double gapLimit = 0.3;
 

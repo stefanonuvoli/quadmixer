@@ -132,9 +132,7 @@ private slots:
     void on_autoRotateButton_clicked();
 
     void on_continuityTestButton_clicked();
-    void on_continuityTestMetricButton_clicked();
     void continuityTest();
-    void continuityTestMetric();
 
 private:
 

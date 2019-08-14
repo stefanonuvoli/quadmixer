@@ -539,6 +539,7 @@ void GLArea::mouseDoubleClickEvent(QMouseEvent* e)
 
 void GLArea::updateRotate()
 {
+    updateGL();
     currentAngle += rotationAngle;
 
     rotationIteration++;

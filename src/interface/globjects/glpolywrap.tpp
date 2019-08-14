@@ -70,6 +70,7 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
 
         if (wireframe) {
             glDepthRange(0.0,0.99999);
+			glDepthFunc(GL_LEQUAL);
             glLineWidth(wireframeSize);
             glDisable(GL_LIGHTING);
             for(unsigned int i=0; i<face.size(); i++)
@@ -86,6 +87,7 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
                     glEnd();
                 }
             }
+            glDepthFunc(GL_LESS);
         }
 
 //        if (transformation) {
