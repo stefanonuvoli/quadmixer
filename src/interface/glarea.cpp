@@ -16,7 +16,7 @@ GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
 {
     this->sceneCenter = vcg::Point3f(0,0,0);
     this->sceneRadius = 0;
-    this->sceneTrackballVisible = true;
+    this->sceneTrackballVisible = false;
     this->transformationMesh = nullptr;
     this->targetMesh1 = nullptr;
     this->targetMesh2 = nullptr;

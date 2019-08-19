@@ -24,14 +24,17 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
     if (mesh != nullptr && this->visible) {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-        glDepthRange(0.00001,1);
+        glDepthFunc(GL_LESS);
+        glDepthRange(0.0001,1);
 
         glEnable(GL_LIGHTING);
 
         glDisable(GL_CULL_FACE);
-//        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
 
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glShadeModel(GL_FLAT);
 //        glShadeModel(GL_SMOOTH);
 
         //vcg::glColor(vcg::Color4b(200,200,200,255));
@@ -69,10 +72,14 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
         }
 
         if (wireframe) {
-            glDepthRange(0.0,0.99999);
-			glDepthFunc(GL_LEQUAL);
-            glLineWidth(wireframeSize);
+            glDepthRange(0.0,0.9999);
+            glDepthFunc(GL_LEQUAL);
+
             glDisable(GL_LIGHTING);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+            glLineWidth(wireframeSize);
+
             for(unsigned int i=0; i<face.size(); i++)
             {
                 if(face[i].IsD())  continue;
@@ -116,9 +123,16 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
 //        }
 
         int n = 0;
-        glDepthRange(0.0,0.999999);
-        glPointSize(8);
+
+        glDepthRange(0.0, 0.9999);
+        glDepthFunc(GL_LEQUAL);
+
         glDisable(GL_LIGHTING);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        glPointSize(8);
+
         glBegin(GL_POINTS);
         for (const typename MeshType::CoordType& point : pickedPoints) {
             if (n % 2 == 0) {
@@ -131,10 +145,12 @@ void GLPolyWrap<MeshType>::GLDraw(bool wireframe, int wireframeSize)
 
             n++;
         }
+
+        glDepthFunc(GL_LESS);
+
+
         glEnd();
 
-
-        //glEnd();
         glPopAttrib();
     }
 

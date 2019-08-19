@@ -98,6 +98,9 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
         const int minimumRectangleArea,
         const bool recursive)
 {
+    if (minimumRectangleArea <= 0)
+        return faceLabel;
+
     if (!isQuadMesh)
         return faceLabel;
 
