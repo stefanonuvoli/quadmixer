@@ -3,10 +3,9 @@
 
 #include "quadcharts.h"
 #include "quadlayoutdata.h"
+#include "quadbooleancommon.h"
 
 namespace QuadBoolean {
-
-enum ILPMethod { LEASTSQUARES, ABS };
 
 namespace internal {
 
@@ -54,6 +53,6 @@ void fixNonFeasibleChart(
 }
 }
 
-#include "quadilp.tpp"
+#include "quadilp.cpp"
 
 #endif // QUADBOOLEAN_QUADILP_H

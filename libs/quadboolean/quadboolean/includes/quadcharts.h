@@ -62,6 +62,6 @@ ChartData getPatchDecompositionChartData(
 }
 }
 
-#include "quadcharts.tpp"
+#include "quadcharts.cpp"
 
 #endif // QUADBOOLEAN_QUADCHARTS_H

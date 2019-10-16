@@ -257,28 +257,38 @@ void getPreservedSurfaceMesh(
         const std::vector<int>& faceLabel1,
         const std::vector<int>& faceLabel2,
         PolyMeshType& preservedSurface,
-        std::vector<int>& newFaceLabel)
+        std::vector<int>& newFaceLabel,
+        std::unordered_map<size_t, size_t>& preservedFacesMap,
+        std::unordered_map<size_t, size_t>& preservedVerticesMap)
 {
-    int maxLabel1 = 0;
-    for (const int& l : faceLabel1) {
-        maxLabel1 = std::max(maxLabel1, l);
-    }
 
-    //Select the face which are remaining
     vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh1);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh2);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(mesh1);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(mesh2);
+
+    //Save vertices id in quality
+    for (size_t i = 0; i < mesh1.vert.size(); i++) {
+        mesh1.vert[i].Q() = i;
+    }
+    for (size_t i = 0; i < mesh2.vert.size(); i++) {
+        mesh2.vert[i].Q() = mesh1.vert.size() + i;
+    }
+
+    //Select the face which are remaining and put their id in quality
     for (size_t i = 0; i < mesh1.face.size(); i++) {
         if (preservedQuad1[i]) {
             mesh1.face[i].SetS();
-            mesh1.face[i].Q() = faceLabel1[i];
+            mesh1.face[i].Q() = i;
         }
     }
     for (size_t i = 0; i < mesh2.face.size(); i++) {
         if (preservedQuad2[i]) {
             mesh2.face[i].SetS();
-            mesh2.face[i].Q() = maxLabel1 + faceLabel2[i];
+            mesh2.face[i].Q() = mesh1.face.size() + i;
         }
     }
+
 
     //Create result
     PolyMeshType tmpMesh;
@@ -290,9 +300,30 @@ void getPreservedSurfaceMesh(
 
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(preservedSurface, tmpMesh);
 
+    int maxLabel1 = 0;
+    for (const int& l : faceLabel1) {
+        maxLabel1 = std::max(maxLabel1, l);
+    }
     newFaceLabel.resize(preservedSurface.face.size(), -1);
     for (size_t i = 0; i < preservedSurface.face.size(); i++) {
-        newFaceLabel[i] = static_cast<int>(preservedSurface.face[i].Q());
+        size_t currentFaceId = static_cast<size_t>(preservedSurface.face[i].Q());
+
+        preservedFacesMap.insert(std::make_pair(i, currentFaceId));
+
+        //Label
+        if (currentFaceId < mesh1.face.size()) {
+            newFaceLabel[i] = faceLabel1[currentFaceId];
+        }
+        else {
+            newFaceLabel[i] = maxLabel1 + faceLabel2[currentFaceId % mesh1.face.size()];
+        }
+    }
+
+
+    for (size_t i = 0; i < preservedSurface.vert.size(); i++) {
+        size_t currentVertId = static_cast<size_t>(preservedSurface.vert[i].Q());
+
+        preservedVerticesMap.insert(std::make_pair(i, currentVertId));
     }
 
     vcg::tri::Allocator<PolyMeshType>::CompactEveryVector(preservedSurface);
@@ -1175,6 +1206,8 @@ void quadrangulate(
 
 template<class PolyMeshType, class TriangleMeshType>
 void getResult(
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
         PolyMeshType& result,
@@ -1183,16 +1216,27 @@ void getResult(
         const double resultSmoothingAvgNRing,
         const int resultSmoothingLaplacianIterations,
         const double resultSmoothingLaplacianAvgNRing,
-        std::vector<size_t>& preservedFacesIds,
-        std::vector<size_t>& newFacesIds)
+        const std::unordered_map<size_t, size_t>& preservedFacesMap,
+        const std::unordered_map<size_t, size_t>& preservedVerticesMap,
+        SourceInfo& sourceInfo)
 {
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(quadrangulatedNewSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceClearV(quadrangulatedNewSurface);
-    for (typename PolyMeshType::FaceIterator fIt = quadrangulatedNewSurface.face.begin(); fIt != quadrangulatedNewSurface.face.end(); fIt++) {
-        for (int k = 0; k < fIt->VN(); k++) {
-            fIt->V(k)->SetV();
+    for (size_t i = 0; i < quadrangulatedNewSurface.face.size(); i++) {
+        if (!quadrangulatedNewSurface.face[i].IsD()) {
+            for (int k = 0; k < quadrangulatedNewSurface.face[i].VN(); k++) {
+                quadrangulatedNewSurface.face[i].Q() = -1;
+
+                quadrangulatedNewSurface.face[i].V(k)->SetV();
+
+                for (int k = 0; k < quadrangulatedNewSurface.face[i].VN(); k++) {
+                    if (vcg::face::IsBorder(quadrangulatedNewSurface.face[i], k)) {
+                        quadrangulatedNewSurface.face[i].V(k)->SetV();
+                    }
+                }
+            }
         }
     }
 
@@ -1200,38 +1244,72 @@ void getResult(
     vcg::tri::UpdateFlags<PolyMeshType>::FaceBorderFromFF(preservedSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(preservedSurface);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceClearV(preservedSurface);
-    for (typename PolyMeshType::FaceIterator fIt = preservedSurface.face.begin(); fIt != preservedSurface.face.end(); fIt++) {
-        fIt->SetV();
-        bool borderFace = false;
-        for (int k = 0; k < fIt->VN(); k++) {
-            if (vcg::face::IsBorder(*fIt, k)) {
-                borderFace = true;
-            }
-        }
-        if (borderFace) {
-            for (int k = 0; k < fIt->VN(); k++) {
-                fIt->V(k)->SetV();
+    for (size_t i = 0; i < preservedSurface.face.size(); i++) {
+        if (!preservedSurface.face[i].IsD()) {
+            preservedSurface.face[i].Q() = preservedFacesMap.at(i);
+
+            preservedSurface.face[i].SetV();
+
+            for (int k = 0; k < preservedSurface.face[i].VN(); k++) {
+                if (vcg::face::IsBorder(preservedSurface.face[i], k)) {
+                    preservedSurface.face[i].V(k)->SetV();
+                }
             }
         }
     }
+    for (size_t i = 0; i < preservedSurface.vert.size(); i++) {
+        if (!preservedSurface.vert[i].IsD()) {
+            preservedSurface.vert[i].Q() = preservedVerticesMap.at(i);
+        }
+    }
 
-    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearV(result);
+    result.Clear();
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, preservedSurface);
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, quadrangulatedNewSurface);
 
     std::vector<size_t> smoothingVertices;
     for (size_t i = 0; i < result.vert.size(); i++) {
-        if (result.vert[i].IsV() && !result.vert[i].IsD()) {
-            smoothingVertices.push_back(i);
+        if (!result.vert[i].IsD()) {
+            if (result.vert[i].IsV() && !result.vert[i].IsD()) {
+                smoothingVertices.push_back(i);
+            }
         }
     }
 
+    //Old and new faces
+    sourceInfo.oldFacesMap.clear();
+    sourceInfo.newFaces.clear();
     for (size_t i = 0; i < result.face.size(); i++) {
-        if (result.face[i].IsV() && !result.face[i].IsD()) {
-            preservedFacesIds.push_back(i);
+        if (!result.face[i].IsD()) {
+            if (result.face[i].Q() >= 0) {
+                size_t currentFaceId = static_cast<size_t>(result.face[i].Q());
+
+                if (currentFaceId < mesh1.face.size()) {
+                    sourceInfo.oldFacesMap.insert(std::make_pair(i, OriginEntity(1, currentFaceId)));
+                }
+                else {
+                    sourceInfo.oldFacesMap.insert(std::make_pair(i, OriginEntity(2, currentFaceId % mesh1.face.size())));
+                }
+            }
+            else {
+                sourceInfo.newFaces.push_back(i);
+            }
         }
-        else {
-            newFacesIds.push_back(i);
+    }
+
+    //Old and new vertices
+    sourceInfo.oldVerticesMap.clear();
+    sourceInfo.newVertices.clear();
+    for (size_t i = 0; i < result.vert.size(); i++) {
+        if (!result.vert[i].IsD()) {
+            size_t currentVertexId = static_cast<size_t>(result.vert[i].Q());
+
+            if (currentVertexId < mesh1.vert.size()) {
+                sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(1, currentVertexId)));
+            }
+            else {
+                sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(2, currentVertexId % mesh1.vert.size())));
+            }
         }
     }
 
@@ -1316,6 +1394,8 @@ void getResult(
 
     LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.8);
 
+    vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(result);
+    vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType> >(result, result.face.size(), false);
 
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(result);

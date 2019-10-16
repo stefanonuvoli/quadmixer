@@ -8,7 +8,7 @@
 #include <unordered_set>
 
 #include "quadcharts.h"
-#include "quadbooleanoperation.h"
+#include "quadbooleancommon.h"
 #include "quadilp.h"
 
 namespace QuadBoolean {
@@ -91,7 +91,9 @@ void getPreservedSurfaceMesh(
         const std::vector<int>& faceLabel1,
         const std::vector<int>& faceLabel2,
         PolyMeshType& preservedSurface,
-        std::vector<int>& newFaceLabel);
+        std::vector<int>& newFaceLabel,
+        std::unordered_map<size_t, size_t>& facesMap,
+        std::unordered_map<size_t, size_t>& verticesMap);
 
 template<class PolyMeshType, class TriangleMeshType>
 void getNewSurfaceMesh(
@@ -140,6 +142,8 @@ void quadrangulate(
 
 template<class PolyMeshType, class TriangleMeshType>
 void getResult(
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
         PolyMeshType& preservedSurface,
         PolyMeshType& quadrangulatedNewSurface,
         PolyMeshType& result,
@@ -148,12 +152,13 @@ void getResult(
         const double resultSmoothingAvgNRing,
         const int resultSmoothingLaplacianIterations,
         const double resultSmoothingLaplacianAvgNRing,
-        std::vector<size_t>& preservedFacesId,
-        std::vector<size_t>& newFacesIds);
+        const std::unordered_map<size_t, size_t>& preservedFacesMap,
+        const std::unordered_map<size_t, size_t>& preservedVerticesMap,
+        SourceInfo& sourceInfo);
 
 }
 }
 
-#include "quadbooleansteps.tpp"
+#include "quadbooleansteps.cpp"
 
 #endif // QUADBOOLEANSTEPS_H

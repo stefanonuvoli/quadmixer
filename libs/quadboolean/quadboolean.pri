@@ -1,18 +1,19 @@
 SOURCES += \
-    $$PWD/quadboolean/quadboolean.tpp \
-    $$PWD/quadboolean/includes/quadpatchtracer.tpp \
-    $$PWD/quadboolean/includes/quadconvert.tpp \
-    $$PWD/quadboolean/includes/quadcharts.tpp \
+    $$PWD/quadboolean/quadboolean.cpp \
+    $$PWD/quadboolean/includes/quadbooleansteps.cpp \
+    $$PWD/quadboolean/includes/quadcharts.cpp \
+    $$PWD/quadboolean/includes/quadconvert.cpp \
+    $$PWD/quadboolean/includes/quadilp.cpp \
+    $$PWD/quadboolean/includes/quadlayoutdata.cpp \
+    $$PWD/quadboolean/includes/quadpatchtracer.cpp \
     $$PWD/quadboolean/includes/quadpatterns.cpp \
     $$PWD/quadboolean/includes/quadquadmapping.cpp \
-    $$PWD/quadboolean/includes/quadlayoutdata.tpp \
-    $$PWD/quadboolean/includes/quadpreserved.tpp \
+    $$PWD/quadboolean/includes/quadpreserved.cpp \
     $$PWD/quadboolean/includes/quadlibiglbooleaninterface.cpp \
-    $$PWD/quadboolean/includes/quadbooleansteps.tpp \
-    $$PWD/quadboolean/includes/quadutils.tpp \
-    $$PWD/quadboolean/includes/quadilp.tpp
+    $$PWD/quadboolean/includes/quadutils.cpp
 
 HEADERS += \
+    $$PWD/quadboolean/includes/quadbooleancommon.h \
     $$PWD/quadboolean/quadboolean.h \
     $$PWD/quadboolean/defaultmeshtypes.h \
     $$PWD/quadboolean/includes/quadpatchtracer.h \
@@ -30,5 +31,4 @@ HEADERS += \
     $$PWD/quadboolean/includes/patch_decomposer.h \
     $$PWD/quadboolean/includes/patch_assembler.h \
     $$PWD/quadboolean/includes/field_tracer.h \
-    $$PWD/quadboolean/includes/quadbooleansteps.h \
-    $$PWD/quadboolean/includes/quadbooleanoperation.h
+    $$PWD/quadboolean/includes/quadbooleansteps.h

@@ -16,6 +16,6 @@ public:
     bool visible;
 };
 
-#include "glsegmentswrap.tpp"
+#include "glsegmentswrap.cpp"
 
 #endif // GLSEGMENTSWRAP_H

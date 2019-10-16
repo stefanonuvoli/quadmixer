@@ -48,12 +48,12 @@ SOURCES += \
     src/mainquadmixer.cpp \
     src/interface/quadmixerwindow.cpp \
     src/interface/glarea.cpp \
-    src/interface/globjects/glpolywrap.tpp \
-    src/interface/globjects/glquadlayoutwrap.tpp \
-    src/interface/globjects/glchartsideswrap.tpp \
+    src/interface/globjects/glpolywrap.cpp \
+    src/interface/globjects/glquadlayoutwrap.cpp \
+    src/interface/globjects/glchartsideswrap.cpp \
     src/interface/globjects/gldrawtext.cpp \
-    src/interface/globjects/glverticeswrap.tpp \
-    src/interface/globjects/glsegmentswrap.tpp
+    src/interface/globjects/glverticeswrap.cpp \
+    src/interface/globjects/glsegmentswrap.cpp
 
 HEADERS += \
     src/interface/quadmixerwindow.h \

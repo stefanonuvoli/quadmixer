@@ -169,6 +169,8 @@ private:
 
     PolyMesh preservedSurface;
     std::vector<int> preservedSurfaceLabel;
+    std::unordered_map<size_t, size_t> preservedFacesMap;
+    std::unordered_map<size_t, size_t> preservedVerticesMap;
 
     TriangleMesh initialNewSurface;
 
@@ -188,8 +190,7 @@ private:
     QuadLayoutData quadLayoutDataQuadrangulatedSurface;
 
     PolyMesh result;
-    std::vector<size_t> preservedFaceIds;
-    std::vector<size_t> newFaceIds;
+    QuadBoolean::SourceInfo sourceInfo;
 
     double continuityLength;
     double continuityOffset;

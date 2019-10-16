@@ -36,6 +36,6 @@ typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh);
 }
 }
 
-#include "quadutils.tpp"
+#include "quadutils.cpp"
 
 #endif // QUADUTILS_H

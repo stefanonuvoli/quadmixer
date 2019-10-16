@@ -2,34 +2,6 @@
 
 namespace QuadBoolean {
 
-inline Parameters::Parameters()
-{
-    motorcycle = DEFAULTMOTORCYCLE;
-    patchRetraction = DEFAULTPATCHRETRACTION;
-    patchRetractionNRing = DEFAULTPATCHRETRACTIONNRING;
-    intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
-    intersectionSmoothingNRing = DEFAULTINTERSECTIONSMOOTHINGNRING;
-    maxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
-    minRectangleArea = DEFAULTMINRECTANGLEAREA;
-    minPatchArea = DEFAULTMINPATCHAREA;
-    mergeQuads = DEFAULTMERGEQUADS;
-    deleteSmall = DEFAULTDELETESMALL;
-    deleteNonConnected = DEFAULTDELETENONCONNECTED;
-    ilpMethod = DEFAULTILPMETHOD;
-    alpha = DEFAULTALPHA;
-    beta = DEFAULTBETA;
-    initialRemeshing = DEFAULTINITIALREMESHING;
-    initialRemeshingEdgeFactor = DEFAULTEDGEFACTOR;
-    reproject = DEFAULTREPROJECT;
-    splitConcaves = DEFAULTSPLITCONCAVES;
-    finalSmoothing = DEFAULTFINALSMOOTHING;
-    chartSmoothingIterations = DEFAULTCHARTSMOOTHINGITERATIONS;
-    quadrangulationSmoothingIterations = DEFAULTQUADRANGULATIONSMOOTHINGITERATIONS;
-    resultSmoothingIterations = DEFAULTRESULTSMOOTHINGITERATIONS;
-    resultSmoothingNRing = DEFAULTRESULTSMOOTHINGNRING;
-    resultSmoothingLaplacianIterations = DEFAULTRESULTSMOOTHINGLAPLACIANITERATIONS;
-    resultSmoothingLaplacianNRing = DEFAULTRESULTSMOOTHINGLAPLACIANNRING;
-}
 
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -37,7 +9,8 @@ void quadBoolean(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
         const Operation& operation,
-        PolyMeshType& result)
+        PolyMeshType& result,
+        SourceInfo& info)
 {
     Parameters defaultParam;
 
@@ -46,7 +19,8 @@ void quadBoolean(
                 mesh2,
                 operation,
                 result,
-                defaultParam);
+                defaultParam,
+                info);
 }
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -55,7 +29,8 @@ void quadBoolean(
         PolyMeshType& mesh2,
         const Operation& operation,
         PolyMeshType& result,
-        const Parameters& parameters)
+        const Parameters& parameters,
+        SourceInfo& info)
 {
      std::vector<int> quadTracerLabel1;
      std::vector<int> quadTracerLabel2;
@@ -81,6 +56,8 @@ void quadBoolean(
 
      PolyMeshType preservedSurface;
      std::vector<int> preservedSurfaceLabel;
+     std::unordered_map<size_t, size_t> preservedFacesMap;
+     std::unordered_map<size_t, size_t> preservedVerticesMap;
 
      TriangleMeshType newSurface;
      std::vector<int> newSurfaceLabel;
@@ -198,7 +175,8 @@ void quadBoolean(
                  mesh1, mesh2,
                  preservedQuad1, preservedQuad2,
                  preservedFaceLabel1, preservedFaceLabel2,
-                 preservedSurface, preservedSurfaceLabel);
+                 preservedSurface, preservedSurfaceLabel,
+                 preservedFacesMap, preservedVerticesMap);
 
      //Make ILP feasible
      internal::makeILPFeasible(preservedSurface, newSurface);
@@ -231,19 +209,14 @@ void quadBoolean(
 
      //Get the result
      result.Clear();
-     std::vector<size_t> preservedFaceIds;
-     std::vector<size_t> newFaceIds;
      QuadBoolean::internal::getResult(
-                 preservedSurface,
-                 quadrangulation,
-                 result,
-                 boolean,
+                 mesh1, mesh2, preservedSurface, quadrangulation,
+                 result, boolean,
                  parameters.resultSmoothingIterations,
                  parameters.resultSmoothingNRing,
                  parameters.resultSmoothingLaplacianIterations,
                  parameters.resultSmoothingLaplacianNRing,
-                 preservedFaceIds,
-                 newFaceIds);
+                 preservedFacesMap, preservedVerticesMap, info);
 
 }
 

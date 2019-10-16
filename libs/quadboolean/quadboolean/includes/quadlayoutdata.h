@@ -38,6 +38,6 @@ QuadLayoutData<PolyMeshType> getQuadLayoutData(
 }
 }
 
-#include "quadlayoutdata.tpp"
+#include "quadlayoutdata.cpp"
 
 #endif // QUADLAYOUTDATA_H

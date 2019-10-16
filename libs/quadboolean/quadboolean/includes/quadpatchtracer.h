@@ -47,6 +47,6 @@ public:
 }
 }
 
-#include "quadpatchtracer.tpp"
+#include "quadpatchtracer.cpp"
 
 #endif // QUADPATCHTRACER_H

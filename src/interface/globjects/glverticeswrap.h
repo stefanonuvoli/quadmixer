@@ -17,6 +17,6 @@ public:
     bool visible;
 };
 
-#include "glverticeswrap.tpp"
+#include "glverticeswrap.cpp"
 
 #endif // GLPOINTSWRAP

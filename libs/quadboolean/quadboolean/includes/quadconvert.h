@@ -29,6 +29,6 @@ void eigenToVCG(
 }
 }
 
-#include "quadconvert.tpp"
+#include "quadconvert.cpp"
 
 #endif // QUADCONVERT_H

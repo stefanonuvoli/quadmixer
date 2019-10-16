@@ -867,7 +867,8 @@ void QuadMixerWindow::doGetSurfaces() {
                 mesh1, mesh2,
                 preservedQuad1, preservedQuad2,
                 preservedFaceLabel1, preservedFaceLabel2,
-                preservedSurface, preservedSurfaceLabel);
+                preservedSurface, preservedSurfaceLabel,
+                preservedFacesMap, preservedVerticesMap);
 
 
     start = chrono::steady_clock::now();
@@ -1053,7 +1054,9 @@ void QuadMixerWindow::doGetResult()
     start = chrono::steady_clock::now();
 
     //Get results
-    QuadBoolean::internal::getResult(preservedSurface, quadrangulation, result, booleanSmoothed, resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing, preservedFaceIds, newFaceIds);
+    QuadBoolean::internal::getResult(mesh1, mesh2, preservedSurface, quadrangulation, result, booleanSmoothed,
+                                     resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing,
+                                     preservedFacesMap, preservedVerticesMap, sourceInfo);
 
     std::cout << std::endl << " >> "
               << "Get result: "
@@ -1503,10 +1506,18 @@ void QuadMixerWindow::colorResultByComboBox(MeshType& mesh, int index) {
     QuadBoolean::internal::QuadMeshTracer<MeshType> quadTracer(mesh);
     switch (index) {
     case 1:
-        for (size_t& preservedFaceId : preservedFaceIds) {
-            mesh.face[preservedFaceId].C() = vcg::Color4b(200,255,200,255);
+        for (const std::pair<size_t, QuadBoolean::OriginEntity> oldFaceEntry : sourceInfo.oldFacesMap) {
+            size_t faceId = oldFaceEntry.first;
+            const QuadBoolean::OriginEntity& originEntity = oldFaceEntry.second;
+            if (originEntity.meshId == 1) {
+                mesh.face[faceId].C() = vcg::Color4b(200,255,200,255);
+            }
+            else {
+                assert(originEntity.meshId == 2);
+                mesh.face[faceId].C() = vcg::Color4b(200,200,255,255);
+            }
         }
-        for (size_t& newFaceId : newFaceIds) {
+        for (size_t& newFaceId : sourceInfo.newFaces) {
             mesh.face[newFaceId].C() = vcg::Color4b(255,255,255,255);
         }
         break;

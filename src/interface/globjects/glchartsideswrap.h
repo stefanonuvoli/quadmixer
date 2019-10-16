@@ -19,6 +19,6 @@ public:
     bool ilpVisible;
 };
 
-#include "glchartsideswrap.tpp"
+#include "glchartsideswrap.cpp"
 
 #endif // GLCHARTSIDESWRAP_H

@@ -25,6 +25,6 @@ public:
     int name;
 };
 
-#include "glpolywrap.tpp"
+#include "glpolywrap.cpp"
 
 #endif // GLPOLYWRAP_H

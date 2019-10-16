@@ -56,7 +56,7 @@ int deleteSmallQuadPatches(
 }
 }
 
-#include "quadpreserved.tpp"
+#include "quadpreserved.cpp"
 
 
 #endif // QUADPRESERVED_H

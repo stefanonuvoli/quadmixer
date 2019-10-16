@@ -17,6 +17,6 @@ public:
     bool visible;
 };
 
-#include "glquadlayoutwrap.tpp"
+#include "glquadlayoutwrap.cpp"
 
 #endif // GLQUADLAYOUTWRAP_H
