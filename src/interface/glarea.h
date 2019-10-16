@@ -130,6 +130,7 @@ public:
     void setQuadrangulation(PolyMesh* quadrangulation);
     void setQuadLayoutQuadrangulation(QuadLayoutData* quadLayoutQuadrangulation);
     void setResult(PolyMesh* result);
+    void setOriginVertices(std::vector<size_t>* OriginVertices);
 
     void setMesh1Visibility(bool visible);
     void setMesh2Visibility(bool visible);
@@ -146,6 +147,7 @@ public:
     void setQuadrangulationVisibility(bool visible);
     void setQuadLayoutQuadrangulationVisibility(bool visible);
     void setResultVisibility(bool visible);
+    void setOriginVerticesVisibility(bool visible);
 
     void resetSceneOnDebugMeshes();
 
@@ -168,6 +170,7 @@ private:
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutPreserved2;
     GLChartSidesWrap<TriangleMesh> glWrapChartSides;
     GLQuadLayoutWrap<PolyMesh> glWrapQuadLayoutQuadrangulation;
+    GLVerticesWrap<PolyMesh> glWrapOriginVertices;
 
 
     void initMeshWrapper(GLPolyWrap<TriangleMesh>& glWrap, TriangleMesh* mesh);

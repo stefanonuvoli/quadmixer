@@ -389,6 +389,7 @@ void QuadMixerWindow::updateVisibility()
     ui.glArea->setQuadrangulationVisibility(ui.showQuadrangulationCheckBox->isChecked());
     ui.glArea->setQuadLayoutQuadrangulationVisibility(ui.showQuadrangulationLayoutCheckBox->isChecked());
     ui.glArea->setResultVisibility(ui.showResultCheckBox->isChecked());
+    ui.glArea->setOriginVerticesVisibility(ui.showOriginVerticesCheckBox->isChecked());
 
     ui.glArea->setWireframe(ui.showWireframe->isChecked());
     ui.glArea->setWireframeSize(ui.wireframeSlider->value());
@@ -1073,6 +1074,7 @@ void QuadMixerWindow::doGetResult()
     colorResultByComboBox(result, ui.colorResultComboBox->currentIndex());
 
     ui.glArea->setResult(&result);
+    ui.glArea->setOriginVertices(&sourceInfo.newVertices);
 }
 
 void QuadMixerWindow::clearVisualizationData()
@@ -1092,6 +1094,7 @@ void QuadMixerWindow::clearVisualizationData()
     ui.glArea->setQuadrangulation(nullptr);
     ui.glArea->setQuadLayoutQuadrangulation(nullptr);
     ui.glArea->setResult(nullptr);
+    ui.glArea->setOriginVertices(nullptr);
 
     ui.showMesh1CheckBox->setChecked(true);
     ui.showMesh2CheckBox->setChecked(true);
@@ -1107,6 +1110,7 @@ void QuadMixerWindow::clearVisualizationData()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 }
 
 
@@ -1129,6 +1133,7 @@ void QuadMixerWindow::on_computeBooleanButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1153,6 +1158,7 @@ void QuadMixerWindow::on_smoothButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1177,6 +1183,7 @@ void QuadMixerWindow::on_getSurfacesButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1201,6 +1208,7 @@ void QuadMixerWindow::on_decompositionButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1227,6 +1235,7 @@ void QuadMixerWindow::on_ilpButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1251,6 +1260,7 @@ void QuadMixerWindow::on_quadrangulateButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(true);
     ui.showQuadrangulationLayoutCheckBox->setChecked(true);
     ui.showResultCheckBox->setChecked(false);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1275,6 +1285,7 @@ void QuadMixerWindow::on_getResultButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(true);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->updateGL();
@@ -1307,6 +1318,7 @@ void QuadMixerWindow::on_computeAllButton_clicked()
     ui.showQuadrangulationCheckBox->setChecked(false);
     ui.showQuadrangulationLayoutCheckBox->setChecked(false);
     ui.showResultCheckBox->setChecked(true);
+    ui.showOriginVerticesCheckBox->setChecked(false);
 
     updateVisibility();
     ui.glArea->update();
@@ -1417,6 +1429,12 @@ void QuadMixerWindow::on_showQuadrangulationLayoutCheckBox_stateChanged(int arg1
 void QuadMixerWindow::on_showResultCheckBox_stateChanged(int arg1)
 {
     ui.glArea->setResultVisibility(arg1 == Qt::Checked);
+    ui.glArea->updateGL();
+}
+
+void QuadMixerWindow::on_showOriginVerticesCheckBox_stateChanged(int arg1)
+{
+    ui.glArea->setOriginVerticesVisibility(arg1 == Qt::Checked);
     ui.glArea->updateGL();
 }
 

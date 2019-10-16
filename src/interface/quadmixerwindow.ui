@@ -698,6 +698,13 @@
                   </property>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QCheckBox" name="showOriginVerticesCheckBox">
+                  <property name="text">
+                   <string>Origin vertices</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>

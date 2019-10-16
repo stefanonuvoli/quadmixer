@@ -1257,9 +1257,15 @@ void getResult(
             }
         }
     }
+
     for (size_t i = 0; i < preservedSurface.vert.size(); i++) {
         if (!preservedSurface.vert[i].IsD()) {
             preservedSurface.vert[i].Q() = preservedVerticesMap.at(i);
+        }
+    }
+    for (size_t i = 0; i < quadrangulatedNewSurface.vert.size(); i++) {
+        if (!quadrangulatedNewSurface.vert[i].IsD()) {
+            quadrangulatedNewSurface.vert[i].Q() = -1;
         }
     }
 
@@ -1302,13 +1308,18 @@ void getResult(
     sourceInfo.newVertices.clear();
     for (size_t i = 0; i < result.vert.size(); i++) {
         if (!result.vert[i].IsD()) {
-            size_t currentVertexId = static_cast<size_t>(result.vert[i].Q());
+            if (result.vert[i].Q() >= 0) {
+                size_t currentVertexId = static_cast<size_t>(result.vert[i].Q());
 
-            if (currentVertexId < mesh1.vert.size()) {
-                sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(1, currentVertexId)));
+                if (currentVertexId < mesh1.vert.size()) {
+                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(1, currentVertexId)));
+                }
+                else {
+                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(2, currentVertexId % mesh1.vert.size())));
+                }
             }
             else {
-                sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(2, currentVertexId % mesh1.vert.size())));
+                sourceInfo.newVertices.push_back(i);
             }
         }
     }

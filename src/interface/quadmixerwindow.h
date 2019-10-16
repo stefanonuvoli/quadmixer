@@ -118,7 +118,7 @@ private slots:
     void on_showQuadrangulationCheckBox_stateChanged(int arg1);
     void on_showQuadrangulationLayoutCheckBox_stateChanged(int arg1);
     void on_showResultCheckBox_stateChanged(int arg1);
-
+    void on_showOriginVerticesCheckBox_stateChanged(int arg1);
 
     void on_colorResultComboBox_currentIndexChanged(int index);
 

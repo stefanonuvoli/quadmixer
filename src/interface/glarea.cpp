@@ -399,6 +399,7 @@ void GLArea::paintGL()
         glWrapQuadrangulation.GLDraw(wireframe);
         glWrapQuadLayoutQuadrangulation.GLDraw();
         glWrapResult.GLDraw(wireframe, wireframeSize);
+        glWrapOriginVertices.GLDraw();
     }
 
     glPopMatrix();
@@ -640,6 +641,12 @@ void GLArea::setQuadLayoutQuadrangulation(QuadLayoutData* quadLayoutQuadrangulat
 void GLArea::setResult(PolyMesh* result)
 {
     initMeshWrapper(this->glWrapResult, result);
+    glWrapOriginVertices.mesh = result;
+}
+
+void GLArea::setOriginVertices(std::vector<size_t>* OriginVertices)
+{
+    glWrapOriginVertices.vertices = OriginVertices;
 }
 
 
@@ -717,6 +724,11 @@ void GLArea::setQuadLayoutQuadrangulationVisibility(bool visible)
 void GLArea::setResultVisibility(bool visible)
 {
     glWrapResult.visible = visible;
+}
+
+void GLArea::setOriginVerticesVisibility(bool visible)
+{
+    glWrapOriginVertices.visible = visible;
 }
 
 void GLArea::setWireframe(bool visible)
