@@ -42,11 +42,13 @@ void quadBoolean(
 
      std::vector<size_t> intersectionVertices;
 
-     std::vector<int> birthQuad1;
-     std::vector<int> birthQuad2;
+     std::vector<std::pair<size_t, size_t>> birthTriangle;
+     std::vector<int> birthFace1;
+     std::vector<int> birthFace2;
 
-     std::vector<bool> preservedQuad1;
-     std::vector<bool> preservedQuad2;
+     std::vector<bool> isPreserved1;
+     std::vector<bool> isPreserved2;
+     std::vector<bool> isNewSurface;
 
      std::unordered_set<int> affectedPatches1;
      std::unordered_set<int> affectedPatches2;
@@ -69,24 +71,9 @@ void quadBoolean(
      PolyMeshType quadrangulation;
      std::vector<int> quadrangulationLabel;
 
-     bool isTriangleMesh1 = internal::isTriangleMesh(mesh1);
-     bool isTriangleMesh2 = internal::isTriangleMesh(mesh2);
-     bool isQuadMesh1 = internal::isQuadMesh(mesh1);
-     bool isQuadMesh2 = internal::isQuadMesh(mesh2);
-
-     if (!isQuadMesh1 && !isTriangleMesh1) {
-         std::cout << "Impossible to compute: you can only use quad or triangle meshes." << std::endl;
-         return;
-     }
-
-     if (!isQuadMesh2 && !isTriangleMesh2) {
-         std::cout << "Impossible to compute: you can only use quad or triangle meshes." << std::endl;
-         return;
-     }
-
      //Triangulate
-     internal::triangulateQuadMesh(mesh1, isQuadMesh1, trimesh1, birthQuad1);
-     internal::triangulateQuadMesh(mesh2, isQuadMesh2, trimesh2, birthQuad2);
+     internal::triangulateMesh(mesh1, trimesh1, birthFace1);
+     internal::triangulateMesh(mesh2, trimesh2, birthFace2);
 
      //Compute boolean operation
      internal::computeBooleanOperation(
@@ -105,81 +92,52 @@ void quadBoolean(
                  FA, FB, FR,
                  J);
 
+     //Get birth triangles
+     birthTriangle = QuadBoolean::internal::getBirthTriangles(FA, FR, J);
+
 
      //Smooth along intersection curves
      QuadBoolean::internal::smoothAlongIntersectionVertices(
                  boolean,
-                 VR,
-                 FR,
                  intersectionVertices,
                  parameters.intersectionSmoothingIterations,
                  parameters.intersectionSmoothingNRing,
                  parameters.maxBB);
 
-
-     //Trace quads following singularities
-     internal::traceQuads(mesh1, quadTracerLabel1, parameters.motorcycle);
-     internal::traceQuads(mesh2, quadTracerLabel2, parameters.motorcycle);
-
-
-     //Face labels
-     preservedFaceLabel1 = quadTracerLabel1;
-     preservedFaceLabel2 = quadTracerLabel2;
-
-     //Find preserved quads
-     internal::findPreservedQuads(
-                 mesh1, mesh2,
-                 boolean,
-                 isQuadMesh1, isQuadMesh2,
-                 intersectionVertices,                 
-                 parameters.patchRetraction, parameters.patchRetractionNRing,
-                 parameters.maxBB,
-                 preservedQuad1, preservedQuad2);
-
-     //Find affected patches
-     internal::findAffectedPatches(mesh1, preservedQuad1, preservedFaceLabel1, affectedPatches1);
-     internal::findAffectedPatches(mesh2, preservedQuad2, preservedFaceLabel2, affectedPatches2);
-
-     //Maximum rectangles in the patches
-     preservedFaceLabel1 = internal::splitQuadPatchesInMaximumRectangles(mesh1, isQuadMesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1, parameters.minRectangleArea, true);
-     preservedFaceLabel2 = internal::splitQuadPatchesInMaximumRectangles(mesh2, isQuadMesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2, parameters.minRectangleArea, true);
-
-     //Merge rectangular patches
-     if (parameters.mergeQuads) {
-         int nMerged1 = internal::mergeQuadPatches(mesh1, isQuadMesh1, affectedPatches1, preservedFaceLabel1, preservedQuad1);
-         int nMerged2 = internal::mergeQuadPatches(mesh2, isQuadMesh2, affectedPatches2, preservedFaceLabel2, preservedQuad2);
-     }
-     if (parameters.deleteSmall) {
-         //Delete small patches
-         int nSmall1 = internal::deleteSmallQuadPatches(mesh1, isQuadMesh1, affectedPatches1, parameters.minPatchArea, preservedFaceLabel1, preservedQuad1);
-         int nSmall2 = internal::deleteSmallQuadPatches(mesh2, isQuadMesh2, affectedPatches2, parameters.minPatchArea, preservedFaceLabel2, preservedQuad2);
-     }
-     if (parameters.deleteNonConnected) {
-         //Delete non-connected patches
-         int nNonConnected1 = internal::deleteNonConnectedQuadPatches(mesh1, isQuadMesh1, preservedFaceLabel1, preservedQuad1);
-         int nNonConnected2 = internal::deleteNonConnectedQuadPatches(mesh2, isQuadMesh2, preservedFaceLabel2, preservedQuad2);
-     }
-
-
-     //New mesh (to be decomposed in patch)
-     internal::getNewSurfaceMesh(
-                 boolean,
-                 mesh1,
-                 mesh2,
-                 preservedQuad1,
-                 preservedQuad2,
-                 newSurface);
-
-     //Get mesh of the preserved surface
-     internal::getPreservedSurfaceMesh(
-                 mesh1, mesh2,
-                 preservedQuad1, preservedQuad2,
-                 preservedFaceLabel1, preservedFaceLabel2,
-                 preservedSurface, preservedSurfaceLabel,
-                 preservedFacesMap, preservedVerticesMap);
+     //Get preserved and new surface
+     QuadBoolean::internal::getSurfaces(
+             mesh1,
+             mesh2,
+             trimesh1,
+             trimesh2,
+             boolean,
+             birthTriangle,
+             birthFace1,
+             birthFace2,
+             intersectionVertices,
+             parameters.motorcycle,
+             parameters.patchRetraction,
+             parameters.patchRetractionNRing,
+             parameters.minRectangleArea,
+             parameters.minPatchArea,
+             parameters.mergeQuads,
+             parameters.deleteSmall,
+             parameters.deleteNonConnected,
+             parameters.maxBB,
+             parameters.preserveNonQuads,
+             preservedFaceLabel1,
+             preservedFaceLabel2,
+             isPreserved1,
+             isPreserved2,
+             isNewSurface,
+             preservedSurfaceLabel,
+             preservedFacesMap,
+             preservedVerticesMap,
+             preservedSurface,
+             newSurface);
 
      //Make ILP feasible
-     internal::makeILPFeasible(preservedSurface, newSurface);
+     internal::makeILPFeasible(preservedSurface, newSurface, parameters.onlyQuads);
 
      //Get patch decomposition of the new surface
      std::vector<std::vector<size_t>> newSurfacePartitions;
@@ -190,7 +148,7 @@ void quadBoolean(
      chartData = internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
      //Solve ILP to find best side size
-     ilpResult = internal::findBestSideSize(
+     ilpResult = internal::findSubdivisions(
                  newSurface,
                  chartData,
                  parameters.alpha,
@@ -208,7 +166,6 @@ void quadBoolean(
                  quadrangulationLabel);
 
      //Get the result
-     result.Clear();
      QuadBoolean::internal::getResult(
                  mesh1, mesh2, preservedSurface, quadrangulation,
                  result, boolean,

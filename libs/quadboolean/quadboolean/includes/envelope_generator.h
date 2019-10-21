@@ -331,6 +331,7 @@ class EnvelopeGenerator
         std::sort(seeds.begin(),seeds.end());
         auto last = std::unique(seeds.begin(), seeds.end());
         seeds.erase(last, seeds.end());
+        vcg::tri::UpdateQuality<MeshType>::VertexConstant(curr_mesh, 0);
         vcg::tri::Geodesic<MeshType>::Compute(curr_mesh,seeds);
 
         //find the radius

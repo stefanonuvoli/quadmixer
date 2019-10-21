@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1788</width>
+    <width>2013</width>
     <height>823</height>
    </rect>
   </property>
@@ -826,6 +826,16 @@
                  </widget>
                 </item>
                 <item>
+                 <widget class="QCheckBox" name="preserveNonQuadsCheckBox">
+                  <property name="text">
+                   <string>Preserve non quads</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
                  <widget class="QLabel" name="minRectangleAreaLabel">
                   <property name="text">
                    <string>Min rectangles</string>
@@ -896,35 +906,13 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QFrame" name="ilpMethodFrame">
-                  <property name="frameShape">
-                   <enum>QFrame::StyledPanel</enum>
+                 <widget class="QCheckBox" name="onlyQuadsCheckBox">
+                  <property name="text">
+                   <string>Only quads</string>
                   </property>
-                  <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_5">
-                   <item>
-                    <widget class="QRadioButton" name="ilpMethodLSRadio">
-                     <property name="text">
-                      <string>LS</string>
-                     </property>
-                     <property name="checked">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QRadioButton" name="ilpMethodABSRadio">
-                     <property name="text">
-                      <string>ABS</string>
-                     </property>
-                     <property name="checked">
-                      <bool>false</bool>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
                  </widget>
                 </item>
                 <item>
@@ -991,6 +979,38 @@
                 <enum>QFrame::Raised</enum>
                </property>
                <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <item>
+                 <widget class="QFrame" name="ilpMethodFrame">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <item>
+                    <widget class="QRadioButton" name="ilpMethodLSRadio">
+                     <property name="text">
+                      <string>LS</string>
+                     </property>
+                     <property name="checked">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QRadioButton" name="ilpMethodABSRadio">
+                     <property name="text">
+                      <string>ABS</string>
+                     </property>
+                     <property name="checked">
+                      <bool>false</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
                 <item>
                  <widget class="QCheckBox" name="initialRemeshingCheckBox">
                   <property name="text">
@@ -1200,7 +1220,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1788</width>
+     <width>2013</width>
      <height>22</height>
     </rect>
    </property>

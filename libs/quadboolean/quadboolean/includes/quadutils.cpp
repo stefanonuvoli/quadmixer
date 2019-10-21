@@ -68,19 +68,22 @@ void LaplacianGeodesic(
             seedVec.push_back(&poly_m.vert[i]);
         }
     }
+    vcg::tri::UpdateQuality<PolyMeshType>::VertexConstant(poly_m, 0);
     vcg::tri::EuclideanDistance<PolyMeshType> ed;
     vcg::tri::UpdateTopology<PolyMeshType>::VertexFace(poly_m);
     vcg::tri::Geodesic<PolyMeshType>::Compute(poly_m,seedVec, ed);
 
     std::vector<double> DampS(poly_m.vert.size());
-    for (int i = 0; i < poly_m.vert.size(); i++) {
-        if (poly_m.vert[i].Q() < maxDistance) {
-            DampS[i] = poly_m.vert[i].Q() / maxDistance;
-            assert(DampS[i] >= 0 && DampS[i] <= 1);
-            DampS[i] = minDumpS + DampS[i]*(1-minDumpS);
-        }
-        else {
-            DampS[i] = std::numeric_limits<double>::max();
+    for (int i = 0; i < poly_m.vert.size(); i++) {        
+        if (!poly_m.vert[i].IsD()) {
+            if (poly_m.vert[i].Q() < maxDistance) {
+                DampS[i] = poly_m.vert[i].Q() / maxDistance;
+                assert(DampS[i] >= 0 && DampS[i] <= 1);
+                DampS[i] = minDumpS + DampS[i]*(1-minDumpS);
+            }
+            else {
+                DampS[i] = std::numeric_limits<double>::max();
+            }
         }
     }
 
@@ -91,11 +94,10 @@ void LaplacianGeodesic(
 
         for (size_t i=0;i<poly_m.vert.size();i++)
         {
-            if (DampS[i] > 1)
-                continue;
-
-            poly_m.vert[i].P()=poly_m.vert[i].P()*DampS[i]+
-                    AvVert[i]*(1-DampS[i]);
+            if (!poly_m.vert[i].IsD() && DampS[i] <= 1) {
+                poly_m.vert[i].P()=poly_m.vert[i].P()*DampS[i]+
+                        AvVert[i]*(1-DampS[i]);
+            }
         }
     }
 }
@@ -122,46 +124,54 @@ bool isQuadMesh(PolyMeshType& mesh) {
 }
 
 template <class PolyMeshType>
-std::vector<int> splitQuadInTriangle(PolyMeshType& mesh) {
+std::vector<int> splitFacesInTriangles(PolyMeshType& mesh) {
     typedef typename PolyMeshType::VertexType VertexType;
 
-
-
     size_t numFaces = mesh.face.size();
-    std::vector<int> birthQuad(mesh.face.size()*2, -1);
+    std::vector<int> birthFace(mesh.face.size(), -1);
 
     for (size_t i = 0; i < numFaces; i++) {
-        assert(mesh.face[i].VN() == 4);
-        VertexType* v[4];
-        v[0] = mesh.face[i].V(0);
-        v[1] = mesh.face[i].V(1);
-        v[2] = mesh.face[i].V(2);
-        v[3] = mesh.face[i].V(3);
+        size_t prevSize = mesh.face.size();
 
-        size_t startIndex = 0;
-        if ((v[0]->P() - v[2]->P()).Norm() > (v[1]->P() - v[3]->P()).Norm()) {
-            startIndex++;
+        if (mesh.face[i].VN() == 4) {
+            VertexType* v[4];
+            v[0] = mesh.face[i].V(0);
+            v[1] = mesh.face[i].V(1);
+            v[2] = mesh.face[i].V(2);
+            v[3] = mesh.face[i].V(3);
+
+            size_t startIndex = 0;
+            if ((v[0]->P() - v[2]->P()).Norm() > (v[1]->P() - v[3]->P()).Norm()) {
+                startIndex++;
+            }
+
+            vcg::tri::Allocator<PolyMeshType>::AddFaces(mesh,1);
+            mesh.face.back().Alloc(3);
+            mesh.face.back().V(0) = v[startIndex];
+            mesh.face.back().V(1) = v[(startIndex + 1)%4];
+            mesh.face.back().V(2) = v[(startIndex + 2)%4];
+
+            mesh.face[i].Dealloc();
+            mesh.face[i].Alloc(3);
+            mesh.face[i].V(0)=v[(startIndex + 2)%4];
+            mesh.face[i].V(1)=v[(startIndex + 3)%4];
+            mesh.face[i].V(2)=v[(startIndex + 4)%4];
+        }
+        else if (mesh.face[i].VN() > 4) {
+            vcg::PolygonalAlgorithm<PolyMeshType>::Triangulate(mesh, i);
         }
 
-        size_t newFaceId = mesh.face.size();
+        birthFace[i] = static_cast<int>(i);
 
-        vcg::tri::Allocator<PolyMeshType>::AddFaces(mesh,1);
-        mesh.face.back().Alloc(3);
-        mesh.face.back().V(0) = v[startIndex];
-        mesh.face.back().V(1) = v[(startIndex + 1)%4];
-        mesh.face.back().V(2) = v[(startIndex + 2)%4];
-
-        mesh.face[i].Dealloc();
-        mesh.face[i].Alloc(3);
-        mesh.face[i].V(0)=v[(startIndex + 2)%4];
-        mesh.face[i].V(1)=v[(startIndex + 3)%4];
-        mesh.face[i].V(2)=v[(startIndex + 4)%4];
-
-        birthQuad[i] = i;
-        birthQuad[newFaceId] = i;
+        for (size_t j = 0; j < mesh.face.size() - prevSize; j++)
+            birthFace.push_back(static_cast<int>(i));
     }
 
-    return birthQuad;
+#ifndef NDEBUG
+    vcg::tri::io::ExporterOBJ<PolyMeshType>::Save(mesh, "res/triang.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
+
+    return birthFace;
 }
 
 template<class PolyMeshType>

@@ -93,9 +93,9 @@ public:
         FindConnectedComponents<TriMeshType>(meshTri,Components);
         std::cout<<"there are "<< Components.size()<<" conn components"<<std::endl;
 
-        //if there is only one connected component is ok
-        if (Components.size()==1)
-            return AlreadyOk;
+//        //if there is only one connected component is ok
+//        if (Components.size()==1)
+//            return AlreadyOk;
 
         //assemble border vertices
         std::cout<<"assemble borders"<<std::endl;
@@ -130,8 +130,8 @@ public:
         //everything is even
         if (NumOdd==0)return AlreadyOk;
 
-        //everything is even
-        if (NumOdd%2)return NonConsistent;
+        //Num odd are not even
+        if (NumOdd%2 == 1)return NonConsistent;
 
 
         PolyChoordsQuad.clear();

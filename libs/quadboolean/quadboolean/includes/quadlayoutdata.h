@@ -19,6 +19,7 @@ template<class PolyMeshType>
 struct QuadLayoutPatch {
     std::vector<size_t> faces;
     vcg::face::Pos<typename PolyMeshType::FaceType> startPos;
+    bool isQuad;
     size_t sizeX;
     size_t sizeY;
 };
@@ -31,8 +32,7 @@ struct QuadLayoutData {
 
 template<class PolyMeshType>
 QuadLayoutData<PolyMeshType> getQuadLayoutData(
-        PolyMeshType& mesh,        
-        const bool isQuadMesh,
+        PolyMeshType& mesh,
         const std::vector<int>& faceLabel);
 
 }

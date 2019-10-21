@@ -16,22 +16,21 @@ namespace QuadBoolean {
 namespace internal {
 
 template<class PolyMeshType>
-void traceQuads(
+void tracePatchLayout(
         PolyMeshType& mesh,
         std::vector<int>& faceLabel,
         bool motorcycle = true);
 
 template<class PolyMeshType, class TriangleMeshType>
-void triangulateQuadMesh(
+void triangulateMesh(
         PolyMeshType& mesh,
-        const bool isQuadMesh,
-        TriangleMeshType& triMesh,
-        std::vector<int>& birthQuad);
+        TriangleMeshType& trimesh,
+        std::vector<int>& birthFace);
 
 template<class TriangleMeshType>
 void computeBooleanOperation(
-        TriangleMeshType& triMesh1,
-        TriangleMeshType& triMesh2,
+        TriangleMeshType& trimesh1,
+        TriangleMeshType& trimesh2,
         const QuadBoolean::Operation& operation,
         TriangleMeshType& result,
         Eigen::MatrixXd& VA,
@@ -41,6 +40,11 @@ void computeBooleanOperation(
         Eigen::MatrixXi& FB,
         Eigen::MatrixXi& FR,
         Eigen::VectorXi& J);
+
+inline std::vector<std::pair<size_t, size_t>> getBirthTriangles(
+        const Eigen::MatrixXi& FA,
+        const Eigen::MatrixXi& FR,
+        const Eigen::VectorXi& J);
 
 std::vector<size_t> getIntersectionVertices(
         const Eigen::MatrixXd& VA,
@@ -54,60 +58,48 @@ std::vector<size_t> getIntersectionVertices(
 template<class TriangleMeshType>
 void smoothAlongIntersectionVertices(
         TriangleMeshType& boolean,
-        Eigen::MatrixXd& VR,
-        Eigen::MatrixXi& FR,
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
         const double avgNRing,
         const double maxBB);
 
 template<class PolyMeshType, class TriangleMeshType>
-void findPreservedQuads(
+void getSurfaces(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        TriangleMeshType& triResult,
-        const bool isQuadMesh1,
-        const bool isQuadMesh2,
+        TriangleMeshType& trimesh1,
+        TriangleMeshType& trimesh2,
+        TriangleMeshType& boolean,
+        const std::vector<std::pair<size_t, size_t>>& birthTriangle,
+        const std::vector<int>& birthFace1,
+        const std::vector<int>& birthFace2,
         const std::vector<size_t>& intersectionVertices,
+        const bool motorcycle,
         const bool patchRetraction,
-        const double patchRetractionNRing,
+        const double patchRetractionAVGNRing,
+        const int minRectangleArea,
+        const int minPatchArea,
+        const bool mergeQuads,
+        const bool deleteSmall,
+        const bool deleteNonConnected,
         const double maxBB,
-        std::vector<bool>& preservedQuad1,
-        std::vector<bool>& preservedQuad2);
-
-template<class PolyMeshType>
-void findAffectedPatches(
-        PolyMeshType& mesh,
-        const std::vector<bool>& preservedQuad,
-        const std::vector<int>& faceLabel,
-        std::unordered_set<int>& affectedPatches);
-
-template<class PolyMeshType>
-void getPreservedSurfaceMesh(
-        PolyMeshType& mesh1,
-        PolyMeshType& mesh2,
-        const std::vector<bool>& preservedQuad1,
-        const std::vector<bool>& preservedQuad2,
-        const std::vector<int>& faceLabel1,
-        const std::vector<int>& faceLabel2,
+        const bool preserveNonQuads,
+        std::vector<int>& faceLabel1,
+        std::vector<int>& faceLabel2,
+        std::vector<bool>& isPreserved1,
+        std::vector<bool>& isPreserved2,
+        std::vector<bool>& isNewSurface,
+        std::vector<int>& preservedSurfaceLabel,
+        std::unordered_map<size_t, size_t>& preservedFacesMap,
+        std::unordered_map<size_t, size_t>& preservedVerticesMap,
         PolyMeshType& preservedSurface,
-        std::vector<int>& newFaceLabel,
-        std::unordered_map<size_t, size_t>& facesMap,
-        std::unordered_map<size_t, size_t>& verticesMap);
-
-template<class PolyMeshType, class TriangleMeshType>
-void getNewSurfaceMesh(
-        TriangleMeshType& triResult,
-        PolyMeshType& mesh1,
-        PolyMeshType& mesh2,
-        const std::vector<bool>& preservedQuad1,
-        const std::vector<bool>& preservedQuad2,
         TriangleMeshType& newSurface);
 
 template<class PolyMeshType, class TriangleMeshType>
 bool makeILPFeasible(
         PolyMeshType& preservedSurface,
-        TriangleMeshType& newSurface);
+        TriangleMeshType& newSurface,
+        const bool onlyQuads);
 
 template<class TriangleMeshType, class PolyMeshType>
 std::vector<int> getPatchDecomposition(
@@ -122,7 +114,7 @@ std::vector<int> getPatchDecomposition(
         const bool finalSmoothing);
 
 template<class TriangleMeshType>
-std::vector<int> findBestSideSize(
+std::vector<int> findSubdivisions(
         TriangleMeshType& newSurface,
         ChartData& chartData,
         const double alpha,

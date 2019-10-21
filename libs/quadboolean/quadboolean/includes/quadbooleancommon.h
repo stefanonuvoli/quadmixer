@@ -10,11 +10,13 @@
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
 #define DEFAULTINTERSECTIONSMOOTHINGNRING 3
 #define DEFAULTINTERSECTIONSMOOTHINGMAXBB 0.025
+#define DEFAULTPRESERVENONQUADS true
 #define DEFAULTMINRECTANGLEAREA 2
 #define DEFAULTMINPATCHAREA 6
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED false
+#define DEFAULTONLYQUADS 3
 #define DEFAULTILPMETHOD QuadBoolean::ILPMethod::LEASTSQUARES
 #define DEFAULTALPHA 0.5
 #define DEFAULTBETA 1
@@ -59,11 +61,13 @@ struct Parameters {
     int intersectionSmoothingIterations;
     double intersectionSmoothingNRing;
     double maxBB;
+    bool preserveNonQuads;
     int minRectangleArea;
     int minPatchArea;
     bool mergeQuads;
     bool deleteSmall;
     bool deleteNonConnected;
+    bool onlyQuads;
     ILPMethod ilpMethod;
     double alpha;
     double beta;
@@ -86,11 +90,13 @@ struct Parameters {
         intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
         intersectionSmoothingNRing = DEFAULTINTERSECTIONSMOOTHINGNRING;
         maxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
+        preserveNonQuads = DEFAULTPRESERVENONQUADS;
         minRectangleArea = DEFAULTMINRECTANGLEAREA;
         minPatchArea = DEFAULTMINPATCHAREA;
         mergeQuads = DEFAULTMERGEQUADS;
         deleteSmall = DEFAULTDELETESMALL;
         deleteNonConnected = DEFAULTDELETENONCONNECTED;
+        onlyQuads = DEFAULTONLYQUADS;
         ilpMethod = DEFAULTILPMETHOD;
         alpha = DEFAULTALPHA;
         beta = DEFAULTBETA;

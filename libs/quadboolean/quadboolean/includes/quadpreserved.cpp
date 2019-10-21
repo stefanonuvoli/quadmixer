@@ -4,110 +4,281 @@
 #include <vcg/complex/algorithms/update/quality.h>
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 
+#include <vcg/complex/algorithms/geodesic.h>
+#include <vcg/space/distance3.h>
 
 namespace QuadBoolean {
 namespace internal {
 
 int maxHist(const std::vector<int>& row, int& startColumn, int& endColumn);
 
+
 template<class PolyMeshType, class TriangleMeshType>
-void computePreservedQuadForMesh(
-        PolyMeshType& mesh,
+void findPreservedFaces(
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
+        TriangleMeshType& trimesh1,
+        TriangleMeshType& trimesh2,
         TriangleMeshType& boolean,
-        const bool isQuadMesh,
-        const double maxDistance,
-        std::vector<bool>& preservedQuad)
+        const std::vector<size_t>& intersectionVertices,
+        const bool patchRetraction,
+        const double patchRetractionNRing,
+        const double maxBB,
+        const bool preserveNonQuads,
+        const std::vector<std::pair<size_t, size_t>>& birthTriangle,
+        const std::vector<int>& birthFace1,
+        const std::vector<int>& birthFace2,
+        std::vector<bool>& isPreserved1,
+        std::vector<bool>& isPreserved2,
+        std::vector<bool>& isNewSurface)
 {
-    preservedQuad.resize(mesh.face.size(), false);
+    typename TriangleMeshType::ScalarType maxDistance = 0;
 
-    if (!isQuadMesh) {
-        return;
+    for (size_t i = 0; i < boolean.vert.size(); i++) {
+        boolean.vert[i].Q() = 0;
     }
 
-    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(mesh);
-    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(boolean);
+    if (patchRetraction) {
+        std::vector<typename TriangleMeshType::VertexPointer> seedVec;
+        for (const size_t& vId : intersectionVertices) {
+            seedVec.push_back(&boolean.vert[vId]);
+        }
+        vcg::tri::UpdateQuality<TriangleMeshType>::VertexConstant(boolean, 0.0);
+        vcg::tri::EuclideanDistance<TriangleMeshType> ed;
+        vcg::tri::UpdateTopology<TriangleMeshType>::VertexFace(boolean);
+        vcg::tri::Geodesic<TriangleMeshType>::Compute(boolean, seedVec, ed);
 
-    vcg::tri::UpdateTopology<TriangleMeshType>::FaceFace(boolean);
-
-    std::map<std::set<typename PolyMeshType::CoordType>, size_t> quadMap;
-
-    for (size_t i = 0; i < mesh.face.size(); i++) {
-        std::set<typename PolyMeshType::CoordType> coordSet;
-
-        for (int j = 0; j < mesh.face[i].VN(); j++)
-            coordSet.insert(mesh.face[i].V(j)->P());
-
-        quadMap.insert(std::make_pair(coordSet, i));
+        maxDistance = std::min(averageEdgeLength(boolean) * patchRetractionNRing, boolean.bbox.Diag()*maxBB);
     }
 
+    isNewSurface.resize(boolean.face.size(), true);
+    isPreserved1.resize(mesh1.face.size(), false);
+    isPreserved2.resize(mesh2.face.size(), false);
 
-    std::vector<bool> isNewSurface(boolean.face.size(), true);
+    //Only faces that are birth faces are set to preserved
     for (size_t i = 0; i < boolean.face.size(); i++) {
-        if (isNewSurface[i]) {
-            bool closeToIntersectionCurve = false;
+        size_t trimeshFaceId = birthTriangle[i].second;
 
-            std::set<typename TriangleMeshType::CoordType> coordSet;
+        //Set face as preserved
+        if (birthTriangle[i].first == 1) {
+            isPreserved1[birthFace1[trimeshFaceId]] = true;
+        }
+        else {
+            isPreserved2[birthFace2[trimeshFaceId]] = true;
+        }
+    }
 
-            for (int k = 0; k < boolean.face[i].VN(); k++) {
-                coordSet.insert(boolean.face[i].V(k)->P());
+    //Identify if the triangle is the new surface
+    for (size_t i = 0; i < boolean.face.size(); i++) {
+        bool closeToIntersectionCurve = false;
+        std::set<typename TriangleMeshType::CoordType> booleanCoordSet;
 
-                if (boolean.face[i].V(k)->Q() < maxDistance) {
-                    closeToIntersectionCurve = true;
-                }
+        //Check if close to intersection curve
+        for (int k = 0; k < boolean.face[i].VN(); k++) {
+            booleanCoordSet.insert(boolean.face[i].V(k)->P());
+
+            if (boolean.face[i].V(k)->Q() < maxDistance) {
+                closeToIntersectionCurve = true;
+            }
+        }
+
+        //Check coordinates
+        TriangleMeshType* currentTrimesh = &trimesh1;
+        if (birthTriangle[i].first == 2) {
+            currentTrimesh = &trimesh2;
+        }
+
+        std::set<typename TriangleMeshType::CoordType> trimeshCoordSet;
+
+        size_t trimeshFaceId = birthTriangle[i].second;
+
+        for (int j = 0; j < currentTrimesh->face[trimeshFaceId].VN(); j++)
+            trimeshCoordSet.insert(currentTrimesh->face[trimeshFaceId].V(j)->P());
+
+        //Check if polygonal faces
+        bool nonPolygonalCheck = true;
+        if (!preserveNonQuads) {
+            typename PolyMeshType::FaceType* facePointer;
+            if (birthTriangle[i].first == 1) {
+                facePointer = &mesh1.face[birthFace1[trimeshFaceId]];
+            }
+            else {
+                facePointer = &mesh2.face[birthFace2[trimeshFaceId]];
             }
 
-            for (int k = 0; k < boolean.face[i].VN() && !closeToIntersectionCurve && isNewSurface[i]; k++) {
-                typename TriangleMeshType::FacePointer fp = boolean.face[i].FFp(k);
+            nonPolygonalCheck = facePointer->VN() == 4;
+        }
 
-                if (fp == &boolean.face[i])
-                    continue;
-
-                std::set<typename PolyMeshType::CoordType> coordSetComplete = coordSet;
-
-                int otherFaceEdge = boolean.face[i].FFi(k);
-                int oppositeVert = (otherFaceEdge + 2) % 3;
-
-                coordSetComplete.insert(fp->V(oppositeVert)->P());
-
-                typename std::map<std::set<typename PolyMeshType::CoordType>, size_t>::iterator findIt = quadMap.find(coordSetComplete);
-                if (findIt != quadMap.end()) {
-                    size_t quadId = findIt->second;
-                    if (mesh.face[quadId].N().dot(boolean.face[i].N()) > 0) {
-                        quadMap.erase(findIt);
-
-                        size_t adjFaceId = vcg::tri::Index(boolean, fp);
-
-                        isNewSurface[adjFaceId] = false;
-                        isNewSurface[i] = false;
-
-                        preservedQuad[quadId] = true;
-                    }
-                }
+        //Surface has not changed
+        if (nonPolygonalCheck && !closeToIntersectionCurve && booleanCoordSet == trimeshCoordSet) {
+            isNewSurface[i] = false;
+        }
+        //A triangle has changed
+        else {
+            //Set face as not preserved
+            if (birthTriangle[i].first == 1) {
+                isPreserved1[birthFace1[trimeshFaceId]] = false;
+            }
+            else {
+                isPreserved2[birthFace2[trimeshFaceId]] = false;
             }
         }
     }
 }
 
 template<class PolyMeshType>
-std::vector<int> splitQuadPatchesInMaximumRectangles(
+void findAffectedPatches(
         PolyMeshType& mesh,
-        const bool isQuadMesh,
+        const std::vector<bool>& isPreserved,
+        const std::vector<int>& faceLabel,
+        std::unordered_set<int>& affectedPatches)
+{
+    //Find affected patches
+    for (int i = 0; i < mesh.face.size(); i++) {
+        if (!isPreserved[i]) {
+            affectedPatches.insert(faceLabel[i]);
+        }
+    }
+}
+
+template<class PolyMeshType>
+void getPreservedSurfaceMesh(
+        PolyMeshType& mesh1,
+        PolyMeshType& mesh2,
+        const std::vector<bool>& isPreserved1,
+        const std::vector<bool>& isPreserved2,
+        const std::vector<int>& faceLabel1,
+        const std::vector<int>& faceLabel2,
+        PolyMeshType& preservedSurface,
+        std::vector<int>& newFaceLabel,
+        std::unordered_map<size_t, size_t>& preservedFacesMap,
+        std::unordered_map<size_t, size_t>& preservedVerticesMap)
+{
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh1);
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh2);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(mesh1);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(mesh2);
+
+    //Save vertices id in quality
+    for (size_t i = 0; i < mesh1.vert.size(); i++) {
+        mesh1.vert[i].Q() = i;
+    }
+    for (size_t i = 0; i < mesh2.vert.size(); i++) {
+        mesh2.vert[i].Q() = mesh1.vert.size() + i;
+    }
+
+    //Select the face which are remaining and put their id in quality
+    for (size_t i = 0; i < mesh1.face.size(); i++) {
+        if (isPreserved1[i]) {
+            mesh1.face[i].SetS();
+            mesh1.face[i].Q() = i;
+        }
+    }
+    for (size_t i = 0; i < mesh2.face.size(); i++) {
+        if (isPreserved2[i]) {
+            mesh2.face[i].SetS();
+            mesh2.face[i].Q() = mesh1.face.size() + i;
+        }
+    }
+
+
+    //Create result
+    PolyMeshType tmpMesh;
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, mesh1, true);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, mesh2, true);
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(tmpMesh);
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(tmpMesh);
+    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(tmpMesh);
+
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(preservedSurface, tmpMesh);
+
+    int maxLabel1 = 0;
+    for (const int& l : faceLabel1) {
+        maxLabel1 = std::max(maxLabel1, l);
+    }
+    newFaceLabel.resize(preservedSurface.face.size(), -1);
+    for (size_t i = 0; i < preservedSurface.face.size(); i++) {
+        if (!preservedSurface.face[i].IsD()) {
+            size_t currentFaceId = static_cast<size_t>(preservedSurface.face[i].Q());
+
+            preservedFacesMap.insert(std::make_pair(i, currentFaceId));
+
+            //Label restore
+            if (currentFaceId < mesh1.face.size()) {
+                newFaceLabel[i] = faceLabel1[currentFaceId];
+            }
+            else {
+                newFaceLabel[i] = maxLabel1 + faceLabel2[currentFaceId - mesh1.face.size()];
+            }
+        }
+    }
+
+
+    for (size_t i = 0; i < preservedSurface.vert.size(); i++) {
+        if (!preservedSurface.vert[i].IsD()) {
+            size_t currentVertId = static_cast<size_t>(preservedSurface.vert[i].Q());
+
+            preservedVerticesMap.insert(std::make_pair(i, currentVertId));
+        }
+    }
+    vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(preservedSurface);
+    vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(preservedSurface);
+    vcg::tri::UpdateBounding<PolyMeshType>::Box(preservedSurface);
+    vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(preservedSurface);
+}
+
+
+template<class TriangleMeshType>
+void getNewSurfaceMesh(
+        TriangleMeshType& boolean,
+        const std::vector<std::pair<size_t, size_t>>& birthTriangle,
+        const std::vector<int>& birthFace1,
+        const std::vector<int>& birthFace2,
+        const std::vector<bool>& isPreserved1,
+        const std::vector<bool>& isPreserved2,
+        std::vector<bool>& isNewSurface,
+        TriangleMeshType& newSurface)
+{
+    //Readjusting new surfaces
+    for (size_t i = 0; i < boolean.face.size(); i++) {
+        if (!isNewSurface[i] && (
+            (birthTriangle[i].first == 1 && !isPreserved1[birthFace1[birthTriangle[i].second]]) ||
+            (birthTriangle[i].first == 2 && !isPreserved2[birthFace2[birthTriangle[i].second]])
+        )) {
+            isNewSurface[i] = true;
+        }
+    }
+
+    vcg::tri::UpdateFlags<TriangleMeshType>::FaceClearS(boolean);
+    for (size_t i = 0; i < boolean.face.size(); i++) {
+        if (isNewSurface[i]) {
+            boolean.face[i].SetS();
+        }
+    }
+    vcg::tri::Append<TriangleMeshType, TriangleMeshType>::Mesh(newSurface, boolean, true);
+    vcg::tri::Clean<TriangleMeshType>::RemoveDuplicateVertex(newSurface);
+    vcg::tri::Clean<TriangleMeshType>::RemoveUnreferencedVertex(newSurface);
+}
+
+
+
+
+template<class PolyMeshType>
+std::vector<int> splitPatchesInMaximumRectangles(
+        PolyMeshType& mesh,
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
-        std::vector<bool>& preservedQuad,
+        std::vector<bool>& isPreserved,
         const int minimumRectangleArea,
         const bool recursive)
 {
     if (minimumRectangleArea <= 0)
         return faceLabel;
 
-    if (!isQuadMesh)
-        return faceLabel;
-
     std::vector<int> newFaceLabel;
     newFaceLabel.resize(faceLabel.size(), -1);
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
 
     const std::set<int>& labels = quadLayoutData.labels;
     const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
@@ -136,7 +307,8 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
             const size_t& sizeX = quadPatch.sizeX;
             const size_t& sizeY = quadPatch.sizeY;
 
-            assert(!startPos.IsNull());
+            if (startPos.IsNull())
+                continue;
 
             vcg::face::Pos<typename PolyMeshType::FaceType> pos;
 
@@ -154,7 +326,7 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
 
                 for (size_t y = 0; y < sizeY; y++) {
                     assert(faceLabel[vcg::tri::Index(mesh, pos2.F())] == pId);
-                    matrix[x][y] = preservedQuad[vcg::tri::Index(mesh, pos2.F())];
+                    matrix[x][y] = isPreserved[vcg::tri::Index(mesh, pos2.F())];
 
                     pos2.FlipE();
                     pos2.FlipF();
@@ -286,30 +458,24 @@ std::vector<int> splitQuadPatchesInMaximumRectangles(
 
     for (size_t i = 0; i < mesh.face.size(); i++) {
         if (!validQuads[i]) {
-            preservedQuad[i] = false;
+            isPreserved[i] = false;
             assert(newFaceLabel[i] == -1);
         }
     }
-
-    quadLayoutData = internal::getQuadLayoutData(mesh, isQuadMesh, newFaceLabel);
 
     return newFaceLabel;
 }
 
 template<class PolyMeshType>
-int mergeQuadPatches(
+int mergePatches(
         PolyMeshType& mesh,
-        const bool isQuadMesh,
         std::unordered_set<int>& affectedQuads,
         std::vector<int>& faceLabel,
-        const std::vector<bool>& preservedQuad)
+        const std::vector<bool>& preservedFace)
 {
-    if (!isQuadMesh)
-        return 0;
-
     vcg::tri::UpdateQuality<PolyMeshType>::VertexValence(mesh);
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
 
     const std::set<int>& labels = quadLayoutData.labels;
     const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
@@ -352,14 +518,14 @@ int mergeQuadPatches(
                 for (size_t j = 0; j < (i%2 == 0 ? sizeX : sizeY); j++) {
 
                     assert(faceLabel[vcg::tri::Index(mesh, pos.F())] == pId);
-                    assert(preservedQuad[vcg::tri::Index(mesh, pos.F())]);
+                    assert(preservedFace[vcg::tri::Index(mesh, pos.F())]);
 
                     if (validToMerge) {
                         pos.FlipF();
 
                         int adjIndex = vcg::tri::Index(mesh, pos.F());
 
-                        if (!preservedQuad[adjIndex]) {
+                        if (!preservedFace[adjIndex]) {
                             validToMerge = false;
                             assert(faceLabel[adjIndex] == -1);
                         }
@@ -411,7 +577,7 @@ int mergeQuadPatches(
                         affectedQuads.erase(adjLabel);
                     }
 
-                    return 1 + mergeQuadPatches(mesh, isQuadMesh, affectedQuads, faceLabel, preservedQuad);
+                    return 1 + mergePatches(mesh, affectedQuads, faceLabel, preservedFace);
                 }
 
                 //Turn
@@ -425,18 +591,14 @@ int mergeQuadPatches(
 }
 
 template<class PolyMeshType>
-int deleteNonConnectedQuadPatches(
+int deleteNonConnectedPatches(
         PolyMeshType& mesh,
-        const bool isQuadMesh,
         std::vector<int>& faceLabel,
-        std::vector<bool>& preservedQuad)
+        std::vector<bool>& preservedFace)
 {
-    if (!isQuadMesh)
-        return 0;
-
     int nDeleted = 0;    
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
 
     const std::set<int>& labels = quadLayoutData.labels;
     const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
@@ -451,10 +613,10 @@ int deleteNonConnectedQuadPatches(
 
         //Find if the quad is connected
         for (const size_t& fId : patchFaces) {
-            if (preservedQuad[fId]) {
+            if (preservedFace[fId]) {
                 for (int j = 0; j < 4 && !connected; j++) {
                     size_t adjIndex = vcg::tri::Index(mesh, mesh.face[fId].FFp(j));
-                    if (preservedQuad[adjIndex] && faceLabel[adjIndex] != pId) {
+                    if (preservedFace[adjIndex] && faceLabel[adjIndex] != pId) {
                         connected = true;
                     }
                 }
@@ -464,7 +626,7 @@ int deleteNonConnectedQuadPatches(
         if (!connected) {
             nDeleted++;
             for (const size_t& fId : patchFaces) {
-                preservedQuad[fId] = false;
+                preservedFace[fId] = false;
                 faceLabel[fId] = -1;
             }
         }
@@ -474,20 +636,16 @@ int deleteNonConnectedQuadPatches(
 }
 
 template<class PolyMeshType>
-int deleteSmallQuadPatches(
+int deleteSmallPatches(
         PolyMeshType& mesh,
-        const bool isQuadMesh,
         const std::unordered_set<int>& affectedPatches,
         const int minPatchArea,
         std::vector<int>& faceLabel,
-        std::vector<bool>& preservedQuad)
+        std::vector<bool>& preservedFace)
 {
-    if (!isQuadMesh)
-        return 0;
-
     int nDeleted = 0;
 
-    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, isQuadMesh, faceLabel);
+    QuadLayoutData<PolyMeshType> quadLayoutData = getQuadLayoutData(mesh, faceLabel);
 
     const std::set<int>& labels = quadLayoutData.labels;
     const std::vector<QuadLayoutPatch<PolyMeshType>>& quadPatches = quadLayoutData.quadPatches;
@@ -501,7 +659,7 @@ int deleteSmallQuadPatches(
             if (quadPatch.sizeX*quadPatch.sizeY < minPatchArea) {
                 nDeleted++;
                 for (const size_t& fId : patchFaces) {
-                    preservedQuad[fId] = false;
+                    preservedFace[fId] = false;
                     faceLabel[fId] = -1;
                 }
             }

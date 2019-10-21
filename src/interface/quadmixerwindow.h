@@ -149,8 +149,10 @@ private:
     Eigen::MatrixXd VA, VB, VR;
     Eigen::MatrixXi FA, FB, FR;
     Eigen::VectorXi J;
-    std::vector<int> birthQuad1;
-    std::vector<int> birthQuad2;
+
+    std::vector<std::pair<size_t, size_t>> birthTriangle;
+    std::vector<int> birthFace1;
+    std::vector<int> birthFace2;
 
     std::vector<size_t> intersectionVertices;
 
@@ -159,11 +161,12 @@ private:
     QuadLayoutData quadLayoutData1;
     QuadLayoutData quadLayoutData2;
 
-    std::vector<bool> preservedQuad1;
-    std::vector<bool> preservedQuad2;
+    std::vector<bool> isPreserved1;
+    std::vector<bool> isPreserved2;
+    std::vector<bool> isNewSurface;
 
-    std::vector<int> preservedFaceLabel1;
-    std::vector<int> preservedFaceLabel2;
+    std::vector<int> meshLabel1;
+    std::vector<int> meshLabel2;
     QuadLayoutData quadLayoutDataPreserved1;
     QuadLayoutData quadLayoutDataPreserved2;
 
@@ -202,7 +205,7 @@ private:
     template<class MeshType>
     void colorResultByComboBox(MeshType& mesh, int index);
     template<class MeshType>
-    void colorMeshByComboBox(MeshType& mesh, int index, const std::vector<bool>& preservedQuad);
+    void colorMeshByComboBox(MeshType& mesh, int index, const std::vector<bool>& preservedFace);
 };
 
 #endif //QUADBOOLEANWINDOW_H

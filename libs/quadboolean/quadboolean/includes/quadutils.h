@@ -24,7 +24,7 @@ template <class PolyMeshType>
 bool isTriangleMesh(PolyMeshType& mesh);
 
 template <class PolyMeshType>
-std::vector<int> splitQuadInTriangle(PolyMeshType& mesh);
+std::vector<int> splitFacesInTriangles(PolyMeshType& mesh);
 
 template<class PolyMeshType>
 typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh, const std::vector<size_t>& faces);

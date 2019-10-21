@@ -32,7 +32,8 @@ void GLQuadLayoutWrap<MeshType>::GLDraw()
             const size_t& sizeX = patch.sizeX;
             const size_t& sizeY = patch.sizeY;
 
-            assert(!startPos.IsNull());
+            if(startPos.IsNull())
+                continue;
 
             pos.Set(startPos.F(), startPos.E(), startPos.V());
             for (size_t i = 0; i < 4; i++) {

@@ -164,7 +164,7 @@ void GLArea::manageDoubleClick(const int &x, const int &y)
 
                     PolyMesh targetCopy;
                     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(targetCopy, *targetMesh1->mesh);
-                    QuadBoolean::internal::splitQuadInTriangle(targetCopy);
+                    QuadBoolean::internal::splitFacesInTriangles(targetCopy);
 
                     TriangleMesh targetTriangulated;
                     vcg::tri::Append<TriangleMesh, PolyMesh>::Mesh(targetTriangulated, targetCopy);

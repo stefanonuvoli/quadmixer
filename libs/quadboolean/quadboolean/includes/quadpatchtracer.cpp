@@ -22,22 +22,52 @@ void QuadMeshTracer<PolyMeshType>::InitSingularities()
     TracedEdges.clear();
     TracingStack.clear();
     vcg::tri::UpdateQuality<PolyMeshType>::VertexValence(PolyM);
-    for (size_t i=0;i<PolyM.face.size();i++)
-        for (int j=0;j<PolyM.face[i].VN();j++)
-        {
-            if (PolyM.face[i].V(j)->IsB())continue;
-            if (PolyM.face[i].V(j)->Q()==4)continue;
-            vcg::face::Pos<PFace> CurrP(&PolyM.face[i],j);
+    for (size_t i=0;i<PolyM.face.size();i++) {
+        if (PolyM.face[i].VN() == 4) {
+            for (int j=0;j<PolyM.face[i].VN();j++)
+            {
+                if (PolyM.face[i].V(j)->IsB())continue;
+                if (PolyM.face[i].V(j)->Q() == 4)continue;
 
-            size_t IndexV=vcg::tri::Index(PolyM,CurrP.V());
-            VisitedVertices.insert(IndexV);
+                vcg::face::Pos<PFace> CurrP(&PolyM.face[i],j);
 
-            CurrP.FlipV();
-            TracingStack.push_back(CurrP);
+                size_t IndexV=vcg::tri::Index(PolyM,CurrP.V());
+                VisitedVertices.insert(IndexV);
 
+                CurrP.FlipV();
+                TracingStack.push_back(CurrP);
+            }
         }
+        else {
+            for (int j=0;j<PolyM.face[i].VN();j++)
+            {
+                vcg::face::Pos<PFace> CurrP(&PolyM.face[i],j);
+
+                size_t IndexV=vcg::tri::Index(PolyM,CurrP.V());
+                VisitedVertices.insert(IndexV);
+
+                size_t IndexV1=vcg::tri::Index(PolyM,CurrP.VFlip());
+                assert(IndexV1!=IndexV);
+                // add to traced paths
+                std::pair<size_t,size_t> key(std::min(IndexV,IndexV1),std::max(IndexV,IndexV1));
+                TracedEdges.insert(key);
+
+                typename PolyMeshType::FaceType* start = CurrP.F();
+                do {
+                    CurrP.FlipF();
+                    CurrP.FlipE();
+                    CurrP.FlipV();
+                    if (start != CurrP.F()) {
+                        TracingStack.push_back(CurrP);
+                    }
+                    CurrP.FlipV();
+                }
+                while (start != CurrP.F());
+            }
+        }
+    }
     if (DebugMessages)
-    std::cout<<"Inserted "<<TracingStack.size()<<" portals"<<std::endl;
+        std::cout<<"Inserted "<<TracingStack.size()<<" portals"<<std::endl;
 }
 
 template <class PolyMeshType>
@@ -95,6 +125,7 @@ void QuadMeshTracer<PolyMeshType>::DoTrace()
     if (DebugMessages)
         std::cout<<TracingStack.size() << " need to be traced! "<<std::endl;
 
+    assert(!TracingStack.empty());
     int step=0;
     do{
         vcg::face::Pos<PFace> CurrP=TracingStack.front();

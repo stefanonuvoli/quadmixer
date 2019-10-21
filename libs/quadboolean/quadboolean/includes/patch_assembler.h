@@ -2723,7 +2723,7 @@ private:
 
         //transform the quad mesh into tris
         //UpdateAttributes()
-        std::vector<int> ret=QuadBoolean::internal::splitQuadInTriangle(SwapQuad);
+        std::vector<int> ret=QuadBoolean::internal::splitFacesInTriangles(SwapQuad);
         //vcg::tri::io::ExporterPLY<QuadMeshType>::Save(SwapQuad,"SwapQuad.ply");
 
         MeshType externalBound;

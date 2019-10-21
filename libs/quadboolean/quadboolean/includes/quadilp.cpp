@@ -551,15 +551,15 @@ std::vector<double> getSmoothedChartAverageEdgeLength(
             int numSides = 0;
 
             for (size_t sId : chart.chartSubSides) {
-                const ChartSubSide& side = chartData.subSides[sId];
-                if (side.isOnBorder) {
-                    currentQuadLength += side.length / side.size;
+                const ChartSubSide& subside = chartData.subSides[sId];
+                if (subside.isOnBorder) {
+                    currentQuadLength += subside.length / subside.size;
                     numSides++;
                 }
             }
 
             if (numSides > 0) {
-                currentQuadLength /= numSides;                
+                currentQuadLength /= numSides;
                 avgLengths[i] = currentQuadLength;
             }
         }
