@@ -114,6 +114,8 @@ void QuadMixerWindow::detachOperation()
         parameters.intersectionSmoothingIterations = 3;
         parameters.resultSmoothingLaplacianNRing = 2;
         parameters.resultSmoothingLaplacianIterations = 5;
+        parameters.preserveNonQuads = false;
+        parameters.onlyQuads = true;
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh1, QuadBoolean::Operation::INTERSECTION, *detachResult1, parameters);
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh2, QuadBoolean::Operation::INTERSECTION, *detachResult2, parameters);
 
