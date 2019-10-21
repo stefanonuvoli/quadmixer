@@ -860,8 +860,6 @@ void QuadMixerWindow::doPatchDecomposition() {
     //Make ILP feasible
     QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface, onlyQuads);
 
-    std::cout << "asd" << std::endl;
-
     std::cout << std::endl << " >> "
               << "Make ILP feasible: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
