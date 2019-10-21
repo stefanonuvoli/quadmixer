@@ -189,12 +189,12 @@ void smoothAlongIntersectionVertices(
         TriangleMeshType& boolean,
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
-        const double avgNRing,
+        const double NRing,
         const double maxBB)
 {
     vcg::tri::UpdateBounding<TriangleMeshType>::Box(boolean);
 
-    typename TriangleMeshType::ScalarType maxDistance = std::min(averageEdgeLength(boolean) * avgNRing, boolean.bbox.Diag()*maxBB);
+    typename TriangleMeshType::ScalarType maxDistance = std::min(averageEdgeLength(boolean) * NRing, boolean.bbox.Diag()*maxBB);
 
     vcg::tri::UpdateSelection<TriangleMeshType>::VertexClear(boolean);
 
@@ -221,7 +221,7 @@ void getSurfaces(
         const std::vector<size_t>& intersectionVertices,
         const bool motorcycle,
         const bool patchRetraction,
-        const double patchRetractionAVGNRing,
+        const double patchRetractionNRing,
         const int minRectangleArea,
         const int minPatchArea,
         const bool mergeQuads,
@@ -251,7 +251,7 @@ void getSurfaces(
                 boolean,
                 intersectionVertices,
                 patchRetraction,
-                patchRetractionAVGNRing,
+                patchRetractionNRing,
                 maxBB,
                 preserveNonQuads,
                 birthTriangle,
@@ -814,9 +814,9 @@ void getResult(
         PolyMeshType& result,
         TriangleMeshType& targetBoolean,
         const int resultSmoothingIterations,
-        const double resultSmoothingAvgNRing,
+        const double resultSmoothingNRing,
         const int resultSmoothingLaplacianIterations,
-        const double resultSmoothingLaplacianAvgNRing,
+        const double resultSmoothingLaplacianNRing,
         const std::unordered_map<size_t, size_t>& preservedFacesMap,
         const std::unordered_map<size_t, size_t>& preservedVerticesMap,
         SourceInfo& sourceInfo)
@@ -879,7 +879,7 @@ void getResult(
 
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(result);
     vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(result);
-    vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType> >(result, result.face.size(), false);
+    vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType>>(result, result.face.size(), false);
 
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, result);
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
@@ -900,10 +900,16 @@ void getResult(
     for (size_t i = 0; i < result.face.size(); i++) {
         if (!result.face[i].IsD()) {
             if (result.face[i].Q() >= 0) {
-                size_t currentFaceId = preservedFacesMap.at(static_cast<size_t>(result.face[i].Q()));
+                int currentFaceId = -1;
+                std::unordered_map<size_t, size_t>::const_iterator it = preservedFacesMap.find(static_cast<size_t>(result.face[i].Q()));
+                if (it != preservedFacesMap.end())
+                    currentFaceId = static_cast<int>(it->second);
 
-                if (currentFaceId < mesh1.face.size()) {
-                    sourceInfo.oldFacesMap.insert(std::make_pair(i, OriginEntity(1, currentFaceId)));
+                if (currentFaceId < 0) {
+                    sourceInfo.oldFacesMap.insert(std::make_pair(i, OriginEntity(0, 0)));
+                }
+                else if (currentFaceId < mesh1.face.size()) {
+                    sourceInfo.oldFacesMap.insert(std::make_pair(i, OriginEntity(1, static_cast<size_t>(currentFaceId))));
                 }
                 else {
                     sourceInfo.oldFacesMap.insert(std::make_pair(i, OriginEntity(2, currentFaceId - mesh1.face.size())));
@@ -921,13 +927,19 @@ void getResult(
     for (size_t i = 0; i < result.vert.size(); i++) {
         if (!result.vert[i].IsD()) {
             if (result.vert[i].Q() >= 0) {
-                size_t currentVertexId = preservedVerticesMap.at(static_cast<size_t>(result.vert[i].Q()));
+                int currentVertId = -1;
+                std::unordered_map<size_t, size_t>::const_iterator it = preservedVerticesMap.find(static_cast<size_t>(result.vert[i].Q()));
+                if (it != preservedVerticesMap.end())
+                    currentVertId = static_cast<int>(it->second);
 
-                if (currentVertexId < mesh1.vert.size()) {
-                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(1, currentVertexId)));
+                if (currentVertId < 0) { //It shouldn't happen
+                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(0, 0)));
+                }
+                else if (currentVertId < mesh1.face.size()) {
+                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(1, static_cast<size_t>(currentVertId))));
                 }
                 else {
-                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(2, currentVertexId - mesh1.vert.size())));
+                    sourceInfo.oldVerticesMap.insert(std::make_pair(i, OriginEntity(2, currentVertId - mesh1.vert.size())));
                 }
             }
             else {
@@ -977,7 +989,8 @@ void getResult(
     }
 
     for (int it = 0; it < resultSmoothingIterations; it++) {
-        typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * resultSmoothingAvgNRing;
+        typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * resultSmoothingNRing;
+
         LaplacianGeodesic(result, 1, maxDistance, 0.7);
 
         //Reproject
@@ -1000,7 +1013,7 @@ void getResult(
         }
     }
 
-    typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * resultSmoothingLaplacianAvgNRing;
+    typename PolyMeshType::ScalarType maxDistance = averageEdgeLength(result) * resultSmoothingLaplacianNRing;
 
     LaplacianGeodesic(result, resultSmoothingLaplacianIterations, maxDistance, 0.8);
 

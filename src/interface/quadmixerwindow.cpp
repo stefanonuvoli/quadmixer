@@ -1466,9 +1466,12 @@ void QuadMixerWindow::colorResultByComboBox(MeshType& mesh, int index) {
             if (originEntity.meshId == 1) {
                 mesh.face[faceId].C() = vcg::Color4b(200,255,200,255);
             }
-            else {
-                assert(originEntity.meshId == 2);
+            else if (originEntity.meshId == 2) {
                 mesh.face[faceId].C() = vcg::Color4b(200,200,255,255);
+            }
+            else {
+                assert(originEntity.meshId == 0);
+                mesh.face[faceId].C() = vcg::Color4b(255,200,200,255);
             }
         }
         for (size_t& newFaceId : sourceInfo.newFaces) {

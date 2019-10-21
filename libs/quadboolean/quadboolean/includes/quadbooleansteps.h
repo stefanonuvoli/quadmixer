@@ -60,7 +60,7 @@ void smoothAlongIntersectionVertices(
         TriangleMeshType& boolean,
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
-        const double avgNRing,
+        const double NRing,
         const double maxBB);
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -76,7 +76,7 @@ void getSurfaces(
         const std::vector<size_t>& intersectionVertices,
         const bool motorcycle,
         const bool patchRetraction,
-        const double patchRetractionAVGNRing,
+        const double patchRetractionNRing,
         const int minRectangleArea,
         const int minPatchArea,
         const bool mergeQuads,
@@ -141,9 +141,9 @@ void getResult(
         PolyMeshType& result,
         TriangleMeshType& targetBoolean,
         const int resultSmoothingIterations,
-        const double resultSmoothingAvgNRing,
+        const double resultSmoothingNRing,
         const int resultSmoothingLaplacianIterations,
-        const double resultSmoothingLaplacianAvgNRing,
+        const double resultSmoothingLaplacianRing,
         const std::unordered_map<size_t, size_t>& preservedFacesMap,
         const std::unordered_map<size_t, size_t>& preservedVerticesMap,
         SourceInfo& sourceInfo);
