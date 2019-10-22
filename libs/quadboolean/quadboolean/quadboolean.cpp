@@ -41,13 +41,14 @@ void quadBoolean(
      Eigen::VectorXi J;
 
      std::vector<size_t> intersectionVertices;
+     std::vector<size_t> smoothedVertices;
 
      std::vector<std::pair<size_t, size_t>> birthTriangle;
      std::vector<int> birthFace1;
      std::vector<int> birthFace2;
 
-     std::vector<bool> isPreserved1;
-     std::vector<bool> isPreserved2;
+     std::vector<std::pair<bool, bool>> isPreserved1;
+     std::vector<std::pair<bool, bool>> isPreserved2;
      std::vector<bool> isNewSurface;
 
      std::unordered_set<int> affectedPatches1;
@@ -102,7 +103,8 @@ void quadBoolean(
                  intersectionVertices,
                  parameters.intersectionSmoothingIterations,
                  parameters.intersectionSmoothingNRing,
-                 parameters.maxBB);
+                 parameters.maxBB,
+                 smoothedVertices);
 
      //Get preserved and new surface
      QuadBoolean::internal::getSurfaces(
@@ -115,6 +117,7 @@ void quadBoolean(
              birthFace1,
              birthFace2,
              intersectionVertices,
+             smoothedVertices,
              parameters.motorcycle,
              parameters.patchRetraction,
              parameters.patchRetractionNRing,
@@ -151,6 +154,7 @@ void quadBoolean(
      ilpResult = internal::findSubdivisions(
                  newSurface,
                  chartData,
+                 parameters.onlyQuads,
                  parameters.alpha,
                  parameters.beta,
                  parameters.ilpMethod);

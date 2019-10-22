@@ -684,6 +684,7 @@ void QuadMixerWindow::doComputeBooleans() {
 void QuadMixerWindow::doSmooth()
 {
     booleanSmoothed.Clear();
+    smoothedVertices.clear();
 
     chrono::steady_clock::time_point start;
 
@@ -702,7 +703,8 @@ void QuadMixerWindow::doSmooth()
                 intersectionVertices,
                 intersectionSmoothingIterations,
                 intersectionNRing,
-                maxBB);
+                maxBB,
+                smoothedVertices);
 
     vcg::tri::UpdateNormal<TriangleMesh>::PerFaceNormalized(booleanSmoothed);
     vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalized(booleanSmoothed);
@@ -769,6 +771,7 @@ void QuadMixerWindow::doGetSurfaces() {
             birthFace1,
             birthFace2,
             intersectionVertices,
+            smoothedVertices,
             motorcycle,
             patchRetraction,
             patchRetractionNRing,
@@ -904,6 +907,7 @@ void QuadMixerWindow::doSolveILP() {
     //Solve ILP
     double alpha = ui.alphaSpinBox->value();
     double beta = ui.betaSpinBox->value();
+    bool onlyQuads = ui.onlyQuadsCheckBox->isChecked();
 
     QuadBoolean::ILPMethod ilpMethod;
     if (ui.ilpMethodLSRadio->isChecked()) {
@@ -919,6 +923,7 @@ void QuadMixerWindow::doSolveILP() {
     ilpResult = QuadBoolean::internal::findSubdivisions(
                 newSurface,
                 chartData,
+                onlyQuads,
                 alpha,
                 beta,
                 ilpMethod);
@@ -1394,7 +1399,7 @@ void QuadMixerWindow::colorizeMesh(
 
 
 template<class MeshType>
-void QuadMixerWindow::colorMeshByComboBox(MeshType& mesh, int index, const std::vector<bool>& preservedFace) {
+void QuadMixerWindow::colorMeshByComboBox(MeshType& mesh, int index, const std::vector<std::pair<bool, bool>>& preservedFace) {
     if (mesh.face.size() == 0)
         return;
 
@@ -1402,7 +1407,7 @@ void QuadMixerWindow::colorMeshByComboBox(MeshType& mesh, int index, const std::
     switch (index) {
     case 1:
         for (size_t i = 0; i < mesh.face.size(); i++) {
-            if (preservedFace.empty() || !preservedFace[i])
+            if (preservedFace.empty() || !preservedFace[i].first)
                 mesh.face[i].C() = vcg::Color4b(255,255,255,255);
             else
                 mesh.face[i].C() = vcg::Color4b(200,255,200,255);

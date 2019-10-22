@@ -61,7 +61,8 @@ void smoothAlongIntersectionVertices(
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
         const double NRing,
-        const double maxBB);
+        const double maxBB,
+        std::vector<size_t>& smoothedVertices);
 
 template<class PolyMeshType, class TriangleMeshType>
 void getSurfaces(
@@ -74,6 +75,7 @@ void getSurfaces(
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
         const std::vector<size_t>& intersectionVertices,
+        const std::vector<size_t>& smoothedVertices,
         const bool motorcycle,
         const bool patchRetraction,
         const double patchRetractionNRing,
@@ -117,6 +119,7 @@ template<class TriangleMeshType>
 std::vector<int> findSubdivisions(
         TriangleMeshType& newSurface,
         ChartData& chartData,
+        const bool onlyQuads,
         const double alpha,
         const double beta,
         const ILPMethod& method);

@@ -28,7 +28,8 @@ HEADERS += \
     $$PWD/quadboolean/includes/quadlayoutdata.h \
     $$PWD/quadboolean/includes/quadpreserved.h \
     $$PWD/quadboolean/includes/quadlibiglbooleaninterface.h \
-    $$PWD/quadboolean/includes/patch_decomposer.h \
     $$PWD/quadboolean/includes/patch_assembler.h \
     $$PWD/quadboolean/includes/field_tracer.h \
-    $$PWD/quadboolean/includes/quadbooleansteps.h
+    $$PWD/quadboolean/includes/quadbooleansteps.h \
+    $$PWD/quadboolean/includes/common_mesh_functions.h
+

@@ -55,10 +55,10 @@ QuadLayoutData<PolyMeshType> getQuadLayoutData(
         size_t& sizeX = quadPatch.sizeX;
         size_t& sizeY = quadPatch.sizeY;
 
-        if (quadPatch.isQuad) {
-            vcg::face::Pos<typename PolyMeshType::FaceType>& startPos = quadPatch.startPos;
-            startPos.SetNull();
+        vcg::face::Pos<typename PolyMeshType::FaceType>& startPos = quadPatch.startPos;
+        startPos.SetNull();
 
+        if (quadPatch.isQuad) {
             //Find a corner of the quad
             int maxNBorders = 0;
             for (const size_t& fId : quadPatch.faces) {
@@ -139,8 +139,12 @@ QuadLayoutData<PolyMeshType> getQuadLayoutData(
             assert(sizeX*sizeY == quadPatch.faces.size());
         }
         else {
-            sizeX = 1;
-            sizeY = 1;
+            assert(quadPatch.faces.size() == 1);
+            sizeX = 0;
+            sizeY = 0;
+
+            typename PolyMeshType::FaceType* f = &mesh.face[quadPatch.faces.at(0)];
+            startPos.Set(f, 0, f->V(0));
         }
     }
 

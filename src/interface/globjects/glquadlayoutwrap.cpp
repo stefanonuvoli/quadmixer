@@ -32,33 +32,50 @@ void GLQuadLayoutWrap<MeshType>::GLDraw()
             const size_t& sizeX = patch.sizeX;
             const size_t& sizeY = patch.sizeY;
 
-            if(startPos.IsNull())
-                continue;
+            assert(!startPos.IsNull());
 
-            pos.Set(startPos.F(), startPos.E(), startPos.V());
-            for (size_t i = 0; i < 4; i++) {
-                for (size_t j = 0; j < (i%2 == 0 ? sizeX : sizeY); j++) {
+            if (patch.isQuad) {
+                assert(sizeX > 0 && sizeY > 0);
+
+                pos.Set(startPos.F(), startPos.E(), startPos.V());
+                for (size_t i = 0; i < 4; i++) {
+                    for (size_t j = 0; j < (i%2 == 0 ? sizeX : sizeY); j++) {
+                        vcg::glColor(vcg::Color4b(0,0,0,255));
+
+                        glBegin(GL_LINES);
+                        pos.FlipV();
+                        vcg::glVertex(pos.V()->P());
+                        pos.FlipV();
+                        vcg::glVertex(pos.V()->P());
+                        glEnd();
+
+                        if (j < (i%2 == 0 ? sizeX-1 : sizeY-1)) {
+                            //Go forward
+                            pos.FlipE();
+                            pos.FlipF();
+                            pos.FlipE();
+                            pos.FlipV();
+                        }
+                    }
+
+                    //Turn left and go forward
+                    pos.FlipE();
+                    pos.FlipV();
+                }
+            }
+            else {
+                assert(sizeX == 0 && sizeY == 0);
+                typename MeshType::FaceType* f = startPos.F();
+
+                for (size_t j = 0; j < f->VN(); j++) {
                     vcg::glColor(vcg::Color4b(0,0,0,255));
 
                     glBegin(GL_LINES);
-                    pos.FlipV();
-                    vcg::glVertex(pos.V()->P());
-                    pos.FlipV();
-                    vcg::glVertex(pos.V()->P());
+                    vcg::glVertex(f->V0(j)->P());
+                    vcg::glVertex(f->V1(j)->P());
                     glEnd();
 
-                    if (j < (i%2 == 0 ? sizeX-1 : sizeY-1)) {
-                        //Go forward
-                        pos.FlipE();
-                        pos.FlipF();
-                        pos.FlipE();
-                        pos.FlipV();
-                    }
                 }
-
-                //Turn left and go forward
-                pos.FlipE();
-                pos.FlipV();
             }
         }
         //glEnd();

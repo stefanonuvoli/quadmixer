@@ -155,14 +155,15 @@ private:
     std::vector<int> birthFace2;
 
     std::vector<size_t> intersectionVertices;
+    std::vector<size_t> smoothedVertices;
 
     TriangleMesh booleanSmoothed;
 
     QuadLayoutData quadLayoutData1;
     QuadLayoutData quadLayoutData2;
 
-    std::vector<bool> isPreserved1;
-    std::vector<bool> isPreserved2;
+    std::vector<std::pair<bool, bool>> isPreserved1;
+    std::vector<std::pair<bool, bool>> isPreserved2;
     std::vector<bool> isNewSurface;
 
     std::vector<int> meshLabel1;
@@ -205,7 +206,7 @@ private:
     template<class MeshType>
     void colorResultByComboBox(MeshType& mesh, int index);
     template<class MeshType>
-    void colorMeshByComboBox(MeshType& mesh, int index, const std::vector<bool>& preservedFace);
+    void colorMeshByComboBox(MeshType& mesh, int index, const std::vector<std::pair<bool, bool>>& preservedFace);
 };
 
 #endif //QUADBOOLEANWINDOW_H

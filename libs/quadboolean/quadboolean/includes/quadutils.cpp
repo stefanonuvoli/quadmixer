@@ -60,7 +60,8 @@ void LaplacianGeodesic(
         PolyMeshType &poly_m,
         int nstep,
         const double maxDistance,
-        const double minDumpS)
+        const double minDumpS,
+        std::vector<size_t>& smoothedVertices)
 {
     std::vector<typename PolyMeshType::VertexPointer> seedVec;
     for (int i = 0; i < poly_m.vert.size(); i++) {
@@ -73,10 +74,12 @@ void LaplacianGeodesic(
     vcg::tri::UpdateTopology<PolyMeshType>::VertexFace(poly_m);
     vcg::tri::Geodesic<PolyMeshType>::Compute(poly_m,seedVec, ed);
 
+    smoothedVertices.clear();
     std::vector<double> DampS(poly_m.vert.size());
     for (int i = 0; i < poly_m.vert.size(); i++) {        
         if (!poly_m.vert[i].IsD()) {
             if (poly_m.vert[i].Q() < maxDistance) {
+                smoothedVertices.push_back(i);
                 DampS[i] = poly_m.vert[i].Q() / maxDistance;
                 assert(DampS[i] >= 0 && DampS[i] <= 1);
                 DampS[i] = minDumpS + DampS[i]*(1-minDumpS);
@@ -217,6 +220,20 @@ class OrientFaces
     typedef typename PolyMeshType::CoordType CoordType;
     typedef typename PolyMeshType::ScalarType ScalarType;
 
+public:
+
+    static void InvertFace(FaceType &f0)
+    {
+        std::vector<VertexType*> faceVert;
+        for (int i=0;i<f0.VN();i++)
+            faceVert.push_back(f0.V(i));
+        std::reverse(faceVert.begin(),faceVert.end());
+        for (int i=0;i<f0.VN();i++)
+            f0.V(i)=faceVert[i];
+    }
+
+private:
+
     static bool IsCoherent(const FaceType &f0,const FaceType &f1,const int IndexE)
     {
         assert(f0.cFFp(IndexE)==&f1);
@@ -231,16 +248,6 @@ class OrientFaces
         assert(v0==v3);
         assert(v1==v2);
         return true;
-    }
-
-    static void InvertFace(FaceType &f0)
-    {
-        std::vector<VertexType*> faceVert;
-        for (int i=0;i<f0.VN();i++)
-            faceVert.push_back(f0.V(i));
-        std::reverse(faceVert.begin(),faceVert.end());
-        for (int i=0;i<f0.VN();i++)
-            f0.V(i)=faceVert[i];
     }
 
     static void InvertFaces(PolyMeshType &PolyM,

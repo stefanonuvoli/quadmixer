@@ -8,18 +8,11 @@
 #include "quadquadmapping.h"
 #include "quadlibiglbooleaninterface.h"
 #include "even_pairing.h"
+#include "patch_assembler.h"
 
 #include <map>
 
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
-
-#define USE_NEW_DECOMPOSER
-
-#ifdef USE_NEW_DECOMPOSER
-#include "patch_assembler.h"
-#else
-#include "patch_decomposer.h"
-#endif
 
 #ifndef NDEBUG
 #include <igl/writeOBJ.h>
@@ -190,7 +183,8 @@ void smoothAlongIntersectionVertices(
         const std::vector<size_t>& intersectionVertices,
         const int intersectionSmoothingInterations,
         const double NRing,
-        const double maxBB)
+        const double maxBB,
+        std::vector<size_t>& smoothedVertices)
 {
     vcg::tri::UpdateBounding<TriangleMeshType>::Box(boolean);
 
@@ -205,7 +199,7 @@ void smoothAlongIntersectionVertices(
         boolean.vert[vId].SetS();
     }
 
-    LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.8);
+    LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.8, smoothedVertices);
 }
 
 template<class PolyMeshType, class TriangleMeshType>
@@ -219,6 +213,7 @@ void getSurfaces(
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
         const std::vector<size_t>& intersectionVertices,
+        const std::vector<size_t>& smoothedVertices,
         const bool motorcycle,
         const bool patchRetraction,
         const double patchRetractionNRing,
@@ -231,8 +226,8 @@ void getSurfaces(
         const bool preserveNonQuads,
         std::vector<int>& faceLabel1,
         std::vector<int>& faceLabel2,
-        std::vector<bool>& isPreserved1,
-        std::vector<bool>& isPreserved2,
+        std::vector<std::pair<bool, bool>>& isPreserved1,
+        std::vector<std::pair<bool, bool>>& isPreserved2,
         std::vector<bool>& isNewSurface,
         std::vector<int>& preservedSurfaceLabel,
         std::unordered_map<size_t, size_t>& preservedFacesMap,
@@ -247,9 +242,9 @@ void getSurfaces(
     //Find preserved quads
     QuadBoolean::internal::findPreservedFaces(
                 mesh1, mesh2,
-                trimesh1, trimesh2,
                 boolean,
                 intersectionVertices,
+                smoothedVertices,
                 patchRetraction,
                 patchRetractionNRing,
                 maxBB,
@@ -372,7 +367,6 @@ std::vector<int> getPatchDecomposition(
     if (newSurface.face.size() <= 0)
         return std::vector<int>();
 
-#ifdef USE_NEW_DECOMPOSER
     std::vector<std::vector<std::vector<std::pair<size_t,size_t>>>> sides;
     PatchAssembler<TriangleMeshType, PolyMeshType> patchAssembler(newSurface, preservedSurface);
     typename PatchAssembler<TriangleMeshType, PolyMeshType>::Parameters parameters;
@@ -382,13 +376,7 @@ std::vector<int> getPatchDecomposition(
     parameters.SplitAllConcave = splitConcaves;
     parameters.Reproject = reproject;
     patchAssembler.BatchProcess(partitions, corners, sides, parameters);
-#else
-    PatchDecomposer<TriangleMeshType> decomposer(newSurface);
-    typename PatchDecomposer<TriangleMeshType>::Parameters parameters;
-    decomposer.SetParam(parameters);
-    decomposer.BatchProcess(partitions, corners);
-    vcg::tri::Allocator<TriangleMesh>::CompactEveryVector(newSurface);
-#endif
+
 
     std::vector<int> newSurfaceLabel(newSurface.face.size(), -1);
     for (size_t pId = 0; pId < partitions.size(); pId++) {
@@ -406,6 +394,7 @@ template<class TriangleMeshType>
 std::vector<int> findSubdivisions(
         TriangleMeshType& newSurface,
         ChartData& chartData,
+        const bool onlyQuads,
         const double alpha,
         const double beta,
         const ILPMethod& method)
@@ -424,7 +413,7 @@ std::vector<int> findSubdivisions(
     ILPStatus status;
 
     //Solve ILP to find the best patches
-    std::vector<int> ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, method, true, timeLimit, gap, status);
+    std::vector<int> ilpResult = solveILP(newSurface, chartData, onlyQuads, alpha, beta, method, true, timeLimit, gap, status);
 
     if (status == ILPStatus::SOLUTIONFOUND && gap < gapLimit) {
         std::cout << "Solution found! Gap: " << gap << std::endl;
@@ -433,15 +422,16 @@ std::vector<int> findSubdivisions(
         if (status == ILPStatus::INFEASIBLE) {
             std::cout << "Error! Model was infeasible or time limit exceeded!" << std::endl;
         }
-
-        ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
-
-        if (status == ILPStatus::SOLUTIONFOUND) {
-            std::cout << "Solution found (ABS)! Gap: " << gap << std::endl;
-        }
         else {
-            ilpResult = solveChartSideILPFixedBorders(newSurface, chartData, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
-            std::cout << "Solution found? (ABS without regularity)! Gap: " << gap << std::endl;
+            ilpResult = solveILP(newSurface, chartData, onlyQuads, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
+
+            if (status == ILPStatus::SOLUTIONFOUND) {
+                std::cout << "Solution found (ABS)! Gap: " << gap << std::endl;
+            }
+            else {
+                ilpResult = solveILP(newSurface, chartData, onlyQuads, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
+                std::cout << "Solution found? (ABS without regularity)! Gap: " << gap << std::endl;
+            }
         }
     }
 

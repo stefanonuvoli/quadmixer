@@ -17,10 +17,9 @@ template<class PolyMeshType, class TriangleMeshType>
 void findPreservedFaces(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        TriangleMeshType& trimesh1,
-        TriangleMeshType& trimesh2,
         TriangleMeshType& boolean,
         const std::vector<size_t>& intersectionVertices,
+        const std::vector<size_t>& smoothedVertices,
         const bool patchRetraction,
         const double patchRetractionNRing,
         const double maxBB,
@@ -28,14 +27,14 @@ void findPreservedFaces(
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
-        std::vector<bool>& preservedFace1,
-        std::vector<bool>& preservedFace2,
+        std::vector<std::pair<bool, bool>>& isPreserved1,
+        std::vector<std::pair<bool, bool>>& isPreserved2,
         std::vector<bool>& isNewSurface);
 
 template<class PolyMeshType>
 void findAffectedPatches(
         PolyMeshType& mesh,
-        const std::vector<bool>& preservedFace,
+        const std::vector<std::pair<bool, bool>>& preservedFace,
         const std::vector<int>& faceLabel,
         std::unordered_set<int>& affectedPatches);
 
@@ -43,8 +42,8 @@ template<class PolyMeshType>
 void getPreservedSurfaceMesh(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        const std::vector<bool>& preservedFace1,
-        const std::vector<bool>& preservedFace2,
+        const std::vector<std::pair<bool, bool>>& isPreserved1,
+        const std::vector<std::pair<bool, bool>>& isPreserved2,
         const std::vector<int>& faceLabel1,
         const std::vector<int>& faceLabel2,
         PolyMeshType& preservedSurface,
@@ -58,8 +57,8 @@ void getNewSurfaceMesh(
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
-        const std::vector<bool>& preservedFace1,
-        const std::vector<bool>& preservedFace2,
+        const std::vector<std::pair<bool, bool>>& isPreserved1,
+        const std::vector<std::pair<bool, bool>>& isPreserved2,
         std::vector<bool>& isNewSurface,
         TriangleMeshType& newSurface);
 
@@ -68,7 +67,7 @@ std::vector<int> splitPatchesInMaximumRectangles(
         PolyMeshType& mesh,
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
-        std::vector<bool>& preservedFace,
+        std::vector<std::pair<bool, bool>>& isPreserved,
         const int minimumRectangleArea,
         const bool recursive = true);
 
@@ -77,13 +76,13 @@ int mergePatches(
         PolyMeshType& mesh,
         std::unordered_set<int>& affectedPatches,
         std::vector<int>& faceLabel,
-        const std::vector<bool>& preservedFace);
+        const std::vector<std::pair<bool, bool>>& isPreserved);
 
 template<class PolyMeshType>
 int deleteNonConnectedPatches(
         PolyMeshType& mesh,
         std::vector<int>& faceLabel,
-        std::vector<bool>& preservedFace);
+        std::vector<std::pair<bool, bool>>& isPreserved);
 
 template<class PolyMeshType>
 int deleteSmallPatches(
@@ -91,7 +90,7 @@ int deleteSmallPatches(
         const std::unordered_set<int>& affectedPatches,
         const int minPatchArea,
         std::vector<int>& faceLabel,
-        std::vector<bool>& preservedFace);
+        std::vector<std::pair<bool, bool>>& isPreserved);
 
 }
 }

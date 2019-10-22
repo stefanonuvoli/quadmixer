@@ -1,5 +1,6 @@
 #ifndef COMMON_MESH_FUNCTIONS
 #define COMMON_MESH_FUNCTIONS
+#include<vcg/complex/complex.h>
 
 namespace QuadBoolean {
 namespace internal {

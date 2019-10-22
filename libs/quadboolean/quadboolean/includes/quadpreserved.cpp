@@ -7,6 +7,8 @@
 #include <vcg/complex/algorithms/geodesic.h>
 #include <vcg/space/distance3.h>
 
+#include "quadutils.h"
+
 namespace QuadBoolean {
 namespace internal {
 
@@ -17,10 +19,9 @@ template<class PolyMeshType, class TriangleMeshType>
 void findPreservedFaces(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        TriangleMeshType& trimesh1,
-        TriangleMeshType& trimesh2,
         TriangleMeshType& boolean,
         const std::vector<size_t>& intersectionVertices,
+        const std::vector<size_t>& smoothedVertices,
         const bool patchRetraction,
         const double patchRetractionNRing,
         const double maxBB,
@@ -28,8 +29,8 @@ void findPreservedFaces(
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
-        std::vector<bool>& isPreserved1,
-        std::vector<bool>& isPreserved2,
+        std::vector<std::pair<bool, bool>>& isPreserved1,
+        std::vector<std::pair<bool, bool>>& isPreserved2,
         std::vector<bool>& isNewSurface)
 {
     typename TriangleMeshType::ScalarType maxDistance = 0;
@@ -52,90 +53,183 @@ void findPreservedFaces(
     }
 
     isNewSurface.resize(boolean.face.size(), true);
-    isPreserved1.resize(mesh1.face.size(), false);
-    isPreserved2.resize(mesh2.face.size(), false);
+    isPreserved1.resize(mesh1.face.size(), std::make_pair(false, false));
+    isPreserved2.resize(mesh2.face.size(), std::make_pair(false, false));
 
     //Only faces that are birth faces are set to preserved
     for (size_t i = 0; i < boolean.face.size(); i++) {
+        //Get face pointer in original meshes
         size_t trimeshFaceId = birthTriangle[i].second;
+        typename PolyMeshType::FaceType* meshFaceP;
+        if (birthTriangle[i].first == 1) {
+            meshFaceP = &mesh1.face[birthFace1[trimeshFaceId]];
+        }
+        else {
+            meshFaceP = &mesh2.face[birthFace2[trimeshFaceId]];
+        }
+
+        //Check if it needs to be reversed
+        bool reverse = false;
+        if (meshFaceP->N().dot(boolean.face[i].N()) < 0) {
+            reverse = true;
+        }
 
         //Set face as preserved
         if (birthTriangle[i].first == 1) {
-            isPreserved1[birthFace1[trimeshFaceId]] = true;
+            isPreserved1[birthFace1[trimeshFaceId]] = std::make_pair(true, reverse);
         }
         else {
-            isPreserved2[birthFace2[trimeshFaceId]] = true;
+            isPreserved2[birthFace2[trimeshFaceId]] = std::make_pair(true, reverse);
         }
     }
 
+    //New vertices check
+    std::set<size_t> newVerticesSet;
+    for (const size_t& vId : intersectionVertices)
+        newVerticesSet.insert(vId);
+    for (const size_t& vId : smoothedVertices)
+        newVerticesSet.insert(vId);
+
     //Identify if the triangle is the new surface
     for (size_t i = 0; i < boolean.face.size(); i++) {
+        bool hasIntersectionVertices = false;
         bool closeToIntersectionCurve = false;
-        std::set<typename TriangleMeshType::CoordType> booleanCoordSet;
+        bool nonPolygonalCheck = true;
+
+        //Get face pointer in original meshes
+        size_t trimeshFaceId = birthTriangle[i].second;
+        typename PolyMeshType::FaceType* meshFaceP;
+        if (birthTriangle[i].first == 1) {
+            meshFaceP = &mesh1.face[birthFace1[trimeshFaceId]];
+        }
+        else {
+            meshFaceP = &mesh2.face[birthFace2[trimeshFaceId]];
+        }
+
+        //Check if the vertex has been smoothed or it is in intersection line
+        for (size_t j = 0; j < boolean.face[i].VN(); j++) {
+            size_t vId = vcg::tri::Index(boolean, boolean.face[i].V(j));
+            if (newVerticesSet.find(vId) != newVerticesSet.end()) {
+                hasIntersectionVertices = true;
+            }
+        }
 
         //Check if close to intersection curve
-        for (int k = 0; k < boolean.face[i].VN(); k++) {
-            booleanCoordSet.insert(boolean.face[i].V(k)->P());
-
-            if (boolean.face[i].V(k)->Q() < maxDistance) {
-                closeToIntersectionCurve = true;
+        if (patchRetraction) {
+            for (int k = 0; k < boolean.face[i].VN(); k++) {
+                if (boolean.face[i].V(k)->Q() < maxDistance) {
+                    closeToIntersectionCurve = true;
+                }
             }
         }
-
-        //Check coordinates
-        TriangleMeshType* currentTrimesh = &trimesh1;
-        if (birthTriangle[i].first == 2) {
-            currentTrimesh = &trimesh2;
-        }
-
-        std::set<typename TriangleMeshType::CoordType> trimeshCoordSet;
-
-        size_t trimeshFaceId = birthTriangle[i].second;
-
-        for (int j = 0; j < currentTrimesh->face[trimeshFaceId].VN(); j++)
-            trimeshCoordSet.insert(currentTrimesh->face[trimeshFaceId].V(j)->P());
 
         //Check if polygonal faces
-        bool nonPolygonalCheck = true;
         if (!preserveNonQuads) {
-            typename PolyMeshType::FaceType* facePointer;
-            if (birthTriangle[i].first == 1) {
-                facePointer = &mesh1.face[birthFace1[trimeshFaceId]];
-            }
-            else {
-                facePointer = &mesh2.face[birthFace2[trimeshFaceId]];
-            }
-
-            nonPolygonalCheck = facePointer->VN() == 4;
+            nonPolygonalCheck = meshFaceP->VN() == 4;
         }
 
         //Surface has not changed
-        if (nonPolygonalCheck && !closeToIntersectionCurve && booleanCoordSet == trimeshCoordSet) {
+        if (!hasIntersectionVertices && !closeToIntersectionCurve && nonPolygonalCheck) {
             isNewSurface[i] = false;
         }
         //A triangle has changed
         else {
             //Set face as not preserved
             if (birthTriangle[i].first == 1) {
-                isPreserved1[birthFace1[trimeshFaceId]] = false;
+                isPreserved1[birthFace1[trimeshFaceId]].first = false;
             }
             else {
-                isPreserved2[birthFace2[trimeshFaceId]] = false;
+                isPreserved2[birthFace2[trimeshFaceId]].first = false;
             }
         }
     }
+
+
+//    isNewSurface.resize(boolean.face.size(), true);
+//    isPreserved1.resize(mesh1.face.size(), false);
+//    isPreserved2.resize(mesh2.face.size(), false);
+
+//    //Only faces that are birth faces are set to preserved
+//    for (size_t i = 0; i < boolean.face.size(); i++) {
+//        size_t trimeshFaceId = birthTriangle[i].second;
+
+//        //Set face as preserved
+//        if (birthTriangle[i].first == 1) {
+//            isPreserved1[birthFace1[trimeshFaceId]] = true;
+//        }
+//        else {
+//            isPreserved2[birthFace2[trimeshFaceId]] = true;
+//        }
+//    }
+
+//    //Identify if the triangle is the new surface
+//    for (size_t i = 0; i < boolean.face.size(); i++) {
+//        bool closeToIntersectionCurve = false;
+//        std::set<typename TriangleMeshType::CoordType> booleanCoordSet;
+
+//        //Check if close to intersection curve
+//        for (int k = 0; k < boolean.face[i].VN(); k++) {
+//            booleanCoordSet.insert(boolean.face[i].V(k)->P());
+
+//            if (boolean.face[i].V(k)->Q() < maxDistance) {
+//                closeToIntersectionCurve = true;
+//            }
+//        }
+
+//        //Check coordinates
+//        TriangleMeshType* currentTrimesh = &trimesh1;
+//        if (birthTriangle[i].first == 2) {
+//            currentTrimesh = &trimesh2;
+//        }
+
+//        std::set<typename TriangleMeshType::CoordType> trimeshCoordSet;
+
+//        size_t trimeshFaceId = birthTriangle[i].second;
+
+//        for (int j = 0; j < currentTrimesh->face[trimeshFaceId].VN(); j++)
+//            trimeshCoordSet.insert(currentTrimesh->face[trimeshFaceId].V(j)->P());
+
+//        //Check if polygonal faces
+//        bool nonPolygonalCheck = true;
+//        if (!preserveNonQuads) {
+//            typename PolyMeshType::FaceType* facePointer;
+//            if (birthTriangle[i].first == 1) {
+//                facePointer = &mesh1.face[birthFace1[trimeshFaceId]];
+//            }
+//            else {
+//                facePointer = &mesh2.face[birthFace2[trimeshFaceId]];
+//            }
+
+//            nonPolygonalCheck = facePointer->VN() == 4;
+//        }
+
+//        //Surface has not changed
+//        if (nonPolygonalCheck && !closeToIntersectionCurve && booleanCoordSet == trimeshCoordSet) {
+//            isNewSurface[i] = false;
+//        }
+//        //A triangle has changed
+//        else {
+//            //Set face as not preserved
+//            if (birthTriangle[i].first == 1) {
+//                isPreserved1[birthFace1[trimeshFaceId]] = false;
+//            }
+//            else {
+//                isPreserved2[birthFace2[trimeshFaceId]] = false;
+//            }
+//        }
+//    }
 }
 
 template<class PolyMeshType>
 void findAffectedPatches(
         PolyMeshType& mesh,
-        const std::vector<bool>& isPreserved,
+        const std::vector<std::pair<bool, bool>>& isPreserved,
         const std::vector<int>& faceLabel,
         std::unordered_set<int>& affectedPatches)
 {
     //Find affected patches
-    for (int i = 0; i < mesh.face.size(); i++) {
-        if (!isPreserved[i]) {
+    for (size_t i = 0; i < mesh.face.size(); i++) {
+        if (!isPreserved[i].first) {
             affectedPatches.insert(faceLabel[i]);
         }
     }
@@ -145,8 +239,8 @@ template<class PolyMeshType>
 void getPreservedSurfaceMesh(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        const std::vector<bool>& isPreserved1,
-        const std::vector<bool>& isPreserved2,
+        const std::vector<std::pair<bool, bool>>& isPreserved1,
+        const std::vector<std::pair<bool, bool>>& isPreserved2,
         const std::vector<int>& faceLabel1,
         const std::vector<int>& faceLabel2,
         PolyMeshType& preservedSurface,
@@ -154,38 +248,49 @@ void getPreservedSurfaceMesh(
         std::unordered_map<size_t, size_t>& preservedFacesMap,
         std::unordered_map<size_t, size_t>& preservedVerticesMap)
 {
-    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh1);
-    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(mesh2);
-    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(mesh1);
-    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(mesh2);
+
+
+    PolyMeshType tmpMesh1, tmpMesh2;
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh1, mesh1, true);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh2, mesh2, true);
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(tmpMesh1);
+    vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(tmpMesh2);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(tmpMesh1);
+    vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(tmpMesh2);
 
     //Save vertices id in quality
-    for (size_t i = 0; i < mesh1.vert.size(); i++) {
-        mesh1.vert[i].Q() = i;
+    for (size_t i = 0; i < tmpMesh1.vert.size(); i++) {
+        tmpMesh1.vert[i].Q() = i;
     }
-    for (size_t i = 0; i < mesh2.vert.size(); i++) {
-        mesh2.vert[i].Q() = mesh1.vert.size() + i;
+    for (size_t i = 0; i < tmpMesh2.vert.size(); i++) {
+        tmpMesh2.vert[i].Q() = tmpMesh1.vert.size() + i;
     }
 
     //Select the face which are remaining and put their id in quality
-    for (size_t i = 0; i < mesh1.face.size(); i++) {
-        if (isPreserved1[i]) {
-            mesh1.face[i].SetS();
-            mesh1.face[i].Q() = i;
+    for (size_t i = 0; i < tmpMesh1.face.size(); i++) {
+        if (isPreserved1[i].first) {
+            if (isPreserved1[i].second) {
+                OrientFaces<PolyMeshType>::InvertFace(tmpMesh1.face[i]);
+            }
+            tmpMesh1.face[i].SetS();
+            tmpMesh1.face[i].Q() = i;
         }
     }
-    for (size_t i = 0; i < mesh2.face.size(); i++) {
-        if (isPreserved2[i]) {
-            mesh2.face[i].SetS();
-            mesh2.face[i].Q() = mesh1.face.size() + i;
+    for (size_t i = 0; i < tmpMesh2.face.size(); i++) {
+        if (isPreserved2[i].first) {
+            if (isPreserved2[i].second) {
+                OrientFaces<PolyMeshType>::InvertFace(tmpMesh2.face[i]);
+            }
+            tmpMesh2.face[i].SetS();
+            tmpMesh2.face[i].Q() = tmpMesh1.face.size() + i;
         }
     }
 
 
     //Create result
     PolyMeshType tmpMesh;
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, mesh1, true);
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, mesh2, true);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, tmpMesh1, true);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, tmpMesh2, true);
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(tmpMesh);
     vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(tmpMesh);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(tmpMesh);
@@ -204,11 +309,11 @@ void getPreservedSurfaceMesh(
             preservedFacesMap.insert(std::make_pair(i, currentFaceId));
 
             //Label restore
-            if (currentFaceId < mesh1.face.size()) {
+            if (currentFaceId < tmpMesh1.face.size()) {
                 newFaceLabel[i] = faceLabel1[currentFaceId];
             }
             else {
-                newFaceLabel[i] = maxLabel1 + faceLabel2[currentFaceId - mesh1.face.size()];
+                newFaceLabel[i] = maxLabel1 + faceLabel2[currentFaceId - tmpMesh1.face.size()];
             }
         }
     }
@@ -234,16 +339,16 @@ void getNewSurfaceMesh(
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
-        const std::vector<bool>& isPreserved1,
-        const std::vector<bool>& isPreserved2,
+        const std::vector<std::pair<bool, bool>>& isPreserved1,
+        const std::vector<std::pair<bool, bool>>& isPreserved2,
         std::vector<bool>& isNewSurface,
         TriangleMeshType& newSurface)
 {
     //Readjusting new surfaces
     for (size_t i = 0; i < boolean.face.size(); i++) {
         if (!isNewSurface[i] && (
-            (birthTriangle[i].first == 1 && !isPreserved1[birthFace1[birthTriangle[i].second]]) ||
-            (birthTriangle[i].first == 2 && !isPreserved2[birthFace2[birthTriangle[i].second]])
+            (birthTriangle[i].first == 1 && !isPreserved1[birthFace1[birthTriangle[i].second]].first) ||
+            (birthTriangle[i].first == 2 && !isPreserved2[birthFace2[birthTriangle[i].second]].first)
         )) {
             isNewSurface[i] = true;
         }
@@ -268,7 +373,7 @@ std::vector<int> splitPatchesInMaximumRectangles(
         PolyMeshType& mesh,
         std::unordered_set<int>& affectedPatches,
         const std::vector<int>& faceLabel,
-        std::vector<bool>& isPreserved,
+        std::vector<std::pair<bool, bool>>& isPreserved,
         const int minimumRectangleArea,
         const bool recursive)
 {
@@ -307,8 +412,12 @@ std::vector<int> splitPatchesInMaximumRectangles(
             const size_t& sizeX = quadPatch.sizeX;
             const size_t& sizeY = quadPatch.sizeY;
 
-            if (startPos.IsNull())
+            assert(!startPos.IsNull());
+
+            if (!quadPatch.isQuad)
                 continue;
+
+            assert(sizeX > 0 && sizeY > 0);
 
             vcg::face::Pos<typename PolyMeshType::FaceType> pos;
 
@@ -326,7 +435,7 @@ std::vector<int> splitPatchesInMaximumRectangles(
 
                 for (size_t y = 0; y < sizeY; y++) {
                     assert(faceLabel[vcg::tri::Index(mesh, pos2.F())] == pId);
-                    matrix[x][y] = isPreserved[vcg::tri::Index(mesh, pos2.F())];
+                    matrix[x][y] = isPreserved[vcg::tri::Index(mesh, pos2.F())].first;
 
                     pos2.FlipE();
                     pos2.FlipF();
@@ -458,7 +567,7 @@ std::vector<int> splitPatchesInMaximumRectangles(
 
     for (size_t i = 0; i < mesh.face.size(); i++) {
         if (!validQuads[i]) {
-            isPreserved[i] = false;
+            isPreserved[i].first = false;
             assert(newFaceLabel[i] == -1);
         }
     }
@@ -471,7 +580,7 @@ int mergePatches(
         PolyMeshType& mesh,
         std::unordered_set<int>& affectedQuads,
         std::vector<int>& faceLabel,
-        const std::vector<bool>& preservedFace)
+        const std::vector<std::pair<bool, bool>>& isPreserved)
 {
     vcg::tri::UpdateQuality<PolyMeshType>::VertexValence(mesh);
 
@@ -489,6 +598,11 @@ int mergePatches(
             const size_t& sizeY = quadPatch.sizeY;
 
             assert(!startPos.IsNull());
+
+            if (!quadPatch.isQuad)
+                continue;
+
+            assert(sizeX > 0 && sizeY > 0);
 
             vcg::face::Pos<typename PolyMeshType::FaceType> pos;
             pos.Set(startPos.F(), startPos.E(), startPos.V());
@@ -518,14 +632,14 @@ int mergePatches(
                 for (size_t j = 0; j < (i%2 == 0 ? sizeX : sizeY); j++) {
 
                     assert(faceLabel[vcg::tri::Index(mesh, pos.F())] == pId);
-                    assert(preservedFace[vcg::tri::Index(mesh, pos.F())]);
+                    assert(isPreserved[vcg::tri::Index(mesh, pos.F())].first);
 
                     if (validToMerge) {
                         pos.FlipF();
 
                         int adjIndex = vcg::tri::Index(mesh, pos.F());
 
-                        if (!preservedFace[adjIndex]) {
+                        if (!isPreserved[adjIndex].first) {
                             validToMerge = false;
                             assert(faceLabel[adjIndex] == -1);
                         }
@@ -567,17 +681,21 @@ int mergePatches(
 
                 if (validToMerge) {
                     const QuadLayoutPatch<PolyMeshType>& adjQuadPatch = quadLayoutData.quadPatches[adjLabel];
-                    assert(sizeX == adjQuadPatch.sizeX ||
-                           sizeY == adjQuadPatch.sizeY ||
-                           sizeX == adjQuadPatch.sizeY ||
-                           sizeY == adjQuadPatch.sizeX);
 
-                    for (const size_t& fId : adjQuadPatch.faces) {
-                        faceLabel[fId] = pId;
-                        affectedQuads.erase(adjLabel);
+                    if (adjQuadPatch.isQuad) {
+                        assert(sizeX == adjQuadPatch.sizeX ||
+                               sizeY == adjQuadPatch.sizeY ||
+                               sizeX == adjQuadPatch.sizeY ||
+                               sizeY == adjQuadPatch.sizeX);
+
+                        for (const size_t& fId : adjQuadPatch.faces) {
+                            faceLabel[fId] = pId;
+                            affectedQuads.erase(adjLabel);
+                        }
+
+                        return 1 + mergePatches(mesh, affectedQuads, faceLabel, isPreserved);
                     }
 
-                    return 1 + mergePatches(mesh, affectedQuads, faceLabel, preservedFace);
                 }
 
                 //Turn
@@ -594,7 +712,7 @@ template<class PolyMeshType>
 int deleteNonConnectedPatches(
         PolyMeshType& mesh,
         std::vector<int>& faceLabel,
-        std::vector<bool>& preservedFace)
+        std::vector<std::pair<bool, bool>>& isPreserved)
 {
     int nDeleted = 0;    
 
@@ -613,10 +731,10 @@ int deleteNonConnectedPatches(
 
         //Find if the quad is connected
         for (const size_t& fId : patchFaces) {
-            if (preservedFace[fId]) {
+            if (isPreserved[fId].first) {
                 for (int j = 0; j < 4 && !connected; j++) {
                     size_t adjIndex = vcg::tri::Index(mesh, mesh.face[fId].FFp(j));
-                    if (preservedFace[adjIndex] && faceLabel[adjIndex] != pId) {
+                    if (isPreserved[adjIndex].first && faceLabel[adjIndex] != pId) {
                         connected = true;
                     }
                 }
@@ -626,7 +744,7 @@ int deleteNonConnectedPatches(
         if (!connected) {
             nDeleted++;
             for (const size_t& fId : patchFaces) {
-                preservedFace[fId] = false;
+                isPreserved[fId].first = false;
                 faceLabel[fId] = -1;
             }
         }
@@ -641,7 +759,7 @@ int deleteSmallPatches(
         const std::unordered_set<int>& affectedPatches,
         const int minPatchArea,
         std::vector<int>& faceLabel,
-        std::vector<bool>& preservedFace)
+        std::vector<std::pair<bool, bool>>& isPreserved)
 {
     int nDeleted = 0;
 
@@ -659,7 +777,7 @@ int deleteSmallPatches(
             if (quadPatch.sizeX*quadPatch.sizeY < minPatchArea) {
                 nDeleted++;
                 for (const size_t& fId : patchFaces) {
-                    preservedFace[fId] = false;
+                    isPreserved[fId].first = false;
                     faceLabel[fId] = -1;
                 }
             }
