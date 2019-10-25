@@ -54,11 +54,12 @@ void QuadMixerWindow::booleanOperation()
 
     chrono::steady_clock::time_point start;
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     QuadBoolean::quadBoolean(*target1, *target2, operation, *booleanResult, parameters);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Computed in: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -621,13 +622,14 @@ void QuadMixerWindow::doComputeBooleans() {
 
     chrono::steady_clock::time_point start;
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     //Triangulate
     QuadBoolean::internal::triangulateMesh(mesh1, trimesh1, birthFace1);
     QuadBoolean::internal::triangulateMesh(mesh2, trimesh2, birthFace2);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Triangulation: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -644,6 +646,7 @@ void QuadMixerWindow::doComputeBooleans() {
         operation = QuadBoolean::Operation::DIFFERENCE;
     }
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     //Boolean operation on trimeshes
@@ -656,12 +659,13 @@ void QuadMixerWindow::doComputeBooleans() {
                 FA, FB, FR,
                 J);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Boolean: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
 
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     intersectionVertices = QuadBoolean::internal::getIntersectionVertices(
@@ -672,7 +676,7 @@ void QuadMixerWindow::doComputeBooleans() {
     birthTriangle = QuadBoolean::internal::getBirthTriangles(FA, FR, J);
 
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Intersection vertices and birth triangles: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -696,6 +700,7 @@ void QuadMixerWindow::doSmooth()
 
     chrono::steady_clock::time_point start;
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
@@ -720,7 +725,7 @@ void QuadMixerWindow::doSmooth()
     
     vcg::tri::UpdateNormal<TriangleMesh>::PerVertexNormalizedPerFace(booleanSmoothed);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Smooth along intersection vertices: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -774,6 +779,7 @@ void QuadMixerWindow::doGetSurfaces() {
 
     chrono::steady_clock::time_point start;
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     QuadBoolean::internal::getSurfaces(
@@ -807,7 +813,7 @@ void QuadMixerWindow::doGetSurfaces() {
             preservedSurface,
             newSurface);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Get surfaces: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -862,14 +868,16 @@ void QuadMixerWindow::doPatchDecomposition() {
     bool splitConcaves = ui.splitConcavesCheckBox->isChecked();
     bool finalSmoothing = ui.finalSmoothingCheckBox->isChecked();
     bool polychordSolver = ui.polychordSolverCheckBox->isChecked();
-    bool splitSolver = ui.polychordSolverCheckBox->isChecked();
+    bool splitSolver = ui.splitSolverCheckBox->isChecked();
 
+
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     //Make ILP feasible
     QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface, polychordSolver, splitSolver);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Make ILP feasible: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -880,14 +888,14 @@ void QuadMixerWindow::doPatchDecomposition() {
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/feasibilityPreservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
-
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, preservedSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, initialRemeshingEdgeFactor, reproject, splitConcaves, finalSmoothing);
 
     //-----------
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Decomposition: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -899,12 +907,13 @@ void QuadMixerWindow::doPatchDecomposition() {
 #endif
 
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
 
     chartData = QuadBoolean::internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Get patches and sides: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -929,6 +938,7 @@ void QuadMixerWindow::doSolveILP() {
     }
 
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     ilpResult = QuadBoolean::internal::findSubdivisions(
@@ -938,7 +948,7 @@ void QuadMixerWindow::doSolveILP() {
                 beta,
                 ilpMethod);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "ILP: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -956,6 +966,7 @@ void QuadMixerWindow::doQuadrangulate()
     int chartSmoothingIterations = ui.chartSmoothingSpinBox->value();
     int quadrangulationSmoothingIterations = ui.quadrangulationSmoothingSpinBox->value();
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     QuadBoolean::internal::quadrangulate(
@@ -967,7 +978,7 @@ void QuadMixerWindow::doQuadrangulate()
                 quadrangulation,
                 quadrangulationLabel);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Quadrangulate new surface: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
@@ -995,6 +1006,7 @@ void QuadMixerWindow::doGetResult()
     double resultSmoothingLaplacianNRing = ui.resultSmoothingLaplacianNRingSpinBox->value();
 
 
+    std::cout << std::endl;
     start = chrono::steady_clock::now();
 
     //Get results
@@ -1002,7 +1014,7 @@ void QuadMixerWindow::doGetResult()
                                      resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing,
                                      preservedFacesMap, preservedVerticesMap, sourceInfo);
 
-    std::cout << std::endl << " >> "
+    std::cout << " >> "
               << "Get result: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;

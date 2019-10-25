@@ -328,7 +328,7 @@ bool makeILPFeasible(
     else if (result == SolvedQuadDominant) {
         std::cout << "Feasibility solved with quad dominant!" << std::endl;
         if (polychordSolver) {
-            std::cout << "It has been impossible to solve with polychord splits!" << std::endl;
+            std::cout << "Warning: it has been impossible to solve with polychord splits!" << std::endl;
         }
         return true;
     }

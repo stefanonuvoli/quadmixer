@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>2006</width>
+    <width>1848</width>
     <height>823</height>
    </rect>
   </property>
@@ -744,7 +744,7 @@
                 <item>
                  <widget class="QCheckBox" name="motorcycleCheckBox">
                   <property name="text">
-                   <string>Motorcycle</string>
+                   <string>Motor</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -785,7 +785,7 @@
                 <item>
                  <widget class="QCheckBox" name="patchRetractionCheckBox">
                   <property name="text">
-                   <string>Retraction</string>
+                   <string>Retr</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -802,7 +802,7 @@
                 <item>
                  <widget class="QLabel" name="maxBBLabel">
                   <property name="text">
-                   <string>MaxB</string>
+                   <string>MaxBB</string>
                   </property>
                  </widget>
                 </item>
@@ -828,7 +828,7 @@
                 <item>
                  <widget class="QCheckBox" name="preservePolygons1CheckBox">
                   <property name="text">
-                   <string>Preserve polygons 1</string>
+                   <string>Polygons 1</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -838,7 +838,7 @@
                 <item>
                  <widget class="QCheckBox" name="preservePolygons2CheckBox">
                   <property name="text">
-                   <string>Preserved polygons 2</string>
+                   <string>Polygons 2</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -848,7 +848,7 @@
                 <item>
                  <widget class="QLabel" name="minRectangleAreaLabel">
                   <property name="text">
-                   <string>Min rectangles</string>
+                   <string>Min rect</string>
                   </property>
                  </widget>
                 </item>
@@ -868,7 +868,7 @@
                 <item>
                  <widget class="QLabel" name="minPatchAreaLabel">
                   <property name="text">
-                   <string>Min patch</string>
+                   <string>Min size</string>
                   </property>
                  </widget>
                 </item>
@@ -918,7 +918,7 @@
                 <item>
                  <widget class="QCheckBox" name="polychordSolverCheckBox">
                   <property name="text">
-                   <string>Polychord solver</string>
+                   <string>Polychord solv</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -928,7 +928,7 @@
                 <item>
                  <widget class="QCheckBox" name="splitSolverCheckBox">
                   <property name="text">
-                   <string>Split solver</string>
+                   <string>Split solv</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -1156,7 +1156,7 @@
                 <item>
                  <widget class="QLabel" name="resultSmoothingLaplacianLabel">
                   <property name="text">
-                   <string>Result laplacian</string>
+                   <string>Laplacian</string>
                   </property>
                  </widget>
                 </item>
@@ -1240,7 +1240,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>2006</width>
+     <width>1848</width>
      <height>22</height>
     </rect>
    </property>
