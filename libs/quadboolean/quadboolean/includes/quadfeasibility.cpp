@@ -288,8 +288,6 @@ size_t solveSplittingPolychords(
 			splittedMap.insert(std::make_pair(firstEdge, preservedSurface.vert[newFirstPoint].P()));
 			splittedMap.insert(std::make_pair(lastEdge, preservedSurface.vert[newLastPoint].P()));
 
-			currentPolychord++;
-
 			//Update non feasible
             numNonFeasible -= 2;
 
@@ -298,6 +296,8 @@ size_t solveSplittingPolychords(
 			isComponentFeasible[polychord.startComponent] = true;
 			isComponentFeasible[polychord.endComponent] = true;
 		}
+
+        currentPolychord++;
     }
 
     //Split mapped edges

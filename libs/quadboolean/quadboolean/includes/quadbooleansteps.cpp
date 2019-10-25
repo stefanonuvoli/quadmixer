@@ -857,16 +857,15 @@ void getResult(
 
     //Create result
     PolyMeshType tmpMesh;
-    result.Clear();
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, preservedSurface);
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, quadrangulatedNewSurface);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, preservedSurface);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, quadrangulatedNewSurface);
 
-    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(result, 0.0000001);
-    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
+    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(tmpMesh, 0.0000001);
+    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(tmpMesh);
 
-    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(result);
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(tmpMesh);
 
-    int numNonManifoldFaces = vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(result);
+    int numNonManifoldFaces = vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(tmpMesh);
     if (numNonManifoldFaces > 0) {
         std::cout << "Removed " << numNonManifoldFaces << " non-manifold faces." << std::endl;
     }
@@ -876,12 +875,15 @@ void getResult(
         std::cout << "Removed " << numHoles << " holes." << std::endl;
     }
 
-    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(result);
-    vcg::tri::Allocator<PolyMeshType>::CompactEveryVector(result);
+    int numDuplicates = vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(tmpMesh);
+    if (numDuplicates > 0) {
+        std::cout << "Removed " << numDuplicates << " duplicates." << std::endl;
+    }
 
-    //    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, result);
-    //    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
+    result.Clear();
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
 
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(result);
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
     OrientFaces<PolyMeshType>::AutoOrientFaces(result);
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
