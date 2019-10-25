@@ -190,7 +190,7 @@ public:
         VertNeigh.clear();
         VertNeigh.resize(mesh.vert.size());
 
-        std::cout<<"initializing connections"<<std::endl;
+//        std::cout<<"initializing connections"<<std::endl;
         for (size_t i=0;i<mesh.vert.size();i++)
         {
             //then set per direction
@@ -214,7 +214,7 @@ public:
         }
 
 
-        std::cout<<"removing unconnected nodes"<<std::endl;
+//        std::cout<<"removing unconnected nodes"<<std::endl;
 
         bool Removed=false;
         size_t step=0;
@@ -254,14 +254,14 @@ public:
             }
         }while (Removed);
 
-        std::cout<<"permormed removed steps "<<step<<std::endl;
+//        std::cout<<"permormed removed steps "<<step<<std::endl;
         for (size_t i=0;i<VertNeigh.size();i++)
             for (size_t j=0;j<VertNeigh[i].size();j++)
             {
                 std::sort(VertNeigh[i][j].begin(),VertNeigh[i][j].end());
             }
 
-        std::cout<<"terminated initialization connections"<<std::endl;
+//        std::cout<<"terminated initialization connections"<<std::endl;
     }
 
     void CheckTangentField()
@@ -372,12 +372,12 @@ public:
             bool traced=TraceNext(IndexVCurr,DirectionVCurr,IndexVNext,DirectionVNext);
             if (!traced)
             {
-                std::cout<<"stopped tracing"<<std::endl;
+//                std::cout<<"stopped tracing"<<std::endl;
                 return false;
             }
             if (Traced.count(std::pair<size_t,size_t>(IndexVNext,DirectionVNext%2))>0)
             {
-                std::cout<<"tangent self intersecting"<<std::endl;
+//                std::cout<<"tangent self intersecting"<<std::endl;
                 return false;
             }
             //std::cout<<"next step"<<std::endl;

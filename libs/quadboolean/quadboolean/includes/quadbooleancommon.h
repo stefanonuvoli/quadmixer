@@ -10,13 +10,15 @@
 #define DEFAULTINTERSECTIONSMOOTHINGITERATIONS 5
 #define DEFAULTINTERSECTIONSMOOTHINGNRING 3
 #define DEFAULTINTERSECTIONSMOOTHINGMAXBB 0.025
-#define DEFAULTPRESERVENONQUADS true
+#define DEFAULTPRESERVEPOLYGONS1 true
+#define DEFAULTPRESERVEPOLYGONS2 true
 #define DEFAULTMINRECTANGLEAREA 2
 #define DEFAULTMINPATCHAREA 6
 #define DEFAULTMERGEQUADS true
 #define DEFAULTDELETESMALL true
 #define DEFAULTDELETENONCONNECTED false
-#define DEFAULTONLYQUADS true
+#define DEFAULTPOLYCHORDSOLVER true
+#define DEFAULTSPLITSOLVER true
 #define DEFAULTILPMETHOD QuadBoolean::ILPMethod::LEASTSQUARES
 #define DEFAULTALPHA 0.5
 #define DEFAULTBETA 1
@@ -61,13 +63,15 @@ struct Parameters {
     int intersectionSmoothingIterations;
     double intersectionSmoothingNRing;
     double maxBB;
-    bool preserveNonQuads;
+    bool preservePolygons1;
+    bool preservePolygons2;
     int minRectangleArea;
     int minPatchArea;
     bool mergeQuads;
     bool deleteSmall;
     bool deleteNonConnected;
-    bool onlyQuads;
+    bool polychordSolver;
+    bool splitSolver;
     ILPMethod ilpMethod;
     double alpha;
     double beta;
@@ -90,13 +94,15 @@ struct Parameters {
         intersectionSmoothingIterations = DEFAULTINTERSECTIONSMOOTHINGITERATIONS;
         intersectionSmoothingNRing = DEFAULTINTERSECTIONSMOOTHINGNRING;
         maxBB = DEFAULTINTERSECTIONSMOOTHINGMAXBB;
-        preserveNonQuads = DEFAULTPRESERVENONQUADS;
+        preservePolygons1 = DEFAULTPRESERVEPOLYGONS1;
+        preservePolygons2 = DEFAULTPRESERVEPOLYGONS2;
         minRectangleArea = DEFAULTMINRECTANGLEAREA;
         minPatchArea = DEFAULTMINPATCHAREA;
         mergeQuads = DEFAULTMERGEQUADS;
         deleteSmall = DEFAULTDELETESMALL;
         deleteNonConnected = DEFAULTDELETENONCONNECTED;
-        onlyQuads = DEFAULTONLYQUADS;
+        polychordSolver = DEFAULTPOLYCHORDSOLVER;
+        splitSolver = DEFAULTSPLITSOLVER;
         ilpMethod = DEFAULTILPMETHOD;
         alpha = DEFAULTALPHA;
         beta = DEFAULTBETA;

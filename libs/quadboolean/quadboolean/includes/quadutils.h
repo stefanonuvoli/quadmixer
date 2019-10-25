@@ -8,12 +8,19 @@ namespace internal {
 
 static std::vector<size_t> dummySizetVector;
 
-template<class PolyMeshType>
-void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert);
+template <class MeshType>
+void updateAllMeshAttributes(MeshType &mesh);
 
-template <class PolyMeshType>
+template <class MeshType>
+std::vector<std::vector<size_t>> findConnectedComponents(
+        const MeshType &mesh);
+
+template<class MeshType>
+void LaplacianPos(MeshType &poly_m,std::vector<typename MeshType::CoordType> &AvVert);
+
+template <class MeshType>
 void LaplacianGeodesic(
-        PolyMeshType &poly_m,
+        MeshType &poly_m,
         int nstep,
         const double maxDistance,
         const double minDumpS = 0.5,
@@ -23,11 +30,15 @@ std::vector<size_t> findVertexChainPath(
         const size_t& vCurrentId,
         const std::vector<std::vector<size_t>>& vertexNextMap);
 
-template <class PolyMeshType>
-bool isTriangleMesh(PolyMeshType& mesh);
 
-template <class PolyMeshType>
-std::vector<int> splitFacesInTriangles(PolyMeshType& mesh);
+template <class MeshType>
+bool isTriangleMesh(MeshType& mesh);
+
+template <class MeshType>
+bool isQuadMesh(MeshType& mesh);
+
+template <class MeshType>
+std::vector<int> splitFacesInTriangles(MeshType& mesh);
 
 template<class PolyMeshType>
 typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh, const std::vector<size_t>& faces);

@@ -1,6 +1,7 @@
 #ifndef PATCH_ASSEMBLER
 #define PATCH_ASSEMBLER
 
+#include <vcg/complex/complex.h>
 #include <vcg/math/matrix33.h>
 #include <vcg/complex/algorithms/parametrization/tangent_field_operators.h>
 #include <vcg/complex/algorithms/isotropic_remeshing.h>
@@ -10,8 +11,8 @@
 #include <wrap/igl/smooth_field.h>
 #include <vcg/complex/algorithms/hole.h>
 #include <vcg/complex/algorithms/update/curvature.h>
+
 #include "field_tracer.h"
-#include "common_mesh_functions.h"
 #include "quadutils.h"
 
 #define CONVEX 8.0
@@ -150,7 +151,10 @@ class PatchSplitter
         TraceVertCandidates=TraceVertSwap;
         TraceDirCandidates=TraceDirSwap;
         int Num1=TraceVertCandidates.size();
-        std::cout<<"Pruned "<<Num0-Num1<<" out ouf "<<Num0<<std::endl;
+
+        if (printMsg) {
+            std::cout<<"Pruned "<<Num0-Num1<<" out ouf "<<Num0<<std::endl;
+        }
         //InitPathPriority();
     }
 
@@ -159,8 +163,9 @@ class PatchSplitter
                                 const std::vector<size_t> &TracingVert,
                                 const std::vector<std::vector<size_t> > &TracingDir)
     {
-        if (printMsg)
+        if (printMsg) {
             std::cout<<"Tracing Concave Corners"<<std::endl;
+        }
 
         assert(TracingVert.size()==TracingDir.size());
         InitTracerConnections(ConvexOriginal);
@@ -192,7 +197,10 @@ class PatchSplitter
                 if (!traced)
                 {
                     non_traced++;
-                    std::cout<<"WARNING: Non Traced "<<TraceV<<" "<<TracingDir[i][j]<<std::endl;
+
+                    if (printMsg) {
+                        std::cout<<"WARNING: Non Traced "<<TraceV<<" "<<TracingDir[i][j]<<std::endl;
+                    }
                     continue;
                 }
 
@@ -200,7 +208,9 @@ class PatchSplitter
                 if (!expanded)
                 {
                     non_expanded++;
-                    std::cout<<"WARNING: Non Expanded "<<TraceV<<" "<<TracingDir[i][j]<<std::endl;
+                    if (printMsg) {
+                        std::cout<<"WARNING: Non Expanded "<<TraceV<<" "<<TracingDir[i][j]<<std::endl;
+                    }
                     continue;
                 }
 
@@ -214,14 +224,19 @@ class PatchSplitter
             std::cout<<"Non Expanded "<<non_expanded<<std::endl;
             std::cout<<"Tested "<<tested<<std::endl;
         }
-        //vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh_trace.ply",vcg::tri::io::Mask::IOM_VERTFLAGS);
+
+#ifndef NDEBUG
+        vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh_trace.ply",vcg::tri::io::Mask::IOM_VERTFLAGS);
+#endif
     }
 
     void TraceAllBordersCandidates(const std::set<size_t> &ConvexOriginal,
                                    const std::vector<size_t> &TracingVert,
                                    const std::vector<std::vector<size_t> > &TracingDir)
     {
-        std::cout<<"Tracing Regular Paths"<<std::endl;
+        if (printMsg) {
+            std::cout<<"Tracing Regular Paths"<<std::endl;
+        }
 
         assert(TracingVert.size()==TracingDir.size());
         InitTracerConnections(ConvexOriginal);
@@ -254,7 +269,9 @@ class PatchSplitter
             if (!traced)
             {
                 non_traced++;
-                std::cout<<"WARNING: Non Traced "<<TraceV<<" "<<TracingDir[i][0]<<std::endl;
+                if (printMsg) {
+                    std::cout<<"WARNING: Non Traced "<<TraceV<<" "<<TracingDir[i][0]<<std::endl;
+                }
                 continue;
             }
 
@@ -262,7 +279,9 @@ class PatchSplitter
             if (!expanded)
             {
                 non_expanded++;
-                std::cout<<"WARNING: Non Expanded "<<TraceV<<" "<<TracingDir[i][0]<<std::endl;
+                if (printMsg) {
+                    std::cout<<"WARNING: Non Expanded "<<TraceV<<" "<<TracingDir[i][0]<<std::endl;
+                }
                 continue;
             }
 
@@ -376,9 +395,11 @@ class PatchSplitter
             if (SelV.count(i)==0)continue;
             patchMesh.vert[i].SetS();
         }
+
         vcg::tri::io::ExporterPLY<MeshType>::Save(patchMesh,"test_mesh.ply",
                                                   vcg::tri::io::Mask::IOM_FACECOLOR|
                                                   vcg::tri::io::Mask::IOM_VERTFLAGS);
+
     }
 
     void SavePatchMeshConcaveQ(const std::set<size_t> &ConcaveOriginal)
@@ -463,7 +484,7 @@ class PatchSplitter
             patchMesh.face[FaceIndexes[i]].SetS();
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(patchMesh);
         vcg::tri::Append<MeshType,MeshType>::Mesh(testMesh,patchMesh,true);
-        UpdateAttributes(testMesh);
+        updateAllMeshAttributes(testMesh);
         vcg::tri::UpdateSelection<MeshType>::Clear(patchMesh);
         vcg::tri::UpdateSelection<MeshType>::Clear(testMesh);
 
@@ -655,7 +676,9 @@ public:
                 //assert(VertPatchCount[i].size()==1);
                 if (VertPatchCount[i].size()!=1)
                 {
-                    std::cout<<"WARNING: VPatch Size"<<VertPatchCount[i].size()<<std::endl;
+                    if (printMsg) {
+                        std::cout<<"WARNING: VPatch Size"<<VertPatchCount[i].size()<<std::endl;
+                    }
                     for (size_t j=0;j<VertPatchCount[i].size();j++)
                     {
                         size_t IndexPatch=VertPatchCount[i][j];
@@ -750,7 +773,7 @@ public:
             size_t IndexOriginal=patchMesh.vert[i].Q();
             patchMesh.vert[i].P()=Source.vert[IndexOriginal].cP();
         }
-        UpdateAttributes(patchMesh);
+        updateAllMeshAttributes(patchMesh);
     }
 
     bool SplitByConcave(const std::set<size_t> &ConvexOriginal,
@@ -825,7 +848,9 @@ public:
         InitCandidatesPathLenghts();
         std::reverse(CandidatesPathLenghts.begin(),CandidatesPathLenghts.end());
         size_t num_removed=0;
-        std::cout<<"*** Initial "<<CandidatesPathLenghts.size()<<" Traces"<<std::endl;
+        if (printMsg) {
+            std::cout<<"*** Initial "<<CandidatesPathLenghts.size()<<" Traces"<<std::endl;
+        }
 
         GetConvexVertices(ConvexOriginal,ConvexPatchMesh);
 
@@ -843,7 +868,9 @@ public:
             TraceVertCandidates[CurrTrace].clear();
             TraceDirCandidates[CurrTrace].clear();
         }
-        std::cout<<"*** Removed "<<num_removed<<" Traces"<<std::endl;
+        if (printMsg) {
+            std::cout<<"*** Removed "<<num_removed<<" Traces"<<std::endl;
+        }
         //exit(0);
         //erase the empty ones
         std::vector<std::vector<size_t > > TraceVertSwap;
@@ -995,7 +1022,7 @@ private:
         }
         vcg::tri::UpdateSelection<MeshType>::VertexFromFaceLoose(mesh);
         vcg::tri::Append<MeshType,MeshType>::Mesh(partition_mesh,mesh,true);
-        UpdateAttributes(partition_mesh);
+        updateAllMeshAttributes(partition_mesh);
         vcg::tri::UpdateFlags<MeshType>::VertexClearS(partition_mesh);
         vcg::tri::UpdateFlags<MeshType>::FaceClearS(partition_mesh);
         vcg::tri::UpdateFlags<MeshType>::VertexClearS(mesh);
@@ -1143,7 +1170,7 @@ private:
         InvertVertexSelection();
         vcg::PolygonalAlgorithm<MeshType>::LaplacianReproject(mesh,3,0.5,true);
 
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
         vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
     }
 
@@ -1164,7 +1191,7 @@ private:
         Par.adapt=false;
         Par.iter=20;
 
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
         //vcg::tri::Smooth<MeshType>::VertexCoordLaplacian(mesh,3);
         //vcg::tri::UpdateCurvature<MeshType>::MeanAndGaussian(mesh);
 //        vcg::tri::UpdateCurvature<MeshType>::PerVertex(mesh);
@@ -1185,17 +1212,21 @@ private:
         SelectFacesWithBorderEdge();
         //SelectFacesWithBorderVertex();
         InvertFaceSelection();
-        std::cout<<"Remeshing step"<<std::endl;
-        std::cout<<"Edge Size " <<EdgeStep<<std::endl;
+
+        if (Param.PrintDebug) {
+            std::cout<<"Remeshing step"<<std::endl;
+            std::cout<<"Edge Size " <<EdgeStep<<std::endl;
+        }
+
         MeshType Reproject;
         vcg::tri::Append<MeshType,MeshType>::Mesh(Reproject,mesh);
-        UpdateAttributes(Reproject);
+        updateAllMeshAttributes(Reproject);
 
         vcg::tri::IsotropicRemeshing<MeshType>::Do(mesh,Reproject,Par);
         //vcg::tri::UpdateColor<MeshType>::PerFaceConstant(mesh,vcg::Color4b::LightGray);
 
         vcg::tri::UpdateFlags<MeshType>::Clear(mesh);
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
 
 
 //        vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"remeshed.ply");
@@ -1475,8 +1506,9 @@ private:
 
     void InitField()
     {
-        if (Param.PrintDebug)
+        if (Param.PrintDebug) {
             std::cout<<"Initializig Field"<<std::endl;
+        }
         typename vcg::tri::FieldSmoother<MeshType>::SmoothParam SParam;
 
         SParam.align_borders=true;
@@ -1490,8 +1522,9 @@ private:
         //vcg::tri::io::ExporterPLY<MeshType>::Save(mesh,"test_field.ply");
 
         vcg::tri::FieldSmoother<MeshType>::SmoothDirections(mesh,SParam);
-        if (Param.PrintDebug)
+        if (Param.PrintDebug) {
             std::cout<<"Done! Now propagating on Vertices"<<std::endl;
+        }
 
         vcg::tri::CrossField<MeshType>::SetVertCrossVectorFromFace(mesh);
 
@@ -1502,15 +1535,17 @@ private:
     }
 
     void CheckIndexOnQ(int TestIndex)
-    {
-        std::cout<<"*** TESTING INDEX "<<TestIndex<<std::endl;
+    {        
+        if (Param.PrintDebug) {
+            std::cout<<"*** TESTING INDEX "<<TestIndex<<std::endl;
+        }
         for (size_t i=0;i<mesh.vert.size();i++)
         {
             size_t Index0=i;
             size_t Index1=mesh.vert[i].Q();
             if (Index0!=Index1)
             {
-                std::cout<<"i: "<<i<<" Q: "<<mesh.vert[i].Q()<<std::endl;
+                std::cout<<"ERROR: i: "<<i<<" Q: "<<mesh.vert[i].Q()<<std::endl;
                 assert(0);
             }
         }
@@ -1521,7 +1556,7 @@ private:
             size_t Index1=mesh.face[i].Q();
             if (Index0!=Index1)
             {
-                std::cout<<"i: "<<i<<" Q: "<<mesh.face[i].Q()<<std::endl;
+                std::cout<<"ERROR i: "<<i<<" Q: "<<mesh.face[i].Q()<<std::endl;
                 assert(0);
             }
         }
@@ -1681,7 +1716,7 @@ private:
     void SmoothPatchStep(ScalarType Damp)
     {
         //save old positio
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
 
         //        std::vector<CoordType> OldNorm;
         //        for (size_t i=0;i<mesh.face.size();i++)
@@ -1785,7 +1820,7 @@ private:
 
         vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
 
-        UpdateAttributes<MeshType>(mesh);
+        updateAllMeshAttributes<MeshType>(mesh);
     }
 
     void SmoothPatches(ScalarType Damp,size_t numSteps,bool Reproject)
@@ -1798,7 +1833,7 @@ private:
         }
 
         vcg::tri::UpdateFlags<MeshType>::Clear(mesh);
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
     }
 
     void UpdatePatchPosition(size_t IndexPatch)
@@ -1817,7 +1852,7 @@ private:
             assert(IndexOriginal<mesh.vert.size());
             PatchMesh->vert[i].P()=mesh.vert[IndexOriginal].cP();
         }
-        UpdateAttributes(*PatchMesh);
+        updateAllMeshAttributes(*PatchMesh);
     }
 
     void UpdatePatchPosition()
@@ -1853,7 +1888,10 @@ private:
         if (NewPatches.size()==1)return false;
         if (!Splitted)return false;
 
-        std::cout<<"Convave Tracing split into patches:"<<NewPatches.size()<<std::endl;
+
+        if (Param.PrintDebug) {
+            std::cout<<"Convave Tracing split into patches:"<<NewPatches.size()<<std::endl;
+        }
 
         //update patches structures
         std::vector<size_t> NewIndexes;
@@ -1892,7 +1930,7 @@ private:
             for (size_t i=0;i<mesh.vert.size();i++)
                 mesh.vert[i].P()=OldPos[i];
 
-            UpdateAttributes(mesh);
+            updateAllMeshAttributes(mesh);
         }
         InitIndexOnQ();
 
@@ -1968,13 +2006,18 @@ private:
             }
             size_t nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(*CurrMesh);
             if (nonManifV!=0)
-            {
-                std::cout<<"TO SPLIT"<<std::endl;
+            {                
+                if (Param.PrintDebug) {
+                    std::cout<<"TO SPLIT"<<std::endl;
+                }
                 To_Split.push_back(i);
                 continue;
             }
         }
-        std::cout<<"Patches Needed to be Resplitted "<<To_Split.size()<<std::endl;
+
+        if (Param.PrintDebug) {
+            std::cout<<"Patches Needed to be Resplitted "<<To_Split.size()<<std::endl;
+        }
 
         std::vector<PatchSplitter<MeshType> > PSplit;
         for (size_t i=0;i<To_Split.size();i++)
@@ -1993,7 +2036,9 @@ private:
         std::vector<bool> HadSplitted(To_Split.size(),false);
         for (size_t i=0;i<To_Split.size();i++)
         {
-            std::cout<<"Splitting Patch "<<To_Split[i]<<std::endl;
+            if (Param.PrintDebug) {
+                std::cout<<"Splitting Patch "<<To_Split[i]<<std::endl;
+            }
             size_t IndexPatch=To_Split[i];
 
             HadSplitted[i]=PSplit[i].SplitByBorders(Patches[IndexPatch].ConvexVertIndex,
@@ -2002,7 +2047,9 @@ private:
                                                     LocalPatches[i],NewPatches[i]);
 
 
-            std::cout<<"Border Tracing split into patches:"<<NewPatches[i].size()<<std::endl;
+            if (Param.PrintDebug) {
+                std::cout<<"Border Tracing split into patches:"<<NewPatches[i].size()<<std::endl;
+            }
 
             //update patches structures;
             splitted|=HadSplitted[i];
@@ -2184,14 +2231,18 @@ private:
             size_t holes=vcg::tri::Clean<MeshType>::CountHoles(*CurrMesh);
             if (holes!=1)
             {
-                std::cout<<"WARNING - Mesh non Disk-Like - ERASED!"<<std::endl;
+                if (Param.PrintDebug) {
+                    std::cout<<"WARNING - Mesh non Disk-Like - ERASED!"<<std::endl;
+                }
                 IsOkPatch[i]=false;
                 NeedErase=true;
             }
             size_t nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(*CurrMesh);
             if (nonManifV!=0)
             {
-                std::cout<<"WARNING - Non Manifold V partition - ERASED!"<<std::endl;
+                if (Param.PrintDebug) {
+                    std::cout<<"WARNING - Non Manifold V partition - ERASED!"<<std::endl;
+                }
                 IsOkPatch[i]=false;
                 NeedErase=true;
             }
@@ -2215,7 +2266,7 @@ private:
         mesh.Clear();
         vcg::tri::Append<MeshType,MeshType>::Mesh(mesh,NewMesh);
         InitIndexOnQ();
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
 
         //then create the vertex map
         std::map<size_t,size_t> VertexMap;
@@ -2340,7 +2391,9 @@ private:
 
     void FixCorners()
     {
-        std::cout<<"fixing corners"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"fixing corners"<<std::endl;
+        }
         CheckVertQuality();
         for (size_t i=0;i<Patches.size();i++)
         {
@@ -2348,7 +2401,9 @@ private:
             if ((Patches[i].ConvexVertIndex.size()>=3)&&
                     (Patches[i].ConvexVertIndex.size()<=6))continue;
 
-            std::cout<<"WARNING - Not good subdivision "<<Patches[i].ConvexVertIndex.size()<<" sides - FIXED!"<<std::endl;
+            if (Param.PrintDebug) {
+                std::cout<<"WARNING - Not good subdivision "<<Patches[i].ConvexVertIndex.size()<<" sides - FIXED!"<<std::endl;
+            }
 
             for (size_t j=0;j<Patches[i].IndexF.size();j++)
                 mesh.face[Patches[i].IndexF[j]].C()=vcg::Color4b(255,0,0,255);
@@ -2384,7 +2439,9 @@ private:
             {
 
                 size_t DifferenceV=3-Patches[i].ConvexVertIndex.size();
-                std::cout<<"FIXED 2"<<std::endl;
+                if (Param.PrintDebug) {
+                    std::cout<<"FIXED 2"<<std::endl;
+                }
                 //then add one by one until match
                 for (size_t j=0;j<AngleVert.size();j++)
                 {
@@ -2425,10 +2482,12 @@ private:
             std::vector<size_t> Vertx(Patches[i].ConvexVertIndex.begin(),
                                       Patches[i].ConvexVertIndex.end());
 
-            std::cout<<"Vertices Fixed "<<std::endl;
-            for (size_t i=0;i<Vertx.size();i++)
-                std::cout<<"Vert "<<Vertx[i]<<std::endl;
-            std::cout<<"End "<<std::endl;
+            if (Param.PrintDebug) {
+                std::cout<<"Vertices Fixed "<<std::endl;
+                for (size_t i=0;i<Vertx.size();i++)
+                    std::cout<<"Vert "<<Vertx[i]<<std::endl;
+                std::cout<<"End "<<std::endl;
+            }
 
             //        MeshType currMesh;
             //        GetPatchMesh(i,currMesh);
@@ -2481,7 +2540,7 @@ private:
     void RemoveSmallCC(ScalarType MinSize=0.001)
     {
         std::vector<std::vector<size_t> > ComponentsVect;
-        FindConnectedComponents(mesh,ComponentsVect);
+        ComponentsVect = findConnectedComponents(mesh);
         ScalarType BBsize=mesh.bbox.Diag();
         bool has_deleted=false;
         for (size_t i=0;i<ComponentsVect.size();i++)
@@ -2502,20 +2561,24 @@ private:
 
         if (has_deleted)
         {
-            std::cout<<"WARNING: Removed Components"<<std::endl;
+            if (Param.PrintDebug) {
+                std::cout<<"WARNING: Removed Components"<<std::endl;
+            }
             vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(mesh);
             vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
-            UpdateAttributes(mesh);
+            updateAllMeshAttributes(mesh);
         }
 
     }
 
     void FixSmallCC()
     {
-        std::cout<<"** fixing small connected components"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"** fixing small connected components"<<std::endl;
+        }
 
         std::vector<std::vector<size_t> > ComponentsVect;
-        FindConnectedComponents(mesh,ComponentsVect);
+        ComponentsVect = QuadBoolean::internal::findConnectedComponents(mesh);
 
         std::vector<std::set<size_t> > Components;
         for (size_t i=0;i<ComponentsVect.size();i++)
@@ -2584,7 +2647,9 @@ private:
                     ForceSplit(IndexPatch);
             }
         }
-        std::cout<<"End"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"End"<<std::endl;
+        }
         //        std::vector<std::set<size_t> > PatchComponent;
         //        for (size_t i=0;i<)
     }
@@ -2722,23 +2787,24 @@ private:
         vcg::tri::Append<QuadMeshType,QuadMeshType>::Mesh(SwapQuad,quadMesh);
 
         //transform the quad mesh into tris
-        //UpdateAttributes()
+        //updateAllMeshAttributes()
         std::vector<int> ret=QuadBoolean::internal::splitFacesInTriangles(SwapQuad);
         //vcg::tri::io::ExporterPLY<QuadMeshType>::Save(SwapQuad,"SwapQuad.ply");
 
         MeshType externalBound;
         vcg::tri::Append<MeshType,QuadMeshType>::Mesh(externalBound,SwapQuad);
-        UpdateAttributes(externalBound);
+        updateAllMeshAttributes(externalBound);
         MeshType TotalMesh;
         vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,externalBound);
         vcg::tri::Append<MeshType,MeshType>::Mesh(TotalMesh,mesh);
         //vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(TotalMesh);
         vcg::tri::Clean<MeshType>::MergeCloseVertex(TotalMesh,0.000001);
-        UpdateAttributes(TotalMesh);
+        updateAllMeshAttributes(TotalMesh);
         //vcg::tri::io::ExporterPLY<MeshType>::Save(TotalMesh,"total.ply");
 
         size_t num_holes=vcg::tri::Clean<MeshType>::CountHoles(TotalMesh);
         if (num_holes==0)return;
+
         std::cout<<"*** There are "<<num_holes<<" HOLES to be fixed!"<<std::endl;
 
         //first smooth around borders
@@ -2757,11 +2823,11 @@ private:
 
         MeshType NewHoles;
         vcg::tri::Append<MeshType,MeshType>::Mesh(NewHoles,TotalMesh,true);
-        UpdateAttributes(NewHoles);
+        updateAllMeshAttributes(NewHoles);
         //vcg::tri::io::ExporterPLY<MeshType>::Save(NewHoles,"test_holes.ply");
 
         std::vector<std::vector<size_t> > Components;
-        QuadBoolean::internal::FindConnectedComponents(NewHoles,Components);
+        Components = QuadBoolean::internal::findConnectedComponents(NewHoles);
         std::cout<<"*** Components "<<Components.size()<<std::endl;
 
         assert(Components.size()==num_holes);
@@ -2795,11 +2861,11 @@ private:
         vcg::tri::Clean<MeshType>::RemoveDuplicateVertex(mesh);
         vcg::tri::Allocator<MeshType>::CompactEveryVector(mesh);
 
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
 
         size_t num_split=vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
         if (num_split>0)
-            UpdateAttributes(mesh);
+            updateAllMeshAttributes(mesh);
 
         InitIndexOnQ();
     }
@@ -2853,28 +2919,33 @@ public:
     {
         Param=_Param;
         assert(Param.EdgeSizeFactor>=0.5);
-        std::cout<<"*****************************"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"***   GETTING GEO-CONSTR  ***"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*****************************"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"*****************************"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"***   GETTING GEO-CONSTR  ***"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*****************************"<<std::endl;
+        }
         //initial check
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
         int nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
         int nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
-        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
-        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+
+        if (nonManifV > 0)
+            std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        if (nonManifE > 0)
+            std::cout<<"non manuf E:"<<nonManifE<<std::endl;
 
         std::vector<CoordType> ConvexV,ConcaveV;
         GetGeometricCorners(ConvexV,ConcaveV);
 
         SelectFacesWithBorderEdge();
         vcg::PolygonalAlgorithm<MeshType>::Triangulate(mesh,true,true);
-        UpdateAttributes(mesh);
+        updateAllMeshAttributes(mesh);
 
         OriginalMesh.Clear();
         vcg::tri::Append<MeshType,MeshType>::Mesh(OriginalMesh,mesh);
-        UpdateAttributes(OriginalMesh);
+        updateAllMeshAttributes(OriginalMesh);
         Grid.Set(OriginalMesh.face.begin(),OriginalMesh.face.end());
 
         if (Param.InitialRemesh)
@@ -2886,7 +2957,7 @@ public:
 
         size_t num_split=vcg::tri::Clean<MeshType>::SplitNonManifoldVertex(mesh,0);
         if (num_split>0)
-            UpdateAttributes(mesh);
+            updateAllMeshAttributes(mesh);
 
         //initialize the field
         InitField();
@@ -2897,11 +2968,13 @@ public:
         InitPatchMesh(0);
 
         //split the concave patches first
-        std::cout<<"*****************************"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*** SPLITTING CONCAVE     ***"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*****************************"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"*****************************"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*** SPLITTING CONCAVE     ***"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*****************************"<<std::endl;
+        }
         SplitConcave(0);
 
         bool splitted=false;
@@ -2927,7 +3000,9 @@ public:
                  IteSetConcave!=Patches[i].ConcaveVertIndex.end();
                  IteSetConcave++)
             {
-                std::cout<<"WARNING - Non Traced Concave - MADE FLAT!"<<std::endl;
+                if (Param.PrintDebug) {
+                    std::cout<<"WARNING - Non Traced Concave - MADE FLAT!"<<std::endl;
+                }
                 size_t IndConcave=(*IteSetConcave);
                 //Patches[i].ConcaveVertIndex.erase(IndConcave);
                 Patches[i].FlatVertIndex.insert(IndConcave);
@@ -2942,11 +3017,13 @@ public:
             }
         }
 
-        std::cout<<"*****************************"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*** SPLITTING NON OK STEP ***"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*****************************"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"*****************************"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*** SPLITTING NON OK STEP ***"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*****************************"<<std::endl;
+        }
 
         //split the rest
         splitted=false;
@@ -2954,25 +3031,32 @@ public:
             splitted=SplitNonOk();
         }while (splitted);
 
-        std::cout<<"*****************************"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*** COLLECTING RESULTS    ***"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*****************************"<<std::endl;
+
+        if (Param.PrintDebug) {
+            std::cout<<"*****************************"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*** COLLECTING RESULTS    ***"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*****************************"<<std::endl;
+        }
 
         //final check
         nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
         nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
-        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
-        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+        if (nonManifV > 0)
+            std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        if (nonManifE > 0)
+            std::cout<<"non manuf E:"<<nonManifE<<std::endl;
 
         //vcg::tri::UpdateColor<MeshType>::PerFaceConstant(mesh);
 
-        std::cout<<"*****************************"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"***FIXING REMAINING ISSUES***"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*****************************"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"*****************************"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"***FIXING REMAINING ISSUES***"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*****************************"<<std::endl;
+        }
 
         RemoveNotTopologicallyOKPartitions();
         //FixSmallCC();
@@ -2986,11 +3070,13 @@ public:
         if (Param.CleanFolds && Param.InterleaveSmooth)
             CleanFoldsNeeded();
 
-        std::cout<<"*****************************"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*** RETRIEVE PARTITIONS   ***"<<std::endl;
-        std::cout<<"***                       ***"<<std::endl;
-        std::cout<<"*****************************"<<std::endl;
+        if (Param.PrintDebug) {
+            std::cout<<"*****************************"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*** RETRIEVE PARTITIONS   ***"<<std::endl;
+            std::cout<<"***                       ***"<<std::endl;
+            std::cout<<"*****************************"<<std::endl;
+        }
 
         RetrievePathesInfo(Partitions,Corners,BorderEdges);
 
@@ -2998,8 +3084,10 @@ public:
 
         nonManifV=vcg::tri::Clean<MeshType>::CountNonManifoldVertexFF(mesh);
         nonManifE=vcg::tri::Clean<MeshType>::CountNonManifoldEdgeFF(mesh);
-        std::cout<<"non manuf V:"<<nonManifV<<std::endl;
-        std::cout<<"non manuf E:"<<nonManifE<<std::endl;
+        if (nonManifV > 0)
+            std::cout<<"non manuf V:"<<nonManifV<<std::endl;
+        if (nonManifE > 0)
+            std::cout<<"non manuf E:"<<nonManifE<<std::endl;
 
     }
 

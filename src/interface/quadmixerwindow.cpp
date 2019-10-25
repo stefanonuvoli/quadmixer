@@ -114,8 +114,8 @@ void QuadMixerWindow::detachOperation()
         parameters.intersectionSmoothingIterations = 3;
         parameters.resultSmoothingLaplacianNRing = 2;
         parameters.resultSmoothingLaplacianIterations = 5;
-        parameters.preserveNonQuads = false;
-        parameters.onlyQuads = true;
+        parameters.preservePolygons1 = true;
+        parameters.preservePolygons2 = false;
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh1, QuadBoolean::Operation::INTERSECTION, *detachResult1, parameters);
         QuadBoolean::quadBoolean(*target1, detachedPolyMesh2, QuadBoolean::Operation::INTERSECTION, *detachResult2, parameters);
 
@@ -149,7 +149,7 @@ int QuadMixerWindow::addMesh(PolyMesh* mesh)
             mesh->face[fId].C() = vcg::Color4b(255,255,255,255);
 
             if (mesh->face[fId].VN() != 4) {
-                mesh->face[fId].C() = vcg::Color4b(255,200,200,255);
+                mesh->face[fId].C() = vcg::Color4b(255,255,200,255);
             }
         }
     }
@@ -239,6 +239,8 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     int intersectionSmoothingIterations = ui.intersectionSmoothingSpinBox->value();
     double intersectionSmoothingNRing = ui.intersectionSmoothingNRingSpinBox->value();
     double maxBB = ui.maxBBSpinBox->value();
+    bool preservePolygons1 = ui.preservePolygons1CheckBox->isChecked();
+    bool preservePolygons2 = ui.preservePolygons2CheckBox->isChecked();
 
     bool patchRetraction = ui.patchRetractionCheckBox->isChecked();
     double patchRetractionNRing = ui.patchRetractionNRingSpinBox->value();
@@ -254,6 +256,8 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     bool reproject = ui.reprojectCheckBox->isChecked();
     bool splitConcaves = ui.splitConcavesCheckBox->isChecked();
     bool finalSmoothing = ui.finalSmoothingCheckBox->isChecked();
+    bool polychordSolver = ui.polychordSolverCheckBox->isChecked();
+    bool splitSolver = ui.splitSolverCheckBox->isChecked();
 
     QuadBoolean::ILPMethod ilpMethod;
     if (ui.ilpMethodLSRadio->isChecked()) {
@@ -279,6 +283,8 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     parameters.intersectionSmoothingIterations = intersectionSmoothingIterations;
     parameters.intersectionSmoothingNRing = intersectionSmoothingNRing;
     parameters.maxBB = maxBB;
+    parameters.preservePolygons1 = preservePolygons1;
+    parameters.preservePolygons2 = preservePolygons2;
     parameters.patchRetraction = patchRetraction;
     parameters.patchRetractionNRing = patchRetractionNRing;
     parameters.minRectangleArea = minRectangleArea;
@@ -291,6 +297,8 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     parameters.reproject = reproject;
     parameters.splitConcaves = splitConcaves;
     parameters.finalSmoothing = finalSmoothing;
+    parameters.polychordSolver = polychordSolver;
+    parameters.splitSolver = splitSolver;
     parameters.ilpMethod = ilpMethod;
     parameters.alpha = alpha;
     parameters.beta = beta;
@@ -726,6 +734,13 @@ void QuadMixerWindow::doSmooth()
 
 
 void QuadMixerWindow::doGetSurfaces() {
+
+
+    //To make it deterministic (remeshing)
+    if (!preservedSurface.IsEmpty()) {
+        doSmooth();
+    }
+
     //Clear data
     quadTracerLabel1.clear();
     quadTracerLabel2.clear();
@@ -742,7 +757,6 @@ void QuadMixerWindow::doGetSurfaces() {
     preservedFacesMap.clear();
 
     isNewSurface.clear();
-    initialNewSurface.Clear();
     newSurface.Clear();
 
 
@@ -755,7 +769,8 @@ void QuadMixerWindow::doGetSurfaces() {
     bool deleteSmall = ui.deleteSmallCheckBox->isChecked();
     bool deleteNonConnected = ui.deleteNonConnectedCheckBox->isChecked();
     double maxBB = ui.maxBBSpinBox->value();
-    bool preserveNonQuads = ui.preserveNonQuadsCheckBox->isChecked();
+    bool preservePolygons1 = ui.preservePolygons1CheckBox->isChecked();
+    bool preservePolygons2 = ui.preservePolygons2CheckBox->isChecked();
 
     chrono::steady_clock::time_point start;
 
@@ -764,8 +779,6 @@ void QuadMixerWindow::doGetSurfaces() {
     QuadBoolean::internal::getSurfaces(
             mesh1,
             mesh2,
-            trimesh1,
-            trimesh2,
             booleanSmoothed,
             birthTriangle,
             birthFace1,
@@ -781,7 +794,8 @@ void QuadMixerWindow::doGetSurfaces() {
             deleteSmall,
             deleteNonConnected,
             maxBB,
-            preserveNonQuads,
+            preservePolygons1,
+            preservePolygons2,
             meshLabel1,
             meshLabel2,
             isPreserved1,
@@ -791,19 +805,12 @@ void QuadMixerWindow::doGetSurfaces() {
             preservedFacesMap,
             preservedVerticesMap,
             preservedSurface,
-            initialNewSurface);
+            newSurface);
 
     std::cout << std::endl << " >> "
               << "Get surfaces: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
-
-
-
-#ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(initialNewSurface, "res/initialNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/initialPreservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-#endif
 
 
     //Trace quads following singularities
@@ -825,48 +832,53 @@ void QuadMixerWindow::doGetSurfaces() {
     ui.glArea->setQuadLayoutPreserved2(&quadLayoutDataPreserved2);
 
 
-    //We keep initial surface
-    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
-
     ui.glArea->setPreservedSurface(&preservedSurface);
     ui.glArea->setNewSurface(&newSurface);
 
     colorizeMesh(preservedSurface, preservedSurfaceLabel);
 
-
 #ifdef SAVEMESHES
     vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
     vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
+
 }
 
 void QuadMixerWindow::doPatchDecomposition() {
     chrono::steady_clock::time_point start;
 
+    //To make it deterministic (remeshing)
+    if (!newSurfaceLabel.empty()) {
+        doGetSurfaces();
+    }
+
     newSurfacePartitions.clear();
     newSurfaceCorners.clear();
     newSurfaceLabel.clear();
-    newSurface.Clear();
-    vcg::tri::Append<TriangleMesh, TriangleMesh>::Mesh(newSurface, initialNewSurface);
-
 
     bool initialRemeshing = ui.initialRemeshingCheckBox->isChecked();
     double initialRemeshingEdgeFactor = ui.edgeFactorSpinBox->value();
     bool reproject = ui.reprojectCheckBox->isChecked();
     bool splitConcaves = ui.splitConcavesCheckBox->isChecked();
     bool finalSmoothing = ui.finalSmoothingCheckBox->isChecked();
-    bool onlyQuads = ui.onlyQuadsCheckBox->isChecked();
-
+    bool polychordSolver = ui.polychordSolverCheckBox->isChecked();
+    bool splitSolver = ui.polychordSolverCheckBox->isChecked();
 
     start = chrono::steady_clock::now();
 
     //Make ILP feasible
-    QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface, onlyQuads);
+    QuadBoolean::internal::makeILPFeasible(preservedSurface, newSurface, polychordSolver, splitSolver);
 
     std::cout << std::endl << " >> "
               << "Make ILP feasible: "
               << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count()
               << " ms" << std::endl;
+
+
+#ifdef SAVEMESHES
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/feasibilityNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/feasibilityPreservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
 
 
     start = chrono::steady_clock::now();
@@ -907,7 +919,6 @@ void QuadMixerWindow::doSolveILP() {
     //Solve ILP
     double alpha = ui.alphaSpinBox->value();
     double beta = ui.betaSpinBox->value();
-    bool onlyQuads = ui.onlyQuadsCheckBox->isChecked();
 
     QuadBoolean::ILPMethod ilpMethod;
     if (ui.ilpMethodLSRadio->isChecked()) {
@@ -923,7 +934,6 @@ void QuadMixerWindow::doSolveILP() {
     ilpResult = QuadBoolean::internal::findSubdivisions(
                 newSurface,
                 chartData,
-                onlyQuads,
                 alpha,
                 beta,
                 ilpMethod);

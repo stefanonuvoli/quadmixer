@@ -176,8 +176,6 @@ private:
     std::unordered_map<size_t, size_t> preservedFacesMap;
     std::unordered_map<size_t, size_t> preservedVerticesMap;
 
-    TriangleMesh initialNewSurface;
-
     TriangleMesh newSurface;
     std::vector<int> newSurfaceLabel;
 

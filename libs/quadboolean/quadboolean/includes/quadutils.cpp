@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <vcg/complex/complex.h>
 #include <vcg/complex/algorithms/update/flag.h>
 #include <vcg/complex/algorithms/update/topology.h>
 #include <vcg/complex/algorithms/update/bounding.h>
@@ -14,29 +15,94 @@
 namespace QuadBoolean {
 namespace internal {
 
-
 bool findVertexChainPathRecursive(
         const size_t& vCurrentId,
         const size_t& vStartId,
         const std::vector<std::vector<size_t>>& vertexNextMap,
         std::vector<size_t>& nextConfiguration);
 
-template<class PolyMeshType>
-void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordType> &AvVert)
+
+template <class MeshType>
+void updateAllMeshAttributes(MeshType &mesh)
+{
+    vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(mesh);
+    vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(mesh);
+    vcg::tri::UpdateBounding<MeshType>::Box(mesh);
+    vcg::tri::UpdateTopology<MeshType>::FaceFace(mesh);
+    vcg::tri::UpdateTopology<MeshType>::VertexFace(mesh);
+    vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(mesh);
+    vcg::tri::UpdateFlags<MeshType>::VertexBorderFromNone(mesh);
+}
+
+template <class MeshType>
+std::vector<std::vector<size_t>> findConnectedComponents(
+        const MeshType &mesh)
+{
+    std::vector<std::vector<size_t>> components;
+
+    std::set<size_t> visited;
+
+    for (size_t i = 0; i < mesh.face.size(); i++) {
+        std::stack<size_t> stack;
+
+        //If face has not been visited
+        if (visited.find(i) == visited.end()) {
+            stack.push(i);
+
+            std::vector<size_t> facesInComponents;
+            do {
+                size_t fId = stack.top();
+                stack.pop();
+
+                if (visited.find(fId) == visited.end()) {
+                    facesInComponents.push_back(fId);
+                    visited.insert(fId);
+
+                    for (size_t j = 0; j < mesh.face[fId].VN(); j++) {
+                        if (!vcg::face::IsBorder(mesh.face[fId], j)) {
+                            size_t adjFId = vcg::tri::Index(mesh, mesh.face[fId].cFFp(j));
+
+                            if (visited.find(adjFId) == visited.end()) {
+                                stack.push(adjFId);
+                            }
+                        }
+                    }
+                }
+            } while (!stack.empty());
+            components.push_back(facesInComponents);
+        }
+    }
+
+#ifndef NDEBUG
+    //Check unique faces in components
+    for (size_t i = 0; i < components.size(); i++)
+    {
+        std::set<size_t> checkComponentsUnique(components[i].begin(), components[i].end());
+        assert(components[i].size() == checkComponentsUnique.size());
+    }
+#endif
+
+    return components;
+}
+
+
+
+template<class MeshType>
+void LaplacianPos(MeshType &poly_m,std::vector<typename MeshType::CoordType> &AvVert)
 {
     //cumulate step
     AvVert.clear();
-    AvVert.resize(poly_m.vert.size(),typename PolyMeshType::CoordType(0,0,0));
-    std::vector<typename PolyMeshType::ScalarType> AvSum(poly_m.vert.size(),0);
+    AvVert.resize(poly_m.vert.size(),typename MeshType::CoordType(0,0,0));
+    std::vector<typename MeshType::ScalarType> AvSum(poly_m.vert.size(),0);
     for (size_t i=0;i<poly_m.face.size();i++)
         for (size_t j=0;j<(size_t)poly_m.face[i].VN();j++)
         {
             //get current vertex
-            typename PolyMeshType::VertexType *currV=poly_m.face[i].V(j);
+            typename MeshType::VertexType *currV=poly_m.face[i].V(j);
             //and its position
-            typename PolyMeshType::CoordType currP=currV->P();
+            typename MeshType::CoordType currP=currV->P();
             //cumulate over other positions
-            typename PolyMeshType::ScalarType W=vcg::PolyArea(poly_m.face[i]);
+            typename MeshType::ScalarType W=vcg::PolyArea(poly_m.face[i]);
             //assert(W!=0);
             for (size_t k=0;k<(size_t)poly_m.face[i].VN();k++)
             {
@@ -55,24 +121,24 @@ void LaplacianPos(PolyMeshType &poly_m,std::vector<typename PolyMeshType::CoordT
     }
 }
 
-template <class PolyMeshType>
+template <class MeshType>
 void LaplacianGeodesic(
-        PolyMeshType &poly_m,
+        MeshType &poly_m,
         int nstep,
         const double maxDistance,
         const double minDumpS,
         std::vector<size_t>& smoothedVertices)
 {
-    std::vector<typename PolyMeshType::VertexPointer> seedVec;
+    std::vector<typename MeshType::VertexPointer> seedVec;
     for (int i = 0; i < poly_m.vert.size(); i++) {
         if (poly_m.vert[i].IsS()) {
             seedVec.push_back(&poly_m.vert[i]);
         }
     }
-    vcg::tri::UpdateQuality<PolyMeshType>::VertexConstant(poly_m, 0);
-    vcg::tri::EuclideanDistance<PolyMeshType> ed;
-    vcg::tri::UpdateTopology<PolyMeshType>::VertexFace(poly_m);
-    vcg::tri::Geodesic<PolyMeshType>::Compute(poly_m,seedVec, ed);
+    vcg::tri::UpdateQuality<MeshType>::VertexConstant(poly_m, 0);
+    vcg::tri::EuclideanDistance<MeshType> ed;
+    vcg::tri::UpdateTopology<MeshType>::VertexFace(poly_m);
+    vcg::tri::Geodesic<MeshType>::Compute(poly_m,seedVec, ed);
 
     smoothedVertices.clear();
     std::vector<double> DampS(poly_m.vert.size());
@@ -92,7 +158,7 @@ void LaplacianGeodesic(
 
     for (int s=0;s<nstep;s++)
     {
-        std::vector< typename PolyMeshType::CoordType> AvVert;
+        std::vector< typename MeshType::CoordType> AvVert;
         LaplacianPos(poly_m,AvVert);
 
         for (size_t i=0;i<poly_m.vert.size();i++)
@@ -106,8 +172,8 @@ void LaplacianGeodesic(
 }
 
 
-template <class PolyMeshType>
-bool isTriangleMesh(PolyMeshType& mesh) {
+template <class MeshType>
+bool isTriangleMesh(MeshType& mesh) {
     for (size_t i = 0; i < mesh.face.size(); i++) {
         if (mesh.face[i].VN() != 3)
             return false;
@@ -116,8 +182,8 @@ bool isTriangleMesh(PolyMeshType& mesh) {
     return true;
 }
 
-template <class PolyMeshType>
-bool isQuadMesh(PolyMeshType& mesh) {
+template <class MeshType>
+bool isQuadMesh(MeshType& mesh) {
     for (size_t i = 0; i < mesh.face.size(); i++) {
         if (mesh.face[i].VN() != 4)
             return false;
@@ -126,9 +192,9 @@ bool isQuadMesh(PolyMeshType& mesh) {
     return true;
 }
 
-template <class PolyMeshType>
-std::vector<int> splitFacesInTriangles(PolyMeshType& mesh) {
-    typedef typename PolyMeshType::VertexType VertexType;
+template <class MeshType>
+std::vector<int> splitFacesInTriangles(MeshType& mesh) {
+    typedef typename MeshType::VertexType VertexType;
 
     size_t numFaces = mesh.face.size();
     std::vector<int> birthFace(mesh.face.size(), -1);
@@ -148,7 +214,7 @@ std::vector<int> splitFacesInTriangles(PolyMeshType& mesh) {
                 startIndex++;
             }
 
-            vcg::tri::Allocator<PolyMeshType>::AddFaces(mesh,1);
+            vcg::tri::Allocator<MeshType>::AddFaces(mesh,1);
             mesh.face.back().Alloc(3);
             mesh.face.back().V(0) = v[startIndex];
             mesh.face.back().V(1) = v[(startIndex + 1)%4];
@@ -161,7 +227,7 @@ std::vector<int> splitFacesInTriangles(PolyMeshType& mesh) {
             mesh.face[i].V(2)=v[(startIndex + 4)%4];
         }
         else if (mesh.face[i].VN() > 4) {
-            vcg::PolygonalAlgorithm<PolyMeshType>::Triangulate(mesh, i);
+            vcg::PolygonalAlgorithm<MeshType>::Triangulate(mesh, i);
         }
 
         birthFace[i] = static_cast<int>(i);
@@ -171,23 +237,23 @@ std::vector<int> splitFacesInTriangles(PolyMeshType& mesh) {
     }
 
 #ifndef NDEBUG
-    vcg::tri::io::ExporterOBJ<PolyMeshType>::Save(mesh, "res/triang.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<MeshType>::Save(mesh, "res/triang.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
     return birthFace;
 }
 
-template<class PolyMeshType>
-typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh, const std::vector<size_t>& faces) {
-    typename PolyMeshType::ScalarType length = 0;
+template<class MeshType>
+typename MeshType::ScalarType averageEdgeLength(MeshType& mesh, const std::vector<size_t>& faces) {
+    typename MeshType::ScalarType length = 0;
     size_t numEdges = 0;
     for (size_t fId : faces) {
         for (size_t j=0;j<mesh.face[fId].VN();j++)
         {
             size_t index0=vcg::tri::Index(mesh,mesh.face[fId].V0(j));
             size_t index1=vcg::tri::Index(mesh,mesh.face[fId].V1(j));
-            typename PolyMeshType::CoordType p0=mesh.vert[index0].P();
-            typename PolyMeshType::CoordType p1=mesh.vert[index1].P();
+            typename MeshType::CoordType p0=mesh.vert[index0].P();
+            typename MeshType::CoordType p1=mesh.vert[index1].P();
             length += (p0-p1).Norm();
             numEdges++;
         }
@@ -199,8 +265,8 @@ typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh, const st
     return length;
 }
 
-template<class PolyMeshType>
-typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh) {
+template<class MeshType>
+typename MeshType::ScalarType averageEdgeLength(MeshType& mesh) {
     std::vector<size_t> faces;
 
     for (size_t i=0;i<mesh.face.size();i++) {
@@ -212,13 +278,13 @@ typename PolyMeshType::ScalarType averageEdgeLength(PolyMeshType& mesh) {
     return averageEdgeLength(mesh, faces);
 }
 
-template <class PolyMeshType>
+template <class MeshType>
 class OrientFaces
 {
-    typedef typename PolyMeshType::FaceType FaceType;
-    typedef typename PolyMeshType::VertexType VertexType;
-    typedef typename PolyMeshType::CoordType CoordType;
-    typedef typename PolyMeshType::ScalarType ScalarType;
+    typedef typename MeshType::FaceType FaceType;
+    typedef typename MeshType::VertexType VertexType;
+    typedef typename MeshType::CoordType CoordType;
+    typedef typename MeshType::ScalarType ScalarType;
 
 public:
 
@@ -250,14 +316,14 @@ private:
         return true;
     }
 
-    static void InvertFaces(PolyMeshType &PolyM,
+    static void InvertFaces(MeshType &PolyM,
                             const std::vector<int> &ToInvert)
     {
         for (size_t i=0;i<ToInvert.size();i++)
             InvertFace(PolyM.face[ToInvert[i]]);
     }
 
-    static void PropagateFrom(PolyMeshType &PolyM,int &fI0,
+    static void PropagateFrom(MeshType &PolyM,int &fI0,
                        std::vector<int> &OrientSet0,
                        std::vector<int> &OrientSet1)
     {
@@ -306,10 +372,10 @@ private:
 
 public:
 
-    static void AutoOrientFaces(PolyMeshType &PolyM)
+    static void AutoOrientFaces(MeshType &PolyM)
     {
-        vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(PolyM);
-        vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(PolyM);
+        vcg::tri::UpdateTopology<MeshType>::FaceFace(PolyM);
+        vcg::tri::UpdateFlags<MeshType>::FaceClearS(PolyM);
         for (int i=0;i<(int)PolyM.face.size();i++)
         {
             if (PolyM.face[i].IsS())continue;

@@ -25,7 +25,8 @@ void findPreservedFaces(
         const bool patchRetraction,
         const double patchRetractionNRing,
         const double maxBB,
-        const bool preserveNonQuads,
+        const bool preservePolygons1,
+        const bool preservePolygons2,
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
         const std::vector<int>& birthFace2,
@@ -101,9 +102,20 @@ void findPreservedFaces(
         typename PolyMeshType::FaceType* meshFaceP;
         if (birthTriangle[i].first == 1) {
             meshFaceP = &mesh1.face[birthFace1[trimeshFaceId]];
+
+            //Check if polygonal face
+            if (!preservePolygons1) {
+                nonPolygonalCheck = meshFaceP->VN() == 4;
+            }
+
         }
         else {
             meshFaceP = &mesh2.face[birthFace2[trimeshFaceId]];
+
+            //Check if polygonal face
+            if (!preservePolygons2) {
+                nonPolygonalCheck = meshFaceP->VN() == 4;
+            }
         }
 
         //Check if the vertex has been smoothed or it is in intersection line
@@ -123,11 +135,6 @@ void findPreservedFaces(
             }
         }
 
-        //Check if polygonal faces
-        if (!preserveNonQuads) {
-            nonPolygonalCheck = meshFaceP->VN() == 4;
-        }
-
         //Surface has not changed
         if (!hasIntersectionVertices && !closeToIntersectionCurve && nonPolygonalCheck) {
             isNewSurface[i] = false;
@@ -143,81 +150,6 @@ void findPreservedFaces(
             }
         }
     }
-
-
-//    isNewSurface.resize(boolean.face.size(), true);
-//    isPreserved1.resize(mesh1.face.size(), false);
-//    isPreserved2.resize(mesh2.face.size(), false);
-
-//    //Only faces that are birth faces are set to preserved
-//    for (size_t i = 0; i < boolean.face.size(); i++) {
-//        size_t trimeshFaceId = birthTriangle[i].second;
-
-//        //Set face as preserved
-//        if (birthTriangle[i].first == 1) {
-//            isPreserved1[birthFace1[trimeshFaceId]] = true;
-//        }
-//        else {
-//            isPreserved2[birthFace2[trimeshFaceId]] = true;
-//        }
-//    }
-
-//    //Identify if the triangle is the new surface
-//    for (size_t i = 0; i < boolean.face.size(); i++) {
-//        bool closeToIntersectionCurve = false;
-//        std::set<typename TriangleMeshType::CoordType> booleanCoordSet;
-
-//        //Check if close to intersection curve
-//        for (int k = 0; k < boolean.face[i].VN(); k++) {
-//            booleanCoordSet.insert(boolean.face[i].V(k)->P());
-
-//            if (boolean.face[i].V(k)->Q() < maxDistance) {
-//                closeToIntersectionCurve = true;
-//            }
-//        }
-
-//        //Check coordinates
-//        TriangleMeshType* currentTrimesh = &trimesh1;
-//        if (birthTriangle[i].first == 2) {
-//            currentTrimesh = &trimesh2;
-//        }
-
-//        std::set<typename TriangleMeshType::CoordType> trimeshCoordSet;
-
-//        size_t trimeshFaceId = birthTriangle[i].second;
-
-//        for (int j = 0; j < currentTrimesh->face[trimeshFaceId].VN(); j++)
-//            trimeshCoordSet.insert(currentTrimesh->face[trimeshFaceId].V(j)->P());
-
-//        //Check if polygonal faces
-//        bool nonPolygonalCheck = true;
-//        if (!preserveNonQuads) {
-//            typename PolyMeshType::FaceType* facePointer;
-//            if (birthTriangle[i].first == 1) {
-//                facePointer = &mesh1.face[birthFace1[trimeshFaceId]];
-//            }
-//            else {
-//                facePointer = &mesh2.face[birthFace2[trimeshFaceId]];
-//            }
-
-//            nonPolygonalCheck = facePointer->VN() == 4;
-//        }
-
-//        //Surface has not changed
-//        if (nonPolygonalCheck && !closeToIntersectionCurve && booleanCoordSet == trimeshCoordSet) {
-//            isNewSurface[i] = false;
-//        }
-//        //A triangle has changed
-//        else {
-//            //Set face as not preserved
-//            if (birthTriangle[i].first == 1) {
-//                isPreserved1[birthFace1[trimeshFaceId]] = false;
-//            }
-//            else {
-//                isPreserved2[birthFace2[trimeshFaceId]] = false;
-//            }
-//        }
-//    }
 }
 
 template<class PolyMeshType>

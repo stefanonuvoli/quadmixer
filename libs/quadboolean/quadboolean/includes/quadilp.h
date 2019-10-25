@@ -16,7 +16,6 @@ template<class TriangleMeshType>
 std::vector<int> solveILP(
         TriangleMeshType& mesh,
         ChartData& chartData,
-        const bool onlyQuads,
         const double alpha,
         const double beta,
         const ILPMethod& method,

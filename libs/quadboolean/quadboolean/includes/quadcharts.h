@@ -42,8 +42,6 @@ struct Chart {
     std::vector<ChartSide> chartSides;
 
     int label;
-
-    bool isTriangle;
 };
 
 struct ChartData {

@@ -110,8 +110,6 @@ void quadBoolean(
      QuadBoolean::internal::getSurfaces(
              mesh1,
              mesh2,
-             trimesh1,
-             trimesh2,
              boolean,
              birthTriangle,
              birthFace1,
@@ -127,7 +125,8 @@ void quadBoolean(
              parameters.deleteSmall,
              parameters.deleteNonConnected,
              parameters.maxBB,
-             parameters.preserveNonQuads,
+             parameters.preservePolygons1,
+             parameters.preservePolygons2,
              preservedFaceLabel1,
              preservedFaceLabel2,
              isPreserved1,
@@ -140,7 +139,7 @@ void quadBoolean(
              newSurface);
 
      //Make ILP feasible
-     internal::makeILPFeasible(preservedSurface, newSurface, parameters.onlyQuads);
+     internal::makeILPFeasible(preservedSurface, newSurface, parameters.polychordSolver, parameters.splitSolver);
 
      //Get patch decomposition of the new surface
      std::vector<std::vector<size_t>> newSurfacePartitions;
@@ -154,7 +153,6 @@ void quadBoolean(
      ilpResult = internal::findSubdivisions(
                  newSurface,
                  chartData,
-                 parameters.onlyQuads,
                  parameters.alpha,
                  parameters.beta,
                  parameters.ilpMethod);

@@ -7,7 +7,7 @@
 #include "quadpatterns.h"
 #include "quadquadmapping.h"
 #include "quadlibiglbooleaninterface.h"
-#include "even_pairing.h"
+#include "quadfeasibility.h"
 #include "patch_assembler.h"
 
 #include <map>
@@ -206,8 +206,6 @@ template<class PolyMeshType, class TriangleMeshType>
 void getSurfaces(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        TriangleMeshType& trimesh1,
-        TriangleMeshType& trimesh2,
         TriangleMeshType& boolean,
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
@@ -223,7 +221,8 @@ void getSurfaces(
         const bool deleteSmall,
         const bool deleteNonConnected,
         const double maxBB,
-        const bool preserveNonQuads,
+        const bool preservePolygons1,
+        const bool preservePolygons2,
         std::vector<int>& faceLabel1,
         std::vector<int>& faceLabel2,
         std::vector<std::pair<bool, bool>>& isPreserved1,
@@ -248,7 +247,8 @@ void getSurfaces(
                 patchRetraction,
                 patchRetractionNRing,
                 maxBB,
-                preserveNonQuads,
+                preservePolygons1,
+                preservePolygons2,
                 birthTriangle,
                 birthFace1, birthFace2,
                 isPreserved1, isPreserved2,
@@ -308,46 +308,45 @@ template<class PolyMeshType, class TriangleMeshType>
 bool makeILPFeasible(
         PolyMeshType& preservedSurface,
         TriangleMeshType& newSurface,
-        const bool onlyQuads)
+        const bool polychordSolver,
+        const bool splitSolver)
 {
-    bool computeOnlyQuads = onlyQuads;
-    if (onlyQuads && !isQuadMesh(preservedSurface)) {
-        std::cout << "Non quad mesh: impossible to compute even pairing." << std::endl;
-        computeOnlyQuads = false;
+    FeasibilityResult result = QuadBoolean::internal::solveFeasibility(
+                preservedSurface,
+                newSurface,
+                polychordSolver,
+                splitSolver);
+
+    if (result == AlreadyOk) {
+            std::cout << "Feasibility was already okay!" << std::endl;
+            return true;
     }
-
-    if (computeOnlyQuads) {
-        internal::EvenPairing<TriangleMeshType, PolyMeshType> evenPairing(newSurface, preservedSurface);
-
-        typename internal::EvenPairing<TriangleMeshType, PolyMeshType>::ResultType result;
-
-        result = evenPairing.SolvePairing(true);
-
-        if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::Solved) {
-            std::cout << "Even pairing solved!" << std::endl;
-            return true;
+    else if (result == SolvedQuadOnly) {
+        std::cout << "Feasibility solved with only quads!" << std::endl;
+        return true;
+    }
+    else if (result == SolvedQuadDominant) {
+        std::cout << "Feasibility solved with quad dominant!" << std::endl;
+        if (polychordSolver) {
+            std::cout << "It has been impossible to solve with polychord splits!" << std::endl;
         }
-        if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::AlreadyOk) {
-            std::cout << "Even pairing was already okay!" << std::endl;
-            return true;
-        }
-        else if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::NonConsistent) {
-            std::cout << "Error: even pairing was not consistent!" << std::endl;
-            return false;
-        }
-        else if (result == internal::EvenPairing<TriangleMeshType, PolyMeshType>::NonSolved) {
-            std::cout << "Error: even pairing was not solved!" << std::endl;
-            return false;
+        return true;
+    }
+    else if (result == NonSolved) {
+        if (polychordSolver || splitSolver) {
+            std::cout << "Error: feasibility not solved!" << std::endl;
         }
         else {
-            std::cout << "Error: undefined return value by even pairing!" << std::endl;
-            return false;
+            std::cout << "Feasibility non solved" << std::endl;
         }
+        return false;
+    }
+    else if (result == NonConsistant) {
+        std::cout << "Error: the model was not consistant. The border vertices were different!" << std::endl;
+        return false;
     }
     else {
-        //TODO
-        std::cout << "Quad dominant solution." << std::endl;
-
+        std::cout << "Error: undefined return value by feasibility solver!" << std::endl;
         return false;
     }
 }
@@ -394,7 +393,6 @@ template<class TriangleMeshType>
 std::vector<int> findSubdivisions(
         TriangleMeshType& newSurface,
         ChartData& chartData,
-        const bool onlyQuads,
         const double alpha,
         const double beta,
         const ILPMethod& method)
@@ -413,7 +411,7 @@ std::vector<int> findSubdivisions(
     ILPStatus status;
 
     //Solve ILP to find the best patches
-    std::vector<int> ilpResult = solveILP(newSurface, chartData, onlyQuads, alpha, beta, method, true, timeLimit, gap, status);
+    std::vector<int> ilpResult = solveILP(newSurface, chartData, alpha, beta, method, true, timeLimit, gap, status);
 
     if (status == ILPStatus::SOLUTIONFOUND && gap < gapLimit) {
         std::cout << "Solution found! Gap: " << gap << std::endl;
@@ -423,13 +421,13 @@ std::vector<int> findSubdivisions(
             std::cout << "Error! Model was infeasible or time limit exceeded!" << std::endl;
         }
         else {
-            ilpResult = solveILP(newSurface, chartData, onlyQuads, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
+            ilpResult = solveILP(newSurface, chartData, alpha, beta, ILPMethod::ABS, true, timeLimit*2, gap, status);
 
             if (status == ILPStatus::SOLUTIONFOUND) {
                 std::cout << "Solution found (ABS)! Gap: " << gap << std::endl;
             }
             else {
-                ilpResult = solveILP(newSurface, chartData, onlyQuads, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
+                ilpResult = solveILP(newSurface, chartData, alpha, beta, ILPMethod::ABS, false, timeLimit*4, gap, status);
                 std::cout << "Solution found? (ABS without regularity)! Gap: " << gap << std::endl;
             }
         }
@@ -450,6 +448,8 @@ void quadrangulate(
         std::vector<int>& quadrangulatedNewSurfaceLabel)
 {
     if (newSurface.face.size() <= 0)
+        return;
+    if (ilpResult.size() == 0)
         return;
 
     std::vector<std::vector<size_t>> vertexSubsideMap(chartData.subSides.size());
@@ -757,6 +757,11 @@ void quadrangulate(
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
     OrientFaces<PolyMeshType>::AutoOrientFaces(quadrangulation);
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
+    vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(quadrangulation);
+
+    vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(newSurface);
+    vcg::tri::UpdateNormal<TriangleMeshType>::PerVertexNormalized(newSurface);
+    vcg::tri::UpdateBounding<TriangleMeshType>::Box(newSurface);
 
     vcg::GridStaticPtr<typename TriangleMeshType::FaceType,typename TriangleMeshType::FaceType::ScalarType> Grid;
     Grid.Set(newSurface.face.begin(),newSurface.face.end());
@@ -791,7 +796,6 @@ void quadrangulate(
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(quadrangulation);
     vcg::tri::UpdateBounding<PolyMeshType>::Box(quadrangulation);
-    vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(quadrangulation);
 }
 
 
@@ -860,19 +864,29 @@ void getResult(
     vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(result, 0.0000001);
     vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(result);
 
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, result);
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
+    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(result);
+
+    int numNonManifoldFaces = vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(result);
+    if (numNonManifoldFaces > 0) {
+        std::cout << "Removed " << numNonManifoldFaces << " non-manifold faces." << std::endl;
+    }
+
+    int numHoles = vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType>>(result, result.face.size(), false);
+    if (numHoles > 0) {
+        std::cout << "Removed " << numHoles << " holes." << std::endl;
+    }
+
+    vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(result);
+    vcg::tri::Allocator<PolyMeshType>::CompactEveryVector(result);
+
+    //    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, result);
+    //    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
 
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
     OrientFaces<PolyMeshType>::AutoOrientFaces(result);
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
+    vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(result);
 
-    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(result);
-    vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(result);
-    vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType>>(result, result.face.size(), false);
-
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, result);
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
 
     //Get smoothing vertices
     std::vector<size_t> smoothingVertices;
@@ -945,7 +959,6 @@ void getResult(
     vcg::tri::UpdateNormal<TriangleMeshType>::PerFaceNormalized(targetBoolean);
     vcg::tri::UpdateNormal<TriangleMeshType>::PerVertexNormalized(targetBoolean);
     vcg::tri::UpdateBounding<TriangleMeshType>::Box(targetBoolean);
-    vcg::tri::UpdateNormal<TriangleMeshType>::PerVertexNormalizedPerFace(targetBoolean);
 
     if (result.face.size() == 0)
         return;
@@ -1010,7 +1023,6 @@ void getResult(
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(result);
     vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalized(result);
     vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
-    vcg::tri::UpdateNormal<PolyMeshType>::PerVertexNormalizedPerFace(result);
 }
 
 

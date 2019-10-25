@@ -27,33 +27,33 @@ SOURCES += \
     $$PWD/patterns/ktmethod/patchgen/extradefinition.cpp
 
 HEADERS += \
-    $$PWD/patterns/patterns/laplacianreconstruction.h \
-    $$PWD/patterns/patterns/meshtypes.h \
-    $$PWD/patterns/patterns/myutils.h \
-    $$PWD/patterns/patterns/patchg.h \
-    $$PWD/patterns/patterns/ktmethod/lp_solve/lp_lib.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Permutation.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_all.h \
+    $$PWD/patterns/laplacianreconstruction.h \
+    $$PWD/patterns/meshtypes.h \
+    $$PWD/patterns/myutils.h \
+    $$PWD/patterns/patchg.h \
+    $$PWD/patterns/ktmethod/lp_solve/lp_lib.h \
+    $$PWD/patterns/ktmethod/patchgen/Permutation.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_all.h \
     $$PWD/patterns/ktmethod/patchgen/Pattern_6_3.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_6_2.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_6_1.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_6_0.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_5_4.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_5_3.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_5_2.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_5_1.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_5_0.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_4_4.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_4_3.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_4_2.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_4_1.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_4_0.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_3_3.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_3_2.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_3_1.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_3_0.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_2_1.h \
-    $$PWD/patterns/patterns/ktmethod/patchgen/Pattern_2_0.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_6_2.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_6_1.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_6_0.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_5_4.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_5_3.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_5_2.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_5_1.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_5_0.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_4_4.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_4_3.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_4_2.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_4_1.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_4_0.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_3_3.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_3_2.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_3_1.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_3_0.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_2_1.h \
+    $$PWD/patterns/ktmethod/patchgen/Pattern_2_0.h \
     $$PWD/patterns/ktmethod/patchgen/Pattern.h \
     $$PWD/patterns/ktmethod/patchgen/PatchParam.h \
     $$PWD/patterns/ktmethod/patchgen/ILP.h \

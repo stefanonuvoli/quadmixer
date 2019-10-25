@@ -412,7 +412,6 @@ void findChartFacesAndBorderFaces(
 
             Chart chart;
 
-            chart.isTriangle = false;
             chart.label = faceLabel[i];
 
             if (chart.label >= 0) {

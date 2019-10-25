@@ -1,6 +1,7 @@
 #ifndef ENVELOPE_GENERATOR
 #define ENVELOPE_GENERATOR
 
+#include <vcg/complex/complex.h>
 #include<vcg/complex/algorithms/update/color.h>
 #include<vcg/complex/algorithms/update/quality.h>
 #include<vcg/complex/algorithms/harmonic.h>
@@ -13,7 +14,8 @@
 #include <vcg/complex/algorithms/create/resampler.h>
 #include <vcg/complex/algorithms/local_optimization.h>
 #include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
-#include "common_mesh_functions.h"
+
+#include "quadutils.h"
 
 // The class prototypes.
 class DeciVertex;
@@ -181,7 +183,7 @@ class EnvelopeGenerator
 
     }
 
-    static void UpdateAttributes(MeshType &curr_mesh)
+    static void updateAllMeshAttributes(MeshType &curr_mesh)
     {
         vcg::tri::UpdateNormal<MeshType>::PerFaceNormalized(curr_mesh);
         vcg::tri::UpdateNormal<MeshType>::PerVertexNormalized(curr_mesh);
@@ -224,14 +226,14 @@ class EnvelopeGenerator
 
         Par.iter=10;
 
-        std::cout<<"Remeshing step"<<std::endl;
-        std::cout<<"Edge Size " <<EdgeStep<<std::endl;
+//        std::cout<<"Remeshing step"<<std::endl;
+//        std::cout<<"Edge Size " <<EdgeStep<<std::endl;
 
-        UpdateAttributes(curr_mesh);
+        updateAllMeshAttributes(curr_mesh);
         vcg::tri::IsotropicRemeshing<MeshType>::Do(curr_mesh,Par);
 
         vcg::tri::UpdateFlags<MeshType>::Clear(curr_mesh);
-        UpdateAttributes(curr_mesh);
+        updateAllMeshAttributes(curr_mesh);
     }
 
 
@@ -249,15 +251,15 @@ class EnvelopeGenerator
         vcg::tri::Resampler<MeshType,MeshType>::Resample(curr_mesh,expand_mesh,bb,box_size,cell_side*5,offsetVal);
 
         //remove the small connected components
-        std::cout<<"Remove small connected components"<<std::endl;
+//        std::cout<<"Remove small connected components"<<std::endl;
         std::vector<std::vector<size_t> > Components;
 
         vcg::tri::UpdateTopology<MeshType>::FaceFace(expand_mesh);
         vcg::tri::UpdateFlags<MeshType>::FaceBorderFromFF(expand_mesh);
         vcg::tri::UpdateFlags<MeshType>::VertexBorderFromFaceAdj(expand_mesh);
 
-        QuadBoolean::internal::FindConnectedComponents<MeshType>(expand_mesh,Components);
-        std::cout<<"de"<<std::endl;
+        Components = QuadBoolean::internal::findConnectedComponents<MeshType>(expand_mesh);
+//        std::cout<<"de"<<std::endl;
 
         if (Components.size()>1)
         {
@@ -279,7 +281,7 @@ class EnvelopeGenerator
             }
             vcg::tri::Clean<MeshType>::RemoveUnreferencedVertex(expand_mesh);
             vcg::tri::Allocator<MeshType>::CompactEveryVector(expand_mesh);
-            UpdateAttributes(expand_mesh);
+            updateAllMeshAttributes(expand_mesh);
         }
 
         //decimate
@@ -312,7 +314,7 @@ class EnvelopeGenerator
                                size_t smooth_steps,
                                bool External)
     {
-        UpdateAttributes(curr_mesh);
+        updateAllMeshAttributes(curr_mesh);
 
         //first find the seeds
         std::vector<VertexType*> seeds;
@@ -436,7 +438,7 @@ class EnvelopeGenerator
                                  MeshType &outMesh)
     {
         vcg::tri::Append<MeshType,MeshType>::Mesh(outMesh,input_mesh);
-        UpdateAttributes(outMesh);
+        updateAllMeshAttributes(outMesh);
 
         //step 1 compute harmonics
         typename vcg::tri::Harmonic<MeshType, ScalarType>::ConstraintVec constraints;
@@ -484,7 +486,7 @@ class EnvelopeGenerator
         SplitLev<MeshType> splMd(&SplitOps);
         EdgePred<MeshType> eP(&SplitOps);
         bool done=vcg::tri::RefineE<MeshType,SplitLev<MeshType>,EdgePred<MeshType> >(outMesh,splMd,eP);
-        UpdateAttributes(outMesh);
+        updateAllMeshAttributes(outMesh);
 
         vcg::tri::UpdateQuality<MeshType>::FaceFromVertex(outMesh);
         vcg::tri::UpdateSelection<MeshType>::Clear(outMesh);
@@ -497,7 +499,7 @@ class EnvelopeGenerator
                                     std::vector<size_t> &IndexV)
     {
         vcg::tri::Append<MeshType,MeshType>::Mesh(out_mesh,in_mesh);
-        UpdateAttributes(out_mesh);
+        updateAllMeshAttributes(out_mesh);
 
         std::vector<size_t> SplitFace;
         std::vector<CoordType> SplitBary;
@@ -511,10 +513,10 @@ class EnvelopeGenerator
         for (size_t i=0;i<SplitFace.size();i++)
         {
             size_t IndexF=SplitFace[i];
-            std::cout<<"Face "<<IndexF<<std::endl;
+//            std::cout<<"Face "<<IndexF<<std::endl;
             if (out_mesh.face[IndexF].IsS())
             {
-                std::cout<<"WARNING SAME FACE SELECTED TWICE"<<std::endl;
+//                std::cout<<"WARNING SAME FACE SELECTED TWICE"<<std::endl;
                 return false;
             }
             out_mesh.face[IndexF].SetS();
@@ -582,8 +584,8 @@ public:
         vcg::tri::Append<MeshType,MeshType>::Mesh(part1,mesh,true);
         vcg::tri::UpdateSelection<MeshType>::Clear(mesh);
 
-        UpdateAttributes(part0);
-        UpdateAttributes(part1);
+        updateAllMeshAttributes(part0);
+        updateAllMeshAttributes(part1);
 
         vcg::tri::Allocator<MeshType>::CompactEveryVector(part0);
         vcg::tri::Allocator<MeshType>::CompactEveryVector(part1);
@@ -613,7 +615,7 @@ public:
         RemeshSelected(part0,AvgEdge0);
         RemeshSelected(part1,AvgEdge1);
 
-        std::cout<<"Remeshing if needed"<<std::endl;
+//        std::cout<<"Remeshing if needed"<<std::endl;
 
         for (size_t i=numF0;i<part0.face.size();i++)
             part0.face[i].SetS();
@@ -637,7 +639,7 @@ public:
                 ExpandSelected(part1,smooth_steps,false);
             }
         }
-        std::cout<<"Expand if needed"<<std::endl;
+//        std::cout<<"Expand if needed"<<std::endl;
 
         ScalarType OffsetVal=input_mesh.bbox.Diag()*offset;
         if (Implicit)
@@ -654,7 +656,7 @@ public:
             vcg::tri::Append<MeshType,MeshType>::Mesh(envelope1,part1);
         }
 
-        std::cout<<"Done"<<std::endl;
+//        std::cout<<"Done"<<std::endl;
 
         //ExpandSelected(envelope0,smooth_steps,External);
         //ExpandSelected(envelope1,smooth_steps,External);

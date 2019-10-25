@@ -1,4 +1,5 @@
 SOURCES += \
+    $$PWD/quadboolean/includes/quadfeasibility.cpp \
     $$PWD/quadboolean/quadboolean.cpp \
     $$PWD/quadboolean/includes/quadbooleansteps.cpp \
     $$PWD/quadboolean/includes/quadcharts.cpp \
@@ -14,10 +15,10 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/quadboolean/includes/quadbooleancommon.h \
+    $$PWD/quadboolean/includes/quadfeasibility.h \
     $$PWD/quadboolean/quadboolean.h \
     $$PWD/quadboolean/defaultmeshtypes.h \
     $$PWD/quadboolean/includes/quadpatchtracer.h \
-    $$PWD/quadboolean/includes/even_pairing.h \
     $$PWD/quadboolean/includes/envelope_generator.h \
     $$PWD/quadboolean/includes/quadilp.h \
     $$PWD/quadboolean/includes/quadconvert.h \
@@ -30,6 +31,5 @@ HEADERS += \
     $$PWD/quadboolean/includes/quadlibiglbooleaninterface.h \
     $$PWD/quadboolean/includes/patch_assembler.h \
     $$PWD/quadboolean/includes/field_tracer.h \
-    $$PWD/quadboolean/includes/quadbooleansteps.h \
-    $$PWD/quadboolean/includes/common_mesh_functions.h
+    $$PWD/quadboolean/includes/quadbooleansteps.h
 

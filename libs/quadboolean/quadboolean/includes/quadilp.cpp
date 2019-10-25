@@ -22,7 +22,6 @@ template<class TriangleMeshType>
 std::vector<int> solveILP(
         TriangleMeshType& mesh,
         ChartData& chartData,
-        const bool onlyQuads,
         const double alpha,
         const double beta,
         const ILPMethod& method,
@@ -184,27 +183,7 @@ std::vector<int> solveILP(
                         }
                     }
                     free[i] = model.addVar(2, GRB_INFINITY, 0.0, GRB_INTEGER, "f" + to_string(i));
-
-                    if (onlyQuads) {
-                        model.addConstr(free[i]*2 == sumExp);
-                    }
-                    else {
-                        if (method == LEASTSQUARES) {
-                            obj += (free[i]*2 - sumExp) * (free[i]*2 - sumExp) * MAXCOST;
-                        }
-                        else {
-                            size_t dId = diff.size();
-                            size_t aId = abs.size();
-
-                            diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
-                            abs.push_back(model.addVar(0, GRB_INFINITY, 0.0, GRB_INTEGER, "a" + to_string(aId)));
-
-                            model.addConstr(diff[dId] == free[i]*2 - sumExp, "dc" + to_string(dId));
-                            model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
-
-                            obj += abs[aId] * MAXCOST;
-                        }
-                    }
+                    model.addConstr(free[i]*2 == sumExp);
                 }
             }
         }
@@ -249,61 +228,13 @@ std::vector<int> solveILP(
                 }
 
                 if (sizeSum % 2 == 1) {
-                    if (onlyQuads) {
-                        std::cout << "Error not even, chart: " << i << " -> ";
-                        for (const size_t& subSideId : chart.chartSubSides) {
-                            std::cout << result[subSideId] << " ";
-                        }
-                        std::cout << " = " << sizeSum << " - FREE: " << free[i].get(GRB_DoubleAttr_X) << std::endl;
-
-                        status = ILPStatus::SOLUTIONWRONG;
+                    std::cout << "Error not even, chart: " << i << " -> ";
+                    for (const size_t& subSideId : chart.chartSubSides) {
+                        std::cout << result[subSideId] << " ";
                     }
-                    else {
-                        exit(-1);
-                        std::vector<int> sideSubdivision(chart.chartSides.size(), 0);
-                        for (size_t j = 0; j < chart.chartSides.size(); j++) {
-                            const ChartSide& side = chart.chartSides[j];
+                    std::cout << " = " << sizeSum << " - FREE: " << free[i].get(GRB_DoubleAttr_X) << std::endl;
 
-                            sideSubdivision[j] = 0;
-                            for (const size_t& subSideId : side.subsides) {
-                                sideSubdivision[j] += result[subSideId];
-                            }
-                        }
-
-                        //Find the one to be split in triangle
-                        bool reversed = false;
-                        int bestIndex = -1;
-                        int bestScore = std::numeric_limits<int>::max();
-
-                        for (size_t j = 0; j < sideSubdivision.size(); j++) {
-                            int score = ((sideSubdivision[j] - 1) - sideSubdivision[(j+2)%sideSubdivision.size()]);
-                            score = score * score;
-
-                            if (score < bestScore) {
-                                bestIndex = j;
-                                bestScore = score;
-                            }
-                        }
-
-                        for (size_t j = 0; j < sideSubdivision.size(); j++) {
-                            int score = ((sideSubdivision[sideSubdivision.size()-1-j] - 1) - sideSubdivision[sideSubdivision.size()-1-((j+2)%sideSubdivision.size())]);
-                            score = score * score;
-
-                            if (score < bestScore) {
-                                reversed = true;
-                                bestIndex = j;
-                                bestScore = score;
-                            }
-                        }
-
-                        chart.chartSides[bestIndex];
-
-                        Chart newTriangleChart;
-                        newTriangleChart.isTriangle = true;
-                        newTriangleChart.faces;
-
-                                //TODO;
-                    }
+                    status = ILPStatus::SOLUTIONWRONG;
                 }
             }
         }

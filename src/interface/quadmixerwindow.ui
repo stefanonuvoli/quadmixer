@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>2013</width>
+    <width>2006</width>
     <height>823</height>
    </rect>
   </property>
@@ -826,9 +826,19 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="preserveNonQuadsCheckBox">
+                 <widget class="QCheckBox" name="preservePolygons1CheckBox">
                   <property name="text">
-                   <string>Preserve non quads</string>
+                   <string>Preserve polygons 1</string>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QCheckBox" name="preservePolygons2CheckBox">
+                  <property name="text">
+                   <string>Preserved polygons 2</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -906,9 +916,9 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QCheckBox" name="onlyQuadsCheckBox">
+                 <widget class="QCheckBox" name="polychordSolverCheckBox">
                   <property name="text">
-                   <string>Only quads</string>
+                   <string>Polychord solver</string>
                   </property>
                   <property name="checked">
                    <bool>true</bool>
@@ -916,48 +926,12 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="alphaLabel">
+                 <widget class="QCheckBox" name="splitSolverCheckBox">
                   <property name="text">
-                   <string>Alpha</string>
+                   <string>Split solver</string>
                   </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QDoubleSpinBox" name="alphaSpinBox">
-                  <property name="minimum">
-                   <double>0.010000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>0.990000000000000</double>
-                  </property>
-                  <property name="singleStep">
-                   <double>0.100000000000000</double>
-                  </property>
-                  <property name="value">
-                   <double>0.500000000000000</double>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="betaLabel">
-                  <property name="text">
-                   <string>Beta</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QDoubleSpinBox" name="betaSpinBox">
-                  <property name="minimum">
-                   <double>0.000000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>1.000000000000000</double>
-                  </property>
-                  <property name="singleStep">
-                   <double>0.100000000000000</double>
-                  </property>
-                  <property name="value">
-                   <double>1.000000000000000</double>
+                  <property name="checked">
+                   <bool>true</bool>
                   </property>
                  </widget>
                 </item>
@@ -1009,6 +983,52 @@
                     </widget>
                    </item>
                   </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="alphaLabel">
+                  <property name="text">
+                   <string>Alpha</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDoubleSpinBox" name="alphaSpinBox">
+                  <property name="minimum">
+                   <double>0.010000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>0.990000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.100000000000000</double>
+                  </property>
+                  <property name="value">
+                   <double>0.500000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="betaLabel">
+                  <property name="text">
+                   <string>Beta</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDoubleSpinBox" name="betaSpinBox">
+                  <property name="minimum">
+                   <double>0.000000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>1.000000000000000</double>
+                  </property>
+                  <property name="singleStep">
+                   <double>0.100000000000000</double>
+                  </property>
+                  <property name="value">
+                   <double>1.000000000000000</double>
+                  </property>
                  </widget>
                 </item>
                 <item>
@@ -1220,7 +1240,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>2013</width>
+     <width>2006</width>
      <height>22</height>
     </rect>
    </property>

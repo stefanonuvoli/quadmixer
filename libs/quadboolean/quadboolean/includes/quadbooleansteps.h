@@ -68,8 +68,6 @@ template<class PolyMeshType, class TriangleMeshType>
 void getSurfaces(
         PolyMeshType& mesh1,
         PolyMeshType& mesh2,
-        TriangleMeshType& trimesh1,
-        TriangleMeshType& trimesh2,
         TriangleMeshType& boolean,
         const std::vector<std::pair<size_t, size_t>>& birthTriangle,
         const std::vector<int>& birthFace1,
@@ -85,7 +83,8 @@ void getSurfaces(
         const bool deleteSmall,
         const bool deleteNonConnected,
         const double maxBB,
-        const bool preserveNonQuads,
+        const bool preservePolygons1,
+        const bool preservePolygons2,
         std::vector<int>& faceLabel1,
         std::vector<int>& faceLabel2,
         std::vector<bool>& isPreserved1,
@@ -101,7 +100,8 @@ template<class PolyMeshType, class TriangleMeshType>
 bool makeILPFeasible(
         PolyMeshType& preservedSurface,
         TriangleMeshType& newSurface,
-        const bool onlyQuads);
+        const bool polychordSolver,
+        const bool splitSolver);
 
 template<class TriangleMeshType, class PolyMeshType>
 std::vector<int> getPatchDecomposition(
@@ -119,7 +119,6 @@ template<class TriangleMeshType>
 std::vector<int> findSubdivisions(
         TriangleMeshType& newSurface,
         ChartData& chartData,
-        const bool onlyQuads,
         const double alpha,
         const double beta,
         const ILPMethod& method);
