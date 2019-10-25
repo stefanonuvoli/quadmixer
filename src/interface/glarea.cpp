@@ -291,10 +291,10 @@ void GLArea::applySelectedMeshTransformation()
 
             vcg::Point3f point = initialPoint;
             point -= initialCenter + tra;
+            point *= scaleFactor;
             point = rot * point;
             point += initialCenter + tra;
             point += rot * tra;
-            point *= scaleFactor;
 
             this->transformationMesh->mesh->vert[i].P() = vcg::Point3d(
                 static_cast<double>(point.X()),
@@ -509,6 +509,8 @@ void GLArea::mouseReleaseEvent (QMouseEvent * e)
         transformationMeshTrackball.MouseUp (QT2VCG_X(this,e), QT2VCG_Y(this,e), QT2VCG (e->button (), e->modifiers ()));
 
         applySelectedMeshTransformation();
+
+        selectTransformationMesh(this->transformationMesh);
     }
 
     updateGL ();
@@ -525,6 +527,8 @@ void GLArea::wheelEvent (QWheelEvent * e)
         transformationMeshTrackball.MouseWheel (e->delta () / float (WHEEL_STEP), QTWheel2VCG (e->modifiers ()));
 
         applySelectedMeshTransformation();
+
+        selectTransformationMesh(this->transformationMesh);
     }
 
     updateGL ();
