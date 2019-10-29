@@ -79,7 +79,13 @@ QuadLayoutData<PolyMeshType> getQuadLayoutData(
                 }
             }
 
-            assert(!startPos.IsNull());
+            if(startPos.IsNull()) {
+                std::cout << "Couldn't find border for a patch." << std::endl;
+                sizeX = 0;
+                sizeY = 0;
+                continue;
+            }
+
 
             //Flip if pos is pointing outside the quad
             startPos.FlipE();

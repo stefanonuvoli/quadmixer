@@ -344,7 +344,10 @@ std::vector<int> splitPatchesInMaximumRectangles(
             const size_t& sizeX = quadPatch.sizeX;
             const size_t& sizeY = quadPatch.sizeY;
 
-            assert(!startPos.IsNull());
+            //It shouldn't happen
+            if (startPos.IsNull()) {
+                continue;
+            }
 
             if (!quadPatch.isQuad)
                 continue;
@@ -529,7 +532,10 @@ int mergePatches(
             const size_t& sizeX = quadPatch.sizeX;
             const size_t& sizeY = quadPatch.sizeY;
 
-            assert(!startPos.IsNull());
+            //It shouldn't happen
+            if (startPos.IsNull()) {
+                continue;
+            }
 
             if (!quadPatch.isQuad)
                 continue;

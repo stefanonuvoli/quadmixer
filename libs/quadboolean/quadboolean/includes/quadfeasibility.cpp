@@ -340,7 +340,7 @@ size_t solveQuadDominant(
         for (size_t i = 0; i < preservedSurface.face.size(); i++) {
             if (!preservedSurface.face[i].IsD() && (
                     bestFace == std::numeric_limits<size_t>::max() ||
-                    preservedSurface.face[i].Q() >= preservedSurface.face[bestFace].Q()
+                    preservedSurface.face[i].Q()/preservedSurface.face[i].VN() >= preservedSurface.face[bestFace].Q()/preservedSurface.face[bestFace].VN()
             )) {
                 for (size_t j = 0; j < preservedSurface.face[i].VN(); j++) {
 
