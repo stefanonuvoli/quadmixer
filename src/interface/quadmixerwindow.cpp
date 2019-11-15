@@ -1783,3 +1783,37 @@ void QuadMixerWindow::continuityTest()
     QTimer::singleShot(0, this, SLOT(continuityTestMetric()));
 }
 
+
+void QuadMixerWindow::on_generalRetractionSpinBox_valueChanged(double arg1)
+{
+    ui.patchRetractionNRingSpinBox->setValue(arg1);
+    ui.intersectionSmoothingNRingSpinBox->setValue(arg1);
+}
+
+void QuadMixerWindow::on_generalMaxBBSpinBox_valueChanged(double arg1)
+{
+    ui.maxBBSpinBox->setValue(arg1);
+}
+
+void QuadMixerWindow::on_generalSmallPatchSpinBox_valueChanged(int arg1)
+{
+    ui.minPatchAreaSpinBox->setValue(arg1);
+
+}
+
+void QuadMixerWindow::on_generalAlphaSpinBox_valueChanged(double arg1)
+{
+    ui.alphaSpinBox->setValue(arg1);
+}
+
+void QuadMixerWindow::on_generalSmoothingSpinBox_valueChanged(int arg1)
+{
+    ui.resultSmoothingSpinBox->setValue(arg1 * 2);
+    ui.resultSmoothingLaplacianSpinBox->setValue(arg1);
+}
+
+void QuadMixerWindow::on_generalSmoothingPropagationSpinBox_valueChanged(double arg1)
+{
+    ui.resultSmoothingNRingSpinBox->setValue(arg1);
+    ui.resultSmoothingLaplacianNRingSpinBox->setValue(arg1);
+}

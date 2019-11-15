@@ -45,7 +45,7 @@ void findPreservedFaces(
         for (const size_t& vId : intersectionVertices) {
             seedVec.push_back(&boolean.vert[vId]);
         }
-        vcg::tri::UpdateQuality<TriangleMeshType>::VertexConstant(boolean, 0.0);
+        vcg::tri::UpdateQuality<TriangleMeshType>::VertexConstant(boolean, std::numeric_limits<float>::max());
         vcg::tri::EuclideanDistance<TriangleMeshType> ed;
         vcg::tri::UpdateTopology<TriangleMeshType>::VertexFace(boolean);
         vcg::tri::Geodesic<TriangleMeshType>::Compute(boolean, seedVec, ed);
@@ -135,12 +135,8 @@ void findPreservedFaces(
             }
         }
 
-        //Surface has not changed
-        if (!hasIntersectionVertices && !closeToIntersectionCurve && nonPolygonalCheck) {
-            isNewSurface[i] = false;
-        }
-        //A triangle has changed
-        else {
+        //The triangle must not be preserved
+        if (hasIntersectionVertices || closeToIntersectionCurve || !nonPolygonalCheck) {
             //Set face as not preserved
             if (birthTriangle[i].first == 1) {
                 isPreserved1[birthFace1[trimeshFaceId]].first = false;
@@ -148,6 +144,10 @@ void findPreservedFaces(
             else {
                 isPreserved2[birthFace2[trimeshFaceId]].first = false;
             }
+        }
+        //The triangle must be preserved
+        else {
+            isNewSurface[i] = false;
         }
     }
 }

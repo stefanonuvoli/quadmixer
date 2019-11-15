@@ -135,7 +135,7 @@ void LaplacianGeodesic(
             seedVec.push_back(&poly_m.vert[i]);
         }
     }
-    vcg::tri::UpdateQuality<MeshType>::VertexConstant(poly_m, 0);
+    vcg::tri::UpdateQuality<MeshType>::VertexConstant(poly_m, std::numeric_limits<float>::max());
     vcg::tri::EuclideanDistance<MeshType> ed;
     vcg::tri::UpdateTopology<MeshType>::VertexFace(poly_m);
     vcg::tri::Geodesic<MeshType>::Compute(poly_m,seedVec, ed);

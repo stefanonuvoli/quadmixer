@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1848</width>
-    <height>823</height>
+    <height>817</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -306,16 +306,125 @@
               </widget>
              </item>
              <item>
-              <widget class="QCheckBox" name="showParametersCheckBox">
-               <property name="text">
-                <string>Show parameters</string>
-               </property>
-              </widget>
-             </item>
-             <item>
               <widget class="QPushButton" name="debugModeButton">
                <property name="text">
                 <string>Debug/normal mode</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="1">
+              <widget class="QDoubleSpinBox" name="generalRetractionSpinBox">
+               <property name="singleStep">
+                <double>0.500000000000000</double>
+               </property>
+               <property name="value">
+                <double>2.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QDoubleSpinBox" name="generalMaxBBSpinBox">
+               <property name="decimals">
+                <number>3</number>
+               </property>
+               <property name="minimum">
+                <double>0.001000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.040000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="0" colspan="3">
+              <widget class="QCheckBox" name="showParametersCheckBox">
+               <property name="text">
+                <string>Show advanced</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0" colspan="2">
+              <widget class="QLabel" name="generalAlphaLabel">
+               <property name="text">
+                <string>Alpha:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QDoubleSpinBox" name="generalAlphaSpinBox">
+               <property name="minimum">
+                <double>0.010000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>0.990000000000000</double>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
+               <property name="value">
+                <double>0.500000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QSpinBox" name="generalSmallPatchSpinBox">
+               <property name="value">
+                <number>4</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QLabel" name="generalSmallPatchLabel">
+               <property name="text">
+                <string>Min patch:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="generalRetractionLabel">
+               <property name="text">
+                <string>Retr:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QLabel" name="generalSmoothingLabel">
+               <property name="text">
+                <string>Smo:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QSpinBox" name="generalSmoothingSpinBox">
+               <property name="value">
+                <number>3</number>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QDoubleSpinBox" name="generalSmoothingPropagationSpinBox">
+               <property name="singleStep">
+                <double>0.500000000000000</double>
+               </property>
+               <property name="value">
+                <double>2.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -777,6 +886,9 @@
                 </item>
                 <item>
                  <widget class="QDoubleSpinBox" name="intersectionSmoothingNRingSpinBox">
+                  <property name="singleStep">
+                   <double>0.500000000000000</double>
+                  </property>
                   <property name="value">
                    <double>2.000000000000000</double>
                   </property>
@@ -794,6 +906,9 @@
                 </item>
                 <item>
                  <widget class="QDoubleSpinBox" name="patchRetractionNRingSpinBox">
+                  <property name="singleStep">
+                   <double>0.500000000000000</double>
+                  </property>
                   <property name="value">
                    <double>2.000000000000000</double>
                   </property>
@@ -821,7 +936,7 @@
                    <double>0.010000000000000</double>
                   </property>
                   <property name="value">
-                   <double>0.030000000000000</double>
+                   <double>0.040000000000000</double>
                   </property>
                  </widget>
                 </item>
@@ -881,7 +996,7 @@
                    <number>200</number>
                   </property>
                   <property name="value">
-                   <number>6</number>
+                   <number>4</number>
                   </property>
                  </widget>
                 </item>
@@ -1135,7 +1250,7 @@
                    <number>200</number>
                   </property>
                   <property name="value">
-                   <number>5</number>
+                   <number>6</number>
                   </property>
                  </widget>
                 </item>
@@ -1148,6 +1263,9 @@
                 </item>
                 <item>
                  <widget class="QDoubleSpinBox" name="resultSmoothingNRingSpinBox">
+                  <property name="singleStep">
+                   <double>0.500000000000000</double>
+                  </property>
                   <property name="value">
                    <double>2.000000000000000</double>
                   </property>
@@ -1179,6 +1297,9 @@
                 </item>
                 <item>
                  <widget class="QDoubleSpinBox" name="resultSmoothingLaplacianNRingSpinBox">
+                  <property name="singleStep">
+                   <double>0.500000000000000</double>
+                  </property>
                   <property name="value">
                    <double>2.000000000000000</double>
                   </property>

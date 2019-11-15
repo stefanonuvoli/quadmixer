@@ -594,8 +594,7 @@ void quadrangulate(
         assert(chartSides.size() == patchEigenSides.size());
 
 #ifndef NDEBUG
-        if (patchV.rows() == 3)
-            igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_chart.obj"), chartV, chartF);
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_chart.obj"), chartV, chartF);
 #endif
 
         //Compute quadrangulation

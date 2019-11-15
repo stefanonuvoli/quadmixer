@@ -134,6 +134,18 @@ private slots:
     void on_continuityTestButton_clicked();
     void continuityTest();
 
+    void on_generalRetractionSpinBox_valueChanged(double arg1);
+
+    void on_generalMaxBBSpinBox_valueChanged(double arg1);
+
+    void on_generalSmallPatchSpinBox_valueChanged(int arg1);
+
+    void on_generalAlphaSpinBox_valueChanged(double arg1);
+
+    void on_generalSmoothingSpinBox_valueChanged(int arg1);
+
+    void on_generalSmoothingPropagationSpinBox_valueChanged(double arg1);
+
 private:
 
     PolyMesh mesh1;
