@@ -146,6 +146,9 @@ private slots:
 
     void on_generalSmoothingPropagationSpinBox_valueChanged(double arg1);
 
+    void on_generalLSRadio_toggled(bool checked);
+    void on_generalABSRadio_toggled(bool checked);
+
 private:
 
     PolyMesh mesh1;

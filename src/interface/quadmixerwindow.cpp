@@ -267,6 +267,9 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     else if (ui.ilpMethodABSRadio->isChecked()) {
         ilpMethod = QuadBoolean::ILPMethod::ABS;
     }
+    else {
+        ilpMethod = QuadBoolean::ILPMethod::LEASTSQUARES;
+    }
     double alpha = ui.alphaSpinBox->value();
     double beta = ui.betaSpinBox->value();
 
@@ -1816,4 +1819,14 @@ void QuadMixerWindow::on_generalSmoothingPropagationSpinBox_valueChanged(double 
 {
     ui.resultSmoothingNRingSpinBox->setValue(arg1);
     ui.resultSmoothingLaplacianNRingSpinBox->setValue(arg1);
+}
+
+void QuadMixerWindow::on_generalLSRadio_toggled(bool checked)
+{
+    ui.ilpMethodLSRadio->setChecked(checked);
+}
+
+void QuadMixerWindow::on_generalABSRadio_toggled(bool checked)
+{
+    ui.ilpMethodABSRadio->setChecked(checked);
 }
