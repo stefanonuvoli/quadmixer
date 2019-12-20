@@ -25,7 +25,7 @@ std::vector<int> solveILP(
         const double alpha,
         const double beta,
         const ILPMethod& method,
-        const bool regularity,
+        const bool isometry,
         const double timeLimit,
         double& gap,
         ILPStatus& status)
@@ -67,9 +67,9 @@ std::vector<int> solveILP(
 
         std::cout << chartData.subSides.size() << " subsides!" << std::endl;
 
-        if (regularity) {
-            GRBQuadExpr regExpr = 0;
-            const double regCost = alpha;
+        if (isometry) {
+            GRBQuadExpr isoExpr = 0;
+            const double isoCost = alpha;
             //Regularity
             for (size_t i = 0; i < chartData.subSides.size(); i++) {
                 const ChartSubSide& subside = chartData.subSides[i];
@@ -86,7 +86,7 @@ std::vector<int> solveILP(
                     size_t aId = abs.size();
 
                     if (method == LEASTSQUARES) {
-                        regExpr += (vars[i] - sideSubdivision) * (vars[i] - sideSubdivision);
+                        isoExpr += (vars[i] - sideSubdivision) * (vars[i] - sideSubdivision);
                     }
                     else {
                         diff.push_back(model.addVar(-GRB_INFINITY, GRB_INFINITY, 0.0, GRB_INTEGER, "d" + to_string(dId)));
@@ -95,15 +95,15 @@ std::vector<int> solveILP(
                         model.addConstr(diff[dId] == vars[i] - sideSubdivision, "dc" + to_string(dId));
                         model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                        regExpr += abs[aId];
+                        isoExpr += abs[aId];
                     }
                 }
             }
-            obj += regCost * regExpr;
+            obj += isoCost * isoExpr;
         }
 
-        GRBQuadExpr isoExpr = 0;
-        const double isoCost = (1-alpha);
+        GRBQuadExpr regExpr = 0;
+        const double regCost = (1-alpha);
         for (size_t i = 0; i < chartData.charts.size(); i++) {
             const Chart& chart = chartData.charts[i];
             if (chart.faces.size() > 0) {
@@ -143,7 +143,7 @@ std::vector<int> solveILP(
 
                         if (!areBorders) {
                             if (method == LEASTSQUARES) {
-                                isoExpr += (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
+                                regExpr += (subSide1Sum - subSide2Sum) * (subSide1Sum - subSide2Sum);
                             }
                             else {
                                 size_t dId = diff.size();
@@ -155,7 +155,7 @@ std::vector<int> solveILP(
                                 model.addConstr(diff[dId] == subSide1Sum - subSide2Sum, "dc" + to_string(dId));
                                 model.addGenConstrAbs(abs[aId], diff[dId], "ac" + to_string(aId));
 
-                                isoExpr += abs[aId];
+                                regExpr += abs[aId];
                             }
                         }
 
@@ -187,7 +187,7 @@ std::vector<int> solveILP(
                 }
             }
         }
-        obj += isoCost * isoExpr;
+        obj += regCost * regExpr;
 
 
 //        model.update();

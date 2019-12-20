@@ -19,7 +19,7 @@ std::vector<int> solveILP(
         const double alpha,
         const double beta,
         const ILPMethod& method,
-        const bool regularity,
+        const bool isometry,
         const double timeLimit,
         double& gap,
         ILPStatus& status);
