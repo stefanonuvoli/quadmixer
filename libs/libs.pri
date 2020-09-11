@@ -53,5 +53,5 @@ LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
 
 #gurobi
 INCLUDEPATH += $$GUROBIPATH/include
-LIBS += -L$$GUROBIPATH/lib -lgurobi_g++5.2 -lgurobi81
+LIBS += -L$$GUROBIPATH/lib -lgurobi_g++5.2 -lgurobi90
 DEFINES += GUROBI_DEFINED
