@@ -45,13 +45,18 @@ unix:!macx {
 DEFINES += GLEW_STATIC
 INCLUDEPATH += $$GLPATH
 
-#cgal
-#DEFINES += CGAL_EIGEN3_ENABLED
-LIBS += -lmpfr -lgmp -lCGAL -frounding-math -lCGAL_Core
-LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
-
-
 #gurobi
 INCLUDEPATH += $$GUROBIPATH/include
 LIBS += -L$$GUROBIPATH/lib -lgurobi_g++5.2 -lgurobi90
 DEFINES += GUROBI_DEFINED
+
+#Parallel computation
+unix:!mac {
+    QMAKE_CXXFLAGS += -fopenmp
+    LIBS += -fopenmp
+}
+macx{
+    QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -lomp -I/usr/local/include
+    QMAKE_LFLAGS += -lomp
+    LIBS += -L /usr/local/lib /usr/local/lib/libomp.dylib
+}

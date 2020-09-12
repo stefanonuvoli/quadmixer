@@ -17,8 +17,6 @@ else:unix: PRE_TARGETDEPS += $$PWD/patterns/ktmethod/lp_solve/liblpsolve55.a
 LIBS += -ldl -lm -lmpfr -llpsolve55
 INCLUDEPATH += $$LPSOLVER_PATH $$EIGEN_PATH
 
-QMAKE_CXXFLAGS += -std=c++11 -fpermissive
-
 SOURCES += \
     $$PWD/patterns/myutils.cpp \
     $$PWD/patterns/ktmethod/patchgen/get_boundary_geometry.cpp \
