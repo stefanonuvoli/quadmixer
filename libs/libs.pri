@@ -26,6 +26,11 @@ QMAKE_CXXFLAGS += -isystem $$LIBIGLPATH/include/
 INCLUDEPATH += $$VCGLIBPATH
 DEFINES += NOCOMISO
 
+#cgal
+#DEFINES += CGAL_EIGEN3_ENABLED
+#LIBS += -lCGAL -lCGAL_Core
+LIBS += -lmpfr -lgmp -frounding-math
+LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
 
 # -------------- EXTERNAL LIBRARIES INCLUDES --------------
 

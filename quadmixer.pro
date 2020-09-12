@@ -16,7 +16,7 @@ TARGET = quadmixer
 
 TEMPLATE        = app
 QT             += core gui opengl widgets
-CONFIG         += c++11
+CONFIG         += c++14
 CONFIG         -= app_bundle
 QMAKE_CXXFLAGS += -Wno-deprecated-declarations # gluQuadric gluSphere and gluCylinde are deprecated in macOS 10.9
 
