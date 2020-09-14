@@ -407,6 +407,11 @@ std::vector<int> findSubdivisions(
 #endif
     const double gapLimit = 0.3;
 
+    //Fix the chart on border
+    for (ChartSubSide& subside : chartData.subSides) {
+        subside.isFixed = subside.isOnBorder;
+    }
+
     double gap;
     ILPStatus status;
 
@@ -479,7 +484,7 @@ void quadrangulate(
     std::set<size_t> finalMeshBorders;
     for (size_t i = 0; i < chartData.subSides.size(); i++) {
         const ChartSubSide& subside = chartData.subSides[i];
-        if (subside.isOnBorder) {
+        if (subside.isFixed) {
             for (size_t k = 0; k < subside.vertices.size(); k++) {
                 const size_t& vId = subside.vertices.at(k);
 
@@ -547,15 +552,37 @@ void quadrangulate(
         //Input subdivisions
         Eigen::VectorXi l(chartSides.size());
 
-        std::vector<double> chartSideLength(chartSides.size());
-        std::vector<std::vector<size_t>> chartEigenSides(chartSides.size());
+        std::vector<std::vector<double>> chartSideLength(chartSides.size());
+        std::vector<std::vector<std::vector<size_t>>> chartSideVertices(chartSides.size());
+        std::vector<std::vector<size_t>> chartSideSubdivision(chartSides.size());
 
         for (size_t i = 0; i < chartSides.size(); i++) {
             const ChartSide& chartSide = chartSides[i];
 
-            size_t targetSize = 0;
-            for (const size_t& subSideId : chartSides[i].subsides) {
-                targetSize += ilpResult[subSideId];
+            chartSideLength[i].resize(chartSide.subsides.size());
+            chartSideVertices[i].resize(chartSide.subsides.size());
+            chartSideSubdivision[i].resize(chartSide.subsides.size());
+
+            size_t targetSideSubdivision = 0;
+            for (size_t j = 0; j < chartSide.subsides.size(); j++) {
+                const size_t& subSideId = chartSides[i].subsides[j];
+                const ChartSubSide& subSide = chartData.subSides[subSideId];
+
+                targetSideSubdivision += ilpResult[subSideId];
+
+                chartSideLength[i][j] = subSide.length;
+                chartSideVertices[i][j] = subSide.vertices;
+                chartSideSubdivision[i][j] = ilpResult[subSideId];
+
+                if (chartSide.reversedSubside[j]) {
+                    std::reverse(chartSideVertices[i][j].begin(), chartSideVertices[i][j].end());
+                }
+
+                for (size_t k = 0; k < chartSideVertices[i][j].size(); k++) {
+                    size_t vId = chartSideVertices[i][j][k];
+                    assert(vMap[vId] >= 0);
+                    chartSideVertices[i][j][k] = vMap[vId];
+                }
 
                 if (ilpResult[subSideId] < 0) {
                     std::cout << "Warning: ILP not valid" << std::endl;
@@ -563,17 +590,7 @@ void quadrangulate(
                 }
             }
 
-            l(static_cast<int>(i)) = targetSize;
-
-            chartSideLength[i] = chartSide.length;
-
-            chartEigenSides[i].resize(chartSide.vertices.size());
-
-            for (size_t j = 0; j < chartSide.vertices.size(); j++) {
-                size_t vId = chartSide.vertices[j];
-                assert(vMap[vId] >= 0);
-                chartEigenSides[i][j] = vMap[vId];
-            }
+            l(static_cast<int>(i)) = targetSideSubdivision;
         }
 
         //Pattern quadrangulation
@@ -602,7 +619,7 @@ void quadrangulate(
         Eigen::MatrixXi uvMapF;
         Eigen::MatrixXd quadrangulationV;
         Eigen::MatrixXi quadrangulationF;
-        QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartEigenSides, chartSideLength, patchEigenSides, uvMapV, uvMapF, quadrangulationV, quadrangulationF);
+        QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartSideVertices, chartSideLength, chartSideSubdivision, patchEigenSides, uvMapV, uvMapF, quadrangulationV, quadrangulationF);
 
 #ifndef NDEBUG
         Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
@@ -650,7 +667,7 @@ void quadrangulate(
 
                 //Create new vertices of the subsides
                 if (vertexSubsideMap[subSideId].empty()) {
-                    assert(!subside.isOnBorder);
+                    assert(!subside.isFixed);
 
                     //Get fixed corners of the subside
                     size_t vStart = subside.vertices[0];
@@ -704,7 +721,7 @@ void quadrangulate(
                         size_t existingVertexId = currentVertexMap[patchSideVId];
 
                         //If it is not a corner or if it is not on border
-                        if (!subside.isOnBorder && k > 0 && k < ilpResult[subSideId]) {
+                        if (!subside.isFixed && k > 0 && k < ilpResult[subSideId]) {
                             //Average
                             const typename PolyMeshType::CoordType& coord = quadrangulatedChartMesh.vert[patchSideVId].P();
                             quadrangulation.vert.at(existingVertexId).P() =

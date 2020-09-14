@@ -57,8 +57,8 @@ std::vector<int> solveILP(
         for (size_t i = 0; i < chartData.subSides.size(); i++) {
             const ChartSubSide& subside = chartData.subSides[i];
 
-            //If it is not a border (free)
-            if (!subside.isOnBorder) {
+            //If it is not a fixed (free)
+            if (!subside.isFixed) {
                 assert(subside.incidentCharts[0] >= 0 && subside.incidentCharts[1] >= 0);
 
                 vars[i] = model.addVar(MINSIDEVALUE, GRB_INFINITY, 0.0, GRB_INTEGER, "s" + to_string(i));
@@ -75,7 +75,7 @@ std::vector<int> solveILP(
                 const ChartSubSide& subside = chartData.subSides[i];
 
                 //If it is not a border (free)
-                if (!subside.isOnBorder) {
+                if (!subside.isFixed) {
                     assert(subside.incidentCharts[0] >= 0 && subside.incidentCharts[1] >= 0);
                     assert(avgLength[subside.incidentCharts[0]] > 0 && avgLength[subside.incidentCharts[1]] > 0);
 
@@ -121,7 +121,7 @@ std::vector<int> solveILP(
                         GRBLinExpr subSide1Sum = 0;
                         for (const size_t& subSideId : side1.subsides) {
                             const ChartSubSide& subSide = chartData.subSides[subSideId];
-                            if (subSide.isOnBorder) {
+                            if (subSide.isFixed) {
                                 subSide1Sum += subSide.size;
                             }
                             else {
@@ -132,7 +132,7 @@ std::vector<int> solveILP(
                         GRBLinExpr subSide2Sum = 0;
                         for (const size_t& subSideId : side2.subsides) {
                             const ChartSubSide& subSide = chartData.subSides[subSideId];
-                            if (subSide.isOnBorder) {
+                            if (subSide.isFixed) {
                                 subSide2Sum += subSide.size;
                             }
                             else {
@@ -175,7 +175,7 @@ std::vector<int> solveILP(
                     GRBLinExpr sumExp = 0;
                     for (const size_t& subSideId : chart.chartSubSides) {
                         const ChartSubSide& subSide = chartData.subSides[subSideId];
-                        if (subSide.isOnBorder) {
+                        if (subSide.isFixed) {
                             sumExp += subSide.size;
                         }
                         else {
@@ -203,7 +203,7 @@ std::vector<int> solveILP(
 
         for (size_t i = 0; i < chartData.subSides.size(); i++) {
             const ChartSubSide& subSide = chartData.subSides[i];
-            if (subSide.isOnBorder) {
+            if (subSide.isFixed) {
                 result[i] = subSide.size;
             }
             else {
@@ -268,7 +268,7 @@ std::vector<double> getSmoothedChartAverageEdgeLength(
 
             for (size_t sId : chart.chartSubSides) {
                 const ChartSubSide& subside = chartData.subSides[sId];
-                if (subside.isOnBorder) {
+                if (subside.isFixed) {
                     currentQuadLength += subside.length / subside.size;
                     numSides++;
                 }

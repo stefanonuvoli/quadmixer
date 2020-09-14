@@ -20,6 +20,8 @@ struct ChartSubSide {
     int size;
 
     bool isOnBorder;
+
+    bool isFixed;
 };
 
 struct ChartSide {
