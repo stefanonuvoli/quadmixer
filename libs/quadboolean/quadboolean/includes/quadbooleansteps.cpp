@@ -769,6 +769,19 @@ void quadrangulate(
         }
     }
 
+    int numDuplicateVertices = vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(quadrangulation);
+    if (numDuplicateVertices > 0) {
+        std::cout << "Removed " << numDuplicateVertices << " duplicate vertices." << std::endl;
+    }
+    int numUnreferencedVertices = vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(quadrangulation);
+    if (numUnreferencedVertices > 0) {
+        std::cout << "Removed " << numUnreferencedVertices << " unreferenced vertices." << std::endl;
+    }
+
+#ifndef NDEBUG
+    vcg::tri::io::ExporterOBJ<PolyMeshType>::Save(quadrangulation, "res/quadrangulation_cleaned.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+#endif
+
     vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(quadrangulation);
     vcg::PolygonalAlgorithm<PolyMeshType>::UpdateFaceNormalByFitting(quadrangulation);
     OrientFaces<PolyMeshType>::AutoOrientFaces(quadrangulation);
@@ -876,25 +889,38 @@ void getResult(
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, preservedSurface);
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh, quadrangulatedNewSurface);
 
-    vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(tmpMesh, 0.0000001);
-    vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(tmpMesh);
-
-    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(tmpMesh);
-
-    int numNonManifoldFaces = vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(tmpMesh);
-    if (numNonManifoldFaces > 0) {
-        std::cout << "Removed " << numNonManifoldFaces << " non-manifold faces." << std::endl;
+    int numDuplicateVertices = vcg::tri::Clean<PolyMeshType>::RemoveDuplicateVertex(tmpMesh);
+    if (numDuplicateVertices > 0) {
+        std::cout << "Merged " << numDuplicateVertices << " duplicate vertices." << std::endl;
     }
 
-    int numHoles = vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType>>(result, result.face.size(), false);
-    if (numHoles > 0) {
-        std::cout << "Removed " << numHoles << " holes." << std::endl;
+    int numMergedVertices = vcg::tri::Clean<PolyMeshType>::MergeCloseVertex(tmpMesh, 0.000001);
+    if (numMergedVertices > 0) {
+        std::cout << "Merged " << numMergedVertices << " close vertices." << std::endl;
     }
 
-    int numDuplicates = vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(tmpMesh);
-    if (numDuplicates > 0) {
-        std::cout << "Removed " << numDuplicates << " duplicates." << std::endl;
+    int numUnreferencedVertices = vcg::tri::Clean<PolyMeshType>::RemoveUnreferencedVertex(tmpMesh);
+    if (numUnreferencedVertices > 0) {
+        std::cout << "Removed " << numUnreferencedVertices << " unreferenced vertices." << std::endl;
     }
+
+
+//    vcg::tri::UpdateTopology<PolyMeshType>::FaceFace(tmpMesh);
+
+//    int numNonManifoldFaces = vcg::tri::Clean<PolyMeshType>::RemoveNonManifoldFace(tmpMesh);
+//    if (numNonManifoldFaces > 0) {
+//        std::cout << "Removed " << numNonManifoldFaces << " non-manifold faces." << std::endl;
+//    }
+
+//    int numHoles = vcg::tri::Hole<PolyMeshType>::template EarCuttingFill<vcg::tri::TrivialEar<PolyMeshType>>(result, result.face.size(), false);
+//    if (numHoles > 0) {
+//        std::cout << "Removed " << numHoles << " holes." << std::endl;
+//    }
+
+//    int numDuplicates = vcg::tri::Clean<PolyMeshType>::RemoveDuplicateFace(tmpMesh);
+//    if (numDuplicates > 0) {
+//        std::cout << "Removed " << numDuplicates << " duplicates." << std::endl;
+//    }
 
     result.Clear();
     vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(result, tmpMesh);
@@ -1043,7 +1069,6 @@ void getResult(
     vcg::tri::UpdateBounding<PolyMeshType>::Box(result);
 }
 
-
-
 }
+
 }

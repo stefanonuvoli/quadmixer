@@ -80,7 +80,7 @@ void computeQuadrangulation(
 
                 b(fixedId) = static_cast<int>(vId);
 
-                //Flip x with y
+                //Flip x with y (problem with patterns)
                 bc(fixedId, 0) = uv(1);
                 bc(fixedId, 1) = uv(0);
 
@@ -97,33 +97,28 @@ void computeQuadrangulation(
     }
     else {
         //Get the UV map with all fixed border
-        uvMapV = bc;
+        uvMapV.resize(chartV.rows(), 2);
+        for (int i = 0; i < bc.rows(); i++) {
+            uvMapV.row(b(i)) = bc.row(i);
+        }
 
         std::cout << "No fixed border! UVMap setted as bc." << std::endl;
     }
-
     uvMapF = chartF;
 
-
-//    const Eigen::Vector2d& v1 = uvMapV.row(uvMapF(0,0));
-//    const Eigen::Vector2d& v2 = uvMapV.row(uvMapF(0,1));
-//    const Eigen::Vector2d& v3 = uvMapV.row(uvMapF(0,2));
-
-//    Eigen::Vector3d e1(v2.x() - v1.x(), v2.y() - v1.y(), 0);
-//    Eigen::Vector3d e2(v3.x() - v2.x(), v3.y() - v2.y(), 0);
-
-//    Eigen::Vector3d normal = e1.cross(e2);
-
-//    //Flip uv map faces
-//    assert(normal.z() != 0);
-//    if (normal.z() < 0) {
-//        for (int i = 0; i < uvMapF.rows(); i++) {
-//            assert(uvMapF.cols() == 3);
-//            for (int j = 0; j < uvMapV.cols()/2; j++) {
-//                std::swap(uvMapF(i,j), uvMapF(i, uvMapF.cols() - 1 - j));
-//            }
-//        }
-//    }
+    for (int i = 0; i < uvMapF.rows(); ++i) {
+        Eigen::VectorXd v1 = uvMapV.row(uvMapF(i,0));
+        Eigen::VectorXd v2 = uvMapV.row(uvMapF(i,1));
+        Eigen::VectorXd v3 = uvMapV.row(uvMapF(i,2));
+        double A = std::abs(
+            (v1.x()*v2.y() - v2.x()*v1.y()) +
+            (v2.x()*v3.y() - v3.x()*v2.y()) +
+            (v3.x()*v1.y() - v1.x()*v3.y())
+        ) / 2.0;
+        if (A <= 0) {
+            std::cout << "Warning: degenerate triangle found in UV mapping!" << std::endl;
+        }
+    }
 
     //AABB tree for point location
     igl::AABB<Eigen::MatrixXd, 2> tree;
@@ -137,19 +132,32 @@ void computeQuadrangulation(
         Q2D(0,0) = Q.x();
         Q2D(0,1) = Q.y();
 
-        Eigen::VectorXi I;
-        igl::in_element(uvMapV, uvMapF, Q2D, tree, I);
-
-        int triIndex = I(0);
-
-        if (triIndex < 0) {
-            Eigen::VectorXi sqrD;
-            Eigen::MatrixXd C;
-            tree.squared_distance(uvMapV, uvMapF, Q2D, sqrD, I, C);
+        int triIndex;
+        if (uvMapF.rows() == 1) {
+            triIndex = 0;
+        }
+        else {
+            Eigen::VectorXi I;
+            igl::in_element(uvMapV, uvMapF, Q2D, tree, I);
 
             triIndex = I(0);
 
-            assert(triIndex > -1);
+            if (triIndex < 0) {
+                Eigen::VectorXd sqrD;
+                Eigen::MatrixXd C;
+                tree.squared_distance(uvMapV, uvMapF, Q2D, sqrD, I, C);
+
+                double currentSquareDistance = sqrD(0);
+                triIndex = I(0);
+                for (int k = 1; k < I.size(); k++) {
+                    if (sqrD(k) < currentSquareDistance) {
+                        triIndex = I(k);
+                        currentSquareDistance = sqrD(k);
+                    }
+                }
+
+                assert(triIndex > -1);
+            }
         }
 
         const Eigen::VectorXi& tri = chartF.row(triIndex);
@@ -217,9 +225,8 @@ Eigen::VectorXd pointToBarycentric(
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
 
     if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps || baryc(0) < 0.0 - eps || baryc(1) < 0.0 - eps) {
-#ifndef NDEBUG
-        std::cout << "Degenerate triangle." << std::endl;
-#endif
+        std::cout << "Valid barycenter coordinates not found." << std::endl;
+
         vcg::Point3d t1vcg(t1.x(), t1.y(), 0);
         vcg::Point3d t2vcg(t2.x(), t2.y(), 0);
         vcg::Point3d t3vcg(t3.x(), t3.y(), 0);
@@ -245,8 +252,7 @@ Eigen::VectorXd pointToBarycentric(
             closestPoint.x() = vcgClosestPoint1.X();
             closestPoint.y() = vcgClosestPoint1.Y();
 
-            bool wasCollinear = findParametricValueInSegment(t1,t2,closestPoint,paramT);
-            assert(wasCollinear);
+            findParametricValueInSegment(t1,t2,closestPoint,paramT);
 
             baryc(0) = 1 - paramT.x();
             baryc(1) = paramT.x();
@@ -256,8 +262,7 @@ Eigen::VectorXd pointToBarycentric(
             closestPoint.x() = vcgClosestPoint2.X();
             closestPoint.y() = vcgClosestPoint2.Y();
 
-            bool wasCollinear = findParametricValueInSegment(t2,t3,closestPoint,paramT);
-            assert(wasCollinear);
+            findParametricValueInSegment(t2,t3,closestPoint,paramT);
 
             baryc(0) = 0;
             baryc(1) = 1 - paramT.x();
@@ -267,49 +272,12 @@ Eigen::VectorXd pointToBarycentric(
             closestPoint.x() = vcgClosestPoint3.X();
             closestPoint.y() = vcgClosestPoint3.Y();
 
-            bool wasCollinear = findParametricValueInSegment(t3,t1,closestPoint,paramT);
-            assert(wasCollinear);
+            findParametricValueInSegment(t3,t1,closestPoint,paramT);
 
             baryc(0) = paramT.x();
             baryc(1) = 0;
             baryc(2) = 1 - paramT.x();
         }
-
-//        Eigen::VectorXd paramT(2);
-
-//        if (findEquationInSegment(t1, t2, p, paramT)) {
-//            baryc(0) = 1 - paramT.x();
-//            baryc(1) = paramT.x();
-//            baryc(2) = 0;
-//#ifndef NDEBUG
-//            std::cout << "Segment interpolation done.";
-//#endif
-//        }
-//        else if (findEquationInSegment(t2, t3, p, paramT)) {
-//            baryc(0) = 0;
-//            baryc(1) = 1 - paramT.x();
-//            baryc(2) = paramT.x();
-//#ifndef NDEBUG
-//            std::cout << "Segment interpolation done.";
-//#endif
-//        }
-//        else if (findEquationInSegment(t3, t1, p, paramT)) {
-//            baryc(0) = paramT.x();
-//            baryc(1) = 0;
-//            baryc(2) = 1 - paramT.x();
-//#ifndef NDEBUG
-//            std::cout << "Segment interpolation done.";
-//#endif
-//        }
-//        else {
-//            baryc(0) = baryc(1) = baryc(2) = 1.0/3.0;
-//#ifndef NDEBUG
-//            std::cout << "Segment interpolation NOT done." ;
-//#endif
-//        }
-//#ifndef NDEBUG
-//        std::cout << std::endl;
-//#endif
     }
     else {
         baryc(2) = 1.0 - baryc(0) - baryc(1);
