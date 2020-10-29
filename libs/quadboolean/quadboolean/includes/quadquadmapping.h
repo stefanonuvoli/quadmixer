@@ -8,13 +8,6 @@
 namespace QuadBoolean {
 namespace internal {
 
-std::vector<std::vector<size_t>> getPatchSides(
-        Eigen::MatrixXd& patchV,
-        Eigen::MatrixXi& patchF,
-        std::vector<size_t>& borders,
-        std::vector<size_t>& corners,
-        const Eigen::VectorXi& l);
-
 void computeQuadrangulation(
         const Eigen::MatrixXd& chartV,
         const Eigen::MatrixXi& chartF,

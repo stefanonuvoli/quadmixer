@@ -22,6 +22,12 @@ Eigen::VectorXd barycentricToPoint(
         const Eigen::VectorXd& t3,
         const Eigen::VectorXd& p);
 
+bool findParametricValueInSegment(
+        const Eigen::VectorXd& s1,
+        const Eigen::VectorXd& s2,
+        const Eigen::VectorXd& p,
+        Eigen::VectorXd& t);
+
 void computeQuadrangulation(
         const Eigen::MatrixXd& chartV,
         const Eigen::MatrixXi& chartF,
@@ -57,14 +63,16 @@ void computeQuadrangulation(
             size_t patchEnd = patchStart + chartSideSubdivision[i][j];
 
             //Get first and last corner of the side
-            const size_t& firstPatchSideCornerId = patchSides[i][patchStart];
-            const size_t& lastPatchSideCornerId = patchSides[i][patchEnd];
+            const size_t& patchFirstId = patchSides[i][patchStart];
+            const size_t& patchLastId = patchSides[i][patchEnd];
 
             //Coordinate of the current corner
-            const Eigen::VectorXd& cornerCoord = patchV.row(firstPatchSideCornerId);
+            const Eigen::VectorXd& patchFirstCoord = patchV.row(patchFirstId);
+            const Eigen::VectorXd& patchLastCoord = patchV.row(patchLastId);
 
             //Get vector of the side
-            const Eigen::VectorXd vector = patchV.row(lastPatchSideCornerId) - patchV.row(firstPatchSideCornerId);
+            const Eigen::VectorXd vector = patchLastCoord - patchFirstCoord;
+
             double currentLength = 0;
             for (size_t k = 0; k < chartSideVertices[i][j].size() - 1; k++) {
                 if (k > 0) {
@@ -76,13 +84,12 @@ void computeQuadrangulation(
                 double lengthRatio = currentLength / chartSideLength[i][j];
                 assert(lengthRatio >= 0 && lengthRatio < 1);
 
-                const Eigen::VectorXd uv = cornerCoord + (vector * lengthRatio);
+                const Eigen::VectorXd uv = patchFirstCoord + (vector * lengthRatio);
 
                 b(fixedId) = static_cast<int>(vId);
 
-                //Flip x with y (problem with patterns)
-                bc(fixedId, 0) = uv(1);
-                bc(fixedId, 1) = uv(0);
+                bc(fixedId, 0) = uv(0);
+                bc(fixedId, 1) = uv(1);
 
                 fixedId++;
             }
@@ -94,6 +101,11 @@ void computeQuadrangulation(
     if (b.size() < chartV.rows()) {
         //Apply Least Square Conformal Maps
         igl::lscm(chartV, chartF, b, bc, uvMapV);
+
+        //Flip x with y (problem with libigl)
+        for (int i = 0; i < uvMapV.rows(); i++) {
+            uvMapV.row(i).reverseInPlace();
+        }
     }
     else {
         //Get the UV map with all fixed border
@@ -102,10 +114,14 @@ void computeQuadrangulation(
             uvMapV.row(b(i)) = bc.row(i);
         }
 
+#ifndef NDEBUG
         std::cout << "No fixed border! UVMap setted as bc." << std::endl;
-    }
+#endif
+    }    
+
     uvMapF = chartF;
 
+#ifndef NDEBUG
     for (int i = 0; i < uvMapF.rows(); ++i) {
         Eigen::VectorXd v1 = uvMapV.row(uvMapF(i,0));
         Eigen::VectorXd v2 = uvMapV.row(uvMapF(i,1));
@@ -119,6 +135,7 @@ void computeQuadrangulation(
             std::cout << "Warning: degenerate triangle found in UV mapping!" << std::endl;
         }
     }
+#endif
 
     //AABB tree for point location
     igl::AABB<Eigen::MatrixXd, 2> tree;
@@ -178,37 +195,8 @@ void computeQuadrangulation(
     }
 
     quadrangulationF = patchF;
-
-    //Flip faces
-    for (int i = 0; i < quadrangulationF.rows(); i++) {
-        assert(quadrangulationF.cols() == 4);
-        for (int j = 0; j < quadrangulationF.cols()/2; j++) {
-            std::swap(quadrangulationF(i,j), quadrangulationF(i, quadrangulationF.cols() - 1 - j));
-        }
-    }
 }
 
-
-bool findParametricValueInSegment(
-        const Eigen::VectorXd& s1,
-        const Eigen::VectorXd& s2,
-        const Eigen::VectorXd& p,
-        Eigen::VectorXd& t)
-{
-    const double eps = 0.0001;
-
-    t.x() = (p.x() - s1.x())/(s2.x() - s1.x());
-    t.y() = (p.y() - s1.y())/(s2.y() - s1.y());
-
-    //Return true if it is collinear and inside the segment
-    return  t.x() >= 0 - eps &&
-            t.x() <= 1 + eps &&
-            t.y() >= 0 - eps &&
-            t.y() <= 1 + eps &&
-            t.x() - eps <= t.y() + eps &&
-            t.x() + eps >= t.y() - eps;
-
-}
 
 Eigen::VectorXd pointToBarycentric(
         const Eigen::VectorXd& t1,
@@ -225,7 +213,9 @@ Eigen::VectorXd pointToBarycentric(
     baryc(1) = ((t3.y() - t1.y()) * (p.x() - t3.x()) + (t1.x() - t3.x()) * (p.y() - t3.y())) / det;
 
     if (baryc(0) > 1.0 + eps || baryc(1) > 1.0 + eps || baryc(0) < 0.0 - eps || baryc(1) < 0.0 - eps) {
+#ifndef NDEBUG
         std::cout << "Valid barycenter coordinates not found." << std::endl;
+#endif
 
         vcg::Point3d t1vcg(t1.x(), t1.y(), 0);
         vcg::Point3d t2vcg(t2.x(), t2.y(), 0);
@@ -285,26 +275,24 @@ Eigen::VectorXd pointToBarycentric(
 
     if (baryc(0) + baryc(1) + baryc(2) < 1.0 - eps || baryc(0) + baryc(1) + baryc(2) > 1.0 + eps) {
         baryc(0) = baryc(1) =  baryc(2) = 1.0/3.0;
+#ifndef NDEBUG
         std::cout << "Barycenter sum not 1!" << std::endl;
+#endif
     }
 
     if (std::isnan(baryc(0)) || std::isnan(baryc(1)) || std::isnan(baryc(2))) {
         baryc(0) = baryc(1) =  baryc(2) = 1.0/3.0;
+#ifndef NDEBUG
         std::cout << "Barycenter nan!" << std::endl;
+#endif
     }
 
     baryc(0) = std::max(std::min(baryc(0), 1.0), 0.0);
     baryc(1) = std::max(std::min(baryc(1), 1.0), 0.0);
     baryc(2) = std::max(std::min(baryc(2), 1.0), 0.0);
 
-    assert(baryc(0) >= 0 && baryc(0) <= 1);
-    assert(baryc(1) >= 0 && baryc(1) <= 1);
-    assert(baryc(2) >= 0 && baryc(2) <= 1);
-
-
     return baryc;
 }
-
 
 Eigen::VectorXd barycentricToPoint(
         const Eigen::VectorXd& t1,
@@ -320,127 +308,25 @@ Eigen::VectorXd barycentricToPoint(
     return coordinates;
 }
 
-std::vector<std::vector<size_t>> getPatchSides(
-        Eigen::MatrixXd& patchV,
-        Eigen::MatrixXi& patchF,
-        std::vector<size_t>& borders,
-        std::vector<size_t>& corners,
-        const Eigen::VectorXi& l)
+bool findParametricValueInSegment(
+        const Eigen::VectorXd& s1,
+        const Eigen::VectorXd& s2,
+        const Eigen::VectorXd& p,
+        Eigen::VectorXd& t)
 {
-    assert(corners.size() == l.size());
+    const double eps = 0.0001;
 
-    std::vector<std::vector<size_t>> sides(corners.size());
-    size_t startCornerId = 0;
+    t.x() = (p.x() - s1.x())/(s2.x() - s1.x());
+    t.y() = (p.y() - s1.y())/(s2.y() - s1.y());
 
-    bool foundSolution;
-    do {
-        size_t bId = 0;
-        while (borders[bId] != corners[startCornerId]) {
-            bId = (bId + 1) % borders.size();
-        }
+    //Return true if it is collinear and inside the segment
+    return  t.x() >= 0 - eps &&
+            t.x() <= 1 + eps &&
+            t.y() >= 0 - eps &&
+            t.y() <= 1 + eps &&
+            t.x() - eps <= t.y() + eps &&
+            t.x() + eps >= t.y() - eps;
 
-        foundSolution = true;
-        size_t cId = startCornerId;
-        size_t sId = 0;
-        do {
-            assert(borders[bId] == corners[cId]);
-
-            cId = (cId + 1) % corners.size();
-
-            std::vector<size_t> side;
-
-            while (borders[bId] != corners[cId]) {
-                side.push_back(borders[bId]);
-                bId = (bId + 1) % borders.size();
-            }
-
-            assert(borders[bId] == corners[cId]);
-            assert(side[side.size() - 1] != corners[cId]);
-
-            if (side.size() != l(sId)) {
-                foundSolution = false;
-#ifdef NDEBUG
-                    break;
-#endif
-            }
-
-            side.push_back(corners[cId]);
-
-            sides[sId] = side;
-            sId++;
-        } while (startCornerId != cId);
-
-       startCornerId++;
-    } while (!foundSolution && startCornerId < corners.size());
-
-    if (!foundSolution) {
-#ifndef NDEBUG
-      std::cout << "Found a no counter-clockwise path in patch. Reversed patch." << std::endl;
-#endif
-
-        for (int i = 0; i < patchV.rows(); i++) {
-            for (int j = 0; j < patchV.cols(); j++) {
-                patchV(i,j) = 0 - patchV(i,j);
-            }
-        }
-        for (int i = 0; i < patchF.rows(); i++) {
-            assert(patchF.cols() == 4);
-            for (int j = 0; j < patchF.cols()/2; j++) {
-                std::swap(patchF(i,j), patchF(i, patchF.cols() - 1 - j));
-            }
-        }
-
-        std::reverse(corners.begin(), corners.end());
-        std::reverse(borders.begin(), borders.end());
-
-        startCornerId = 0;
-        do {
-            assert(startCornerId < corners.size());
-
-            size_t bId = 0;
-            while (borders[bId] != corners[startCornerId]) {
-                bId = (bId + 1) % borders.size();
-            }
-
-            foundSolution = true;
-            size_t cId = startCornerId;
-            size_t sId = 0;
-            do {
-                assert(borders[bId] == corners[cId]);
-
-                cId = (cId + 1) % corners.size();
-
-                std::vector<size_t> side;
-
-                while (borders[bId] != corners[cId]) {
-                    side.push_back(borders[bId]);
-                    bId = (bId + 1) % borders.size();
-                }
-
-                assert(borders[bId] == corners[cId]);
-                assert(side[side.size() - 1] != corners[cId]);
-
-                if (side.size() != l(sId)) {
-                    foundSolution = false;
-#ifdef NDEBUG
-                    break;
-#endif
-                }
-
-                side.push_back(corners[cId]);
-
-                sides[sId] = side;
-                sId++;
-            } while (startCornerId != cId);
-
-            startCornerId++;
-
-        } while (!foundSolution);
-    }
-
-    assert(foundSolution);
-
-    return sides;
 }
 
 }

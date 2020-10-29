@@ -13,7 +13,8 @@ void computePattern(
         Eigen::MatrixXd& patchV,
         Eigen::MatrixXi& patchF,
         std::vector<size_t>& borders,
-        std::vector<size_t>& corners);
+        std::vector<size_t>& corners,
+        std::vector<std::vector<size_t>>& sides);
 
 }
 }

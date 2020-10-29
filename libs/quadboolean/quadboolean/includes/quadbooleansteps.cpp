@@ -14,7 +14,7 @@
 
 #include <vcg/complex/algorithms/polygonal_algorithms.h>
 
-#ifndef NDEBUG
+#ifdef SAVE_MESHES_FOR_DEBUG
 #include <igl/writeOBJ.h>
 #endif
 
@@ -568,6 +568,11 @@ void quadrangulate(
                 const size_t& subSideId = chartSides[i].subsides[j];
                 const ChartSubSide& subSide = chartData.subSides[subSideId];
 
+                if (ilpResult[subSideId] < 0) {
+                    std::cout << "Error: ILP not valid" << std::endl;
+                    return;
+                }
+
                 targetSideSubdivision += ilpResult[subSideId];
 
                 chartSideLength[i][j] = subSide.length;
@@ -583,11 +588,6 @@ void quadrangulate(
                     assert(vMap[vId] >= 0);
                     chartSideVertices[i][j][k] = vMap[vId];
                 }
-
-                if (ilpResult[subSideId] < 0) {
-                    std::cout << "Warning: ILP not valid" << std::endl;
-                    return;
-                }
             }
 
             l(static_cast<int>(i)) = targetSideSubdivision;
@@ -598,20 +598,16 @@ void quadrangulate(
         Eigen::MatrixXi patchF;
         std::vector<size_t> patchBorders;
         std::vector<size_t> patchCorners;
-        QuadBoolean::internal::computePattern(l, patchV, patchF, patchBorders, patchCorners);    
+        std::vector<std::vector<size_t>> patchSides;
+        QuadBoolean::internal::computePattern(l, patchV, patchF, patchBorders, patchCorners, patchSides);
+        assert(chartSides.size() == patchCorners.size());
 
-
-#ifndef NDEBUG
-        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_patch.obj"), patchV, patchF);
+#ifdef SAVE_MESHES_FOR_DEBUG
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_chart.obj"), chartV, chartF);
 #endif
 
-        std::vector<std::vector<size_t>> patchEigenSides = getPatchSides(patchV, patchF, patchBorders, patchCorners, l);
-
-        assert(chartSides.size() == patchCorners.size());
-        assert(chartSides.size() == patchEigenSides.size());
-
-#ifndef NDEBUG
-        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_chart.obj"), chartV, chartF);
+#ifdef SAVE_MESHES_FOR_DEBUG
+        igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_patch.obj"), patchV, patchF);
 #endif
 
         //Compute quadrangulation
@@ -619,7 +615,12 @@ void quadrangulate(
         Eigen::MatrixXi uvMapF;
         Eigen::MatrixXd quadrangulationV;
         Eigen::MatrixXi quadrangulationF;
-        QuadBoolean::internal::computeQuadrangulation(chartV, chartF, patchV, patchF, chartSideVertices, chartSideLength, chartSideSubdivision, patchEigenSides, uvMapV, uvMapF, quadrangulationV, quadrangulationF);
+        QuadBoolean::internal::computeQuadrangulation(
+            chartV, chartF,
+            patchV, patchF,
+            chartSideVertices, chartSideLength, chartSideSubdivision,
+            patchSides,
+            uvMapV, uvMapF, quadrangulationV, quadrangulationF);
 
 #ifndef NDEBUG
         Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
@@ -656,7 +657,7 @@ void quadrangulate(
         //Map subsides on the vertices of the current mesh (create if necessary)
         for (size_t i = 0; i < chartSides.size(); i++) {
             const ChartSide& side = chartSides[i];
-            const std::vector<size_t>& patchSide = patchEigenSides[i];
+            const std::vector<size_t>& patchSide = patchSides[i];
 
             size_t currentPatchSideVertex = 0;
 

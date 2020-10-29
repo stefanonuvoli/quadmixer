@@ -7,6 +7,8 @@ CGALPATH = /usr/include/CGAL
 GLPATH = /usr/include/GL
 GUROBIPATH = /opt/gurobi903/linux64
 
+#DEFINES += SAVE_MESHES_FOR_DEBUG
+
 #######################################################################
 
 # ----- We suggest to not modify anything under this line -----
