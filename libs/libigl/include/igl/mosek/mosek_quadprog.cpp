@@ -19,8 +19,6 @@
 
 igl::mosek::MosekData::MosekData()
 {
-
-
   // These are the default settings that worked well for BBW. Your miles may
   // very well be kilometers.
 
@@ -30,7 +28,10 @@ igl::mosek::MosekData::MosekData()
   // 1e-4 seems safe
   // 1e-8 MOSEK DEFAULT SOLUTION
   douparam[MSK_DPAR_INTPNT_TOL_REL_GAP]=1e-8;
-  // Force using multiple threads, not sure if MOSEK is properly destorying
+#if MSK_VERSION_MAJOR >= 8
+  douparam[MSK_DPAR_INTPNT_QO_TOL_REL_GAP]=1e-12;
+#endif
+  // Force using multiple threads, not sure if MOSEK is properly destroying
   //extra threads...
 #if MSK_VERSION_MAJOR >= 7
   intparam[MSK_IPAR_NUM_THREADS] = 6;
@@ -52,20 +53,13 @@ igl::mosek::MosekData::MosekData()
   //   choose the right ordering method when really any of them are
   //   instantaneous
   intparam[MSK_IPAR_INTPNT_ORDER_METHOD] = MSK_ORDER_METHOD_NONE;
-  // 1.0 means optimizer is very leniant about declaring model infeasible
+  // 1.0 means optimizer is very lenient about declaring model infeasible
   douparam[MSK_DPAR_INTPNT_TOL_INFEAS] = 1e-8;
   // Hard to say if this is doing anything, probably nothing dramatic
   douparam[MSK_DPAR_INTPNT_TOL_PSAFE]= 1e2;
   // Turn off convexity check
   intparam[MSK_IPAR_CHECK_CONVEXITY] = MSK_CHECK_CONVEXITY_NONE;
 }
-
-  /* Directs the log stream to the 'printstr' function. */
-  // Little function mosek needs in order to know how to print to std out
-  void printstr(void *handle,const char str[])
-  {
-    printf("%s",str);
-  }
 
 template <typename Index, typename Scalar>
 IGL_INLINE bool igl::mosek::mosek_quadprog(
@@ -84,31 +78,8 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   const std::vector<Scalar> & lx,
   const std::vector<Scalar> & ux,
   MosekData & mosek_data,
-  std::vector<Scalar> & x,
-  std::vector<Scalar> *slc,
-  std::vector<Scalar> *suc)
+  std::vector<Scalar> & x)
 {
-    const auto & key = [](const double lxj, const double uxj) ->
-      MSKboundkeye
-    {
-      MSKboundkeye k = MSK_BK_FR;
-      if(isfinite(lxj) && isfinite(uxj))
-      {
-        if(lxj < uxj)
-        {
-          k = MSK_BK_RA;
-        }else{
-          k = MSK_BK_FX;
-        }
-      }else if(isfinite(lxj))
-      {
-        k = MSK_BK_LO;
-      }else if(isfinite(uxj))
-      {
-        k = MSK_BK_UP;
-      }
-      return k;
-    };
   // I J V vectors of Q should all be same length
   assert(Qv.size() == Qi.size());
   assert(Qv.size() == Qj.size());
@@ -125,9 +96,6 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   // allocate space for solution in x
   x.resize(n);
 
-  if (slc!=NULL)slc->resize(m);
-  if (suc!=NULL)suc->resize(m);
-
   // variables for mosek task, env and result code
   MSKenv_t env;
   MSKtask_t task;
@@ -138,26 +106,21 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
 #elif MSK_VERSION_MAJOR == 6
   mosek_guarded(MSK_makeenv(&env,NULL,NULL,NULL,NULL));
 #endif
-
-//  /* Directs the log stream to the 'printstr' function. */
-//  // Little function mosek needs in order to know how to print to std out
-//  const auto & printstr = [](void *handle, char str[])
-//  {
-//    printf("%s",str);
-//  };
-
-//  mosek_guarded(MSK_linkfunctoenvstream(env,MSK_STREAM_LOG,NULL,printstr));
-
-
+  ///* Directs the log stream to the 'printstr' function. */
+  //// Little function mosek needs in order to know how to print to std out
+  //const auto & printstr = [](void *handle, char str[])
+  //{
+  //  printf("%s",str);
+  //}
+  //mosek_guarded(MSK_linkfunctoenvstream(env,MSK_STREAM_LOG,NULL,printstr));
   // initialize mosek environment
+#if MSK_VERSION_MAJOR <= 7
   mosek_guarded(MSK_initenv(env));
+#endif
   // Create the optimization task
   mosek_guarded(MSK_maketask(env,m,n,&task));
   verbose("Creating task with %ld linear constraints and %ld variables...\n",m,n);
-
-  MSK_linkfunctotaskstream(task,MSK_STREAM_LOG,NULL,&printstr);
-
-  // Tell mosek how to print to std out
+  //// Tell mosek how to print to std out
   //mosek_guarded(MSK_linkfunctotaskstream(task,MSK_STREAM_LOG,NULL,printstr));
   // Give estimate of number of variables
   mosek_guarded(MSK_putmaxnumvar(task,n));
@@ -199,14 +162,13 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
     }
 
     // Set constant bounds on variable j
-    mosek_guarded(MSK_putbound(task,MSK_ACC_VAR,j,key(lx[j],ux[j]),lx[j],ux[j]));
-//    if(lx[j] == ux[j])
-//    {
-//      mosek_guarded(MSK_putbound(task,MSK_ACC_VAR,j,MSK_BK_FX,lx[j],ux[j]));
-//    }else
-//    {
-//      mosek_guarded(MSK_putbound(task,MSK_ACC_VAR,j,MSK_BK_RA,lx[j],ux[j]));
-//    }
+    if(lx[j] == ux[j])
+    {
+      mosek_guarded(MSK_putbound(task,MSK_ACC_VAR,j,MSK_BK_FX,lx[j],ux[j]));
+    }else
+    {
+      mosek_guarded(MSK_putbound(task,MSK_ACC_VAR,j,MSK_BK_RA,lx[j],ux[j]));
+    }
 
     if(m>0)
     {
@@ -238,8 +200,7 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   for(int i = 0;i<m;i++)
   {
     // put bounds  on constraints
-    //mosek_guarded(MSK_putbound(task,MSK_ACC_CON,i,MSK_BK_RA,lc[i],uc[i]));
-      mosek_guarded(MSK_putbound(task,MSK_ACC_CON,i,key(lc[i],uc[i]),lc[i],uc[i]));
+    mosek_guarded(MSK_putbound(task,MSK_ACC_CON,i,MSK_BK_RA,lc[i],uc[i]));
   }
 
   // Input Q for the objective (REMEMBER Q SHOULD ONLY BE LOWER TRIANGLE)
@@ -268,7 +229,7 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
 
   //// Print a summary containing information about the solution for debugging
   //// purposes
-  MSK_solutionsummary(task,MSK_STREAM_LOG);
+  //MSK_solutionsummary(task,MSK_STREAM_LOG);
 
   // Get status of solution
   MSKsolstae solsta;
@@ -278,30 +239,12 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   MSK_getsolutionstatus(task,MSK_SOL_ITR,NULL,&solsta);
 #endif
 
-  //MSK_printdata(task, MSK_STREAM_LOG, 0, m, 0, n,0, 0, 1, 0, 1, 0, 1, 1, 0, 0);
-
-//  MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_XX,0,n,&x[0]);
-//if (slc!=NULL)
-//  MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_SLC,0,m,&(*slc)[0]);
-//if (suc!=NULL)
-//  MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_SUC,0,m,&(*suc)[0]);
-
   bool success = false;
   switch(solsta)
   {
-    case MSK_SOL_STA_OPTIMAL:
+    case MSK_SOL_STA_OPTIMAL:   
     case MSK_SOL_STA_NEAR_OPTIMAL:
-    case MSK_SOL_STA_UNKNOWN:
-        MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_XX,0,n,&x[0]);
-      if (slc!=NULL)
-        MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_SLC,0,m,&(*slc)[0]);
-      if (suc!=NULL)
-        MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_SUC,0,m,&(*suc)[0]);
       MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_XX,0,n,&x[0]);
-    if (slc!=NULL)
-      MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_SLC,0,m,&(*slc)[0]);
-    if (suc!=NULL)
-      MSK_getsolutionslice(task,MSK_SOL_ITR,MSK_SOL_ITEM_SUC,0,m,&(*suc)[0]);
       //printf("Optimal primal solution\n");
       //for(size_t j=0; j<n; ++j)
       //{
@@ -312,9 +255,10 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
     case MSK_SOL_STA_DUAL_INFEAS_CER:
     case MSK_SOL_STA_PRIM_INFEAS_CER:
     case MSK_SOL_STA_NEAR_DUAL_INFEAS_CER:
-    case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER:
-      printf("Primal or dual infeasibility certificate found.\n");
+    case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER:  
+      //printf("Primal or dual infeasibility certificate found.\n");
       break;
+    case MSK_SOL_STA_UNKNOWN:
       //printf("The status of the solution could not be determined.\n");
       break;
     default:
@@ -326,7 +270,6 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   MSK_deleteenv(&env);
 
   return success;
-  //return true;
 }
 
 IGL_INLINE bool igl::mosek::mosek_quadprog(
@@ -339,13 +282,13 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   const Eigen::VectorXd & lx,
   const Eigen::VectorXd & ux,
   MosekData & mosek_data,
-  Eigen::VectorXd & x,
-  std::vector<double> *slc,
-  std::vector<double> *suc)
+  Eigen::VectorXd & x)
 {
   using namespace Eigen;
   using namespace std;
 
+  typedef int Index;
+  typedef double Scalar;
   // Q should be square
   assert(Q.rows() == Q.cols());
   // Q should be symmetric
@@ -353,36 +296,36 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
   assert( (Q-Q.transpose()).sum() < FLOAT_EPS);
 #endif
   // Only keep lower triangular part of Q
-  SparseMatrix<double> QL;
+  SparseMatrix<Scalar> QL;
   //QL = Q.template triangularView<Lower>();
   QL = Q.triangularView<Lower>();
   VectorXi Qi,Qj;
   VectorXd Qv;
   find(QL,Qi,Qj,Qv);
-  vector<int> vQi = matrix_to_list(Qi);
-  vector<int> vQj = matrix_to_list(Qj);
-  vector<double> vQv = matrix_to_list(Qv);
+  vector<Index> vQi = matrix_to_list(Qi);
+  vector<Index> vQj = matrix_to_list(Qj);
+  vector<Scalar> vQv = matrix_to_list(Qv);
 
   // Convert linear term
-  vector<double> vc = matrix_to_list(c);
+  vector<Scalar> vc = matrix_to_list(c);
 
   assert(lc.size() == A.rows());
   assert(uc.size() == A.rows());
   // Convert A to harwell boeing format
-  vector<double> vAv;
-  vector<int> vAr,vAc;
-  int nr;
+  vector<Scalar> vAv;
+  vector<Index> vAr,vAc;
+  Index nr;
   harwell_boeing(A,nr,vAv,vAr,vAc);
 
   assert(lx.size() == Q.rows());
   assert(ux.size() == Q.rows());
-  vector<double> vlc = matrix_to_list(lc);
-  vector<double> vuc = matrix_to_list(uc);
-  vector<double> vlx = matrix_to_list(lx);
-  vector<double> vux = matrix_to_list(ux);
+  vector<Scalar> vlc = matrix_to_list(lc);
+  vector<Scalar> vuc = matrix_to_list(uc);
+  vector<Scalar> vlx = matrix_to_list(lx);
+  vector<Scalar> vux = matrix_to_list(ux);
 
-  vector<double> vx;
-  bool ret = mosek_quadprog(
+  vector<Scalar> vx;
+  bool ret = mosek_quadprog<Index,Scalar>(
     Q.rows(),vQi,vQj,vQv,
     vc,
     cf,
@@ -391,9 +334,7 @@ IGL_INLINE bool igl::mosek::mosek_quadprog(
     vlc,vuc,
     vlx,vux,
     mosek_data,
-    vx,
-    slc,
-    suc);
+    vx);
   list_to_matrix(vx,x);
   return ret;
 }

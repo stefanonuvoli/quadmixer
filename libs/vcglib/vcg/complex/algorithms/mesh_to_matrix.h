@@ -28,8 +28,6 @@
 #include <vcg/complex/algorithms/update/quality.h>
 #include <vcg/complex/algorithms/harmonic.h>
 
-using namespace std;
-
 namespace vcg {
 namespace tri {
 template < typename MeshType >
@@ -237,21 +235,21 @@ public:
     }
 
     template< class VecType >
-    static void PerVertexArea(MeshType &m, VecType &h)
+    static void PerVertexArea(const MeshType &m, VecType &h)
     {
         tri::RequireCompactness(m);
         h.resize(m.vn);
-        fill(h.begin(),h.end(),0);        
-        for(FaceIterator fi=m.face.begin(); fi!=m.face.end();++fi)
+        fill(h.begin(),h.end(),0);
+        for (int i = 0; i < m.FN(); ++i)
         {
-            ScalarType a = DoubleArea(*fi)/6.0;
-            for(int j=0;j<fi->VN();++j)
-                h[tri::Index(m,fi->V(j))] += a;
+            ScalarType a = DoubleArea(m.face[i])/6.0;
+            for(int j=0;j<m.face[i].VN();++j)
+                h[tri::Index(m,m.face[i].cV(j))] += a;
         }
     }
 
     template< class VecType >
-    static void PerFaceArea(MeshType &m, VecType &h)
+    static void PerFaceArea(const MeshType &m, VecType &h)
     {
         tri::RequireCompactness(m);
         h.resize(m.fn);

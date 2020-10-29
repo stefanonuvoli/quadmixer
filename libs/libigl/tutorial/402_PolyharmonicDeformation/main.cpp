@@ -1,7 +1,7 @@
 #include <igl/colon.h>
 #include <igl/harmonic.h>
 #include <igl/readOBJ.h>
-#include <igl/viewer/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
 #include <algorithm>
 #include <iostream>
 #include "tutorial_shared_path.h"
@@ -16,7 +16,7 @@ Eigen::MatrixXi F;
 Eigen::VectorXi b;
 Eigen::VectorXd bc;
 
-bool pre_draw(igl::viewer::Viewer & viewer)
+bool pre_draw(igl::opengl::glfw::Viewer & viewer)
 {
   using namespace Eigen;
   if(resolve)
@@ -25,9 +25,9 @@ bool pre_draw(igl::viewer::Viewer & viewer)
     resolve = false;
   }
   U.col(2) = z_max*Z;
-  viewer.data.set_vertices(U);
-  viewer.data.compute_normals();
-  if(viewer.core.is_animating)
+  viewer.data().set_vertices(U);
+  viewer.data().compute_normals();
+  if(viewer.core().is_animating)
   {
     z_max += z_dir;
     z_dir *= (z_max>=1.0 || z_max<=0.0?-1.0:1.0);
@@ -35,12 +35,12 @@ bool pre_draw(igl::viewer::Viewer & viewer)
   return false;
 }
 
-bool key_down(igl::viewer::Viewer &viewer, unsigned char key, int mods)
+bool key_down(igl::opengl::glfw::Viewer &viewer, unsigned char key, int mods)
 {
   switch(key)
   {
     case ' ':
-      viewer.core.is_animating = !viewer.core.is_animating;
+      viewer.core().is_animating = !viewer.core().is_animating;
       break;
     case '.':
       k++;
@@ -93,16 +93,16 @@ int main(int argc, char *argv[])
   }
 
   // Plot the mesh with pseudocolors
-  igl::viewer::Viewer viewer;
-  viewer.data.set_mesh(U, F);
-  viewer.core.show_lines = false;
-  viewer.data.set_colors(C);
-  viewer.core.trackball_angle = Eigen::Quaternionf(0.81,-0.58,-0.03,-0.03);
-  viewer.core.trackball_angle.normalize();
+  igl::opengl::glfw::Viewer viewer;
+  viewer.data().set_mesh(U, F);
+  viewer.data().show_lines = false;
+  viewer.data().set_colors(C);
+  viewer.core().trackball_angle = Eigen::Quaternionf(0.81,-0.58,-0.03,-0.03);
+  viewer.core().trackball_angle.normalize();
   viewer.callback_pre_draw = &pre_draw;
   viewer.callback_key_down = &key_down;
-  viewer.core.is_animating = true;
-  viewer.core.animation_max_fps = 30.;
+  viewer.core().is_animating = true;
+  viewer.core().animation_max_fps = 30.;
   cout<<
     "Press [space] to toggle animation."<<endl<<
     "Press '.' to increase k."<<endl<<

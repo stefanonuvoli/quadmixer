@@ -30,7 +30,7 @@ namespace igl
       //   offending #offending map taking face indices into F to pairs of order
       //     of first finding and list of intersection objects from all
       //     intersections
-      //   stitch_all  if true, merge all vertices with thte same coordiante.
+      //   stitch_all  if true, merge all vertices with the same coordinate.
       // Outputs:
       //   VV  #VV by 3 list of vertex positions, if stitch_all = false then
       //     first #V vertices will always be V
@@ -50,8 +50,8 @@ namespace igl
         typename DerivedJ,
         typename DerivedIM>
       IGL_INLINE void remesh_intersections(
-        const Eigen::PlainObjectBase<DerivedV> & V,
-        const Eigen::PlainObjectBase<DerivedF> & F,
+        const Eigen::MatrixBase<DerivedV> & V,
+        const Eigen::MatrixBase<DerivedF> & F,
         const std::vector<CGAL::Triangle_3<Kernel> > & T,
         const std::map<
           typename DerivedF::Index,
@@ -72,8 +72,8 @@ namespace igl
         typename DerivedJ,
         typename DerivedIM>
       IGL_INLINE void remesh_intersections(
-        const Eigen::PlainObjectBase<DerivedV> & V,
-        const Eigen::PlainObjectBase<DerivedF> & F,
+        const Eigen::MatrixBase<DerivedV> & V,
+        const Eigen::MatrixBase<DerivedF> & F,
         const std::vector<CGAL::Triangle_3<Kernel> > & T,
         const std::map<
           typename DerivedF::Index,

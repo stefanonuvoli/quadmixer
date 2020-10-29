@@ -3,7 +3,8 @@
 #include <igl/material_colors.h>
 #include <igl/copyleft/marching_cubes.h>
 #include <igl/copyleft/swept_volume.h>
-#include <igl/viewer/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
+#include <igl/PI.h>
 #include <Eigen/Core>
 #include <iostream>
 
@@ -20,8 +21,8 @@ int main(int argc, char * argv[])
   const auto & transform = [](const double t)->Eigen::Affine3d
   {
     Eigen::Affine3d T = Eigen::Affine3d::Identity();
-    T.rotate(Eigen::AngleAxisd(t*2.*M_PI,Eigen::Vector3d(0,1,0)));
-    T.translate(Eigen::Vector3d(0,0.125*cos(2.*M_PI*t),0));
+    T.rotate(Eigen::AngleAxisd(t*2.*igl::PI,Eigen::Vector3d(0,1,0)));
+    T.translate(Eigen::Vector3d(0,0.125*cos(2.*igl::PI*t),0));
     return T;
   };
   // Read in inputs as double precision floating point meshes
@@ -30,10 +31,10 @@ int main(int argc, char * argv[])
   cout<<R"(Usage:
 [space]  Toggle between transforming original mesh and swept volume
 )";
-  igl::viewer::Viewer viewer;
-  viewer.data.set_mesh(V,F);
-  viewer.data.set_face_based(true);
-  viewer.core.is_animating = !show_swept_volume;
+  igl::opengl::glfw::Viewer viewer;
+  viewer.data().set_mesh(V,F);
+  viewer.data().set_face_based(true);
+  viewer.core().is_animating = !show_swept_volume;
   const int grid_size = 50;
   const int time_steps = 200;
   const double isolevel = 0.1;
@@ -43,7 +44,7 @@ int main(int argc, char * argv[])
   std::cerr<<" finished."<<std::endl;
 
   viewer.callback_pre_draw =
-    [&](igl::viewer::Viewer & viewer)->bool
+    [&](igl::opengl::glfw::Viewer & viewer)->bool
     {
       if(!show_swept_volume)
       {
@@ -51,13 +52,13 @@ int main(int argc, char * argv[])
         VT = V*T.matrix().block(0,0,3,3).transpose();
         Eigen::RowVector3d trans = T.matrix().block(0,3,3,1).transpose();
         VT = ( VT.rowwise() + trans).eval();
-        viewer.data.set_vertices(VT);
-        viewer.data.compute_normals();
+        viewer.data().set_vertices(VT);
+        viewer.data().compute_normals();
       }
       return false;
     };
   viewer.callback_key_down =
-    [&](igl::viewer::Viewer & viewer, unsigned char key, int mod)->bool
+    [&](igl::opengl::glfw::Viewer & viewer, unsigned char key, int mod)->bool
     {
       switch(key)
       {
@@ -65,20 +66,21 @@ int main(int argc, char * argv[])
           return false;
         case ' ':
           show_swept_volume = !show_swept_volume;
-          viewer.data.clear();
+          viewer.data().clear();
           if(show_swept_volume)
           {
-            viewer.data.set_mesh(SV,SF);
-            viewer.data.uniform_colors(
-              {SILVER_AMBIENT[0], SILVER_AMBIENT[1], SILVER_AMBIENT[2]},
-              {SILVER_DIFFUSE[0], SILVER_DIFFUSE[1], SILVER_DIFFUSE[2]},
-              {SILVER_SPECULAR[0], SILVER_SPECULAR[1], SILVER_SPECULAR[2]});
-          }else
-          {
-            viewer.data.set_mesh(V,F);
+            viewer.data().set_mesh(SV,SF);
+            Eigen::Vector3d ambient = Eigen::Vector3d(SILVER_AMBIENT[0], SILVER_AMBIENT[1], SILVER_AMBIENT[2]);
+            Eigen::Vector3d diffuse = Eigen::Vector3d(SILVER_DIFFUSE[0], SILVER_DIFFUSE[1], SILVER_DIFFUSE[2]);
+            Eigen::Vector3d specular = Eigen::Vector3d(SILVER_SPECULAR[0], SILVER_SPECULAR[1], SILVER_SPECULAR[2]);
+            viewer.data().uniform_colors(ambient,diffuse,specular);
           }
-          viewer.core.is_animating = !show_swept_volume;
-          viewer.data.set_face_based(true);
+          else
+          {
+            viewer.data().set_mesh(V,F);
+          }
+          viewer.core().is_animating = !show_swept_volume;
+          viewer.data().set_face_based(true);
           break;
       }
       return true;

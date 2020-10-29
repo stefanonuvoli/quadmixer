@@ -263,6 +263,14 @@ namespace vcg {
                             );
                     }
 
+					if (HasPerFaceNormal(m) && (pi.mask & Mask::IOM_FACENORMAL))
+					{
+						const char* fntp = vcg::tri::io::Precision<typename SaveMeshType::ScalarType>::typeName();
+						fprintf(fpout, "property %s nx\n", fntp);
+						fprintf(fpout, "property %s ny\n", fntp);
+						fprintf(fpout, "property %s nz\n", fntp);
+					}
+
                     if( HasPerFaceQuality(m) && (pi.mask & Mask::IOM_FACEQUALITY) )
                     {
                         const char* fqtp = vcg::tri::io::Precision<typename SaveMeshType::FaceType::QualityType>::typeName();
@@ -481,7 +489,7 @@ namespace vcg {
                                 fprintf(fpout,"%.*g %.*g %.*g " ,DGT,vp->P()[0],DGT,vp->P()[1],DGT,vp->P()[2]);
 
                                 if( HasPerVertexNormal(m) && (pi.mask & Mask::IOM_VERTNORMAL) )
-                                    fprintf(fpout,"%.*g %.*g %.*g " ,DGT,double(vp->N()[0]),DGT,double(vp->N()[1]),DGT,double(vp->N()[2]));
+									fprintf(fpout,"%.*g %.*g %.*g " ,DGT,ScalarType(vp->N()[0]),DGT,ScalarType(vp->N()[1]),DGT,ScalarType(vp->N()[2]));
 
                                 if( HasPerVertexFlags(m) && (pi.mask & Mask::IOM_VERTFLAGS))
                                     fprintf(fpout,"%d ",vp->Flags());
@@ -612,6 +620,14 @@ namespace vcg {
                                 }
                             }
 
+							if( HasPerFaceNormal(m) && (pi.mask & Mask::IOM_FACENORMAL) )
+							{
+								ScalarType t;
+								t = ScalarType(fp->N()[0]); fwrite(&t,sizeof(ScalarType),1,fpout);
+								t = ScalarType(fp->N()[1]); fwrite(&t,sizeof(ScalarType),1,fpout);
+								t = ScalarType(fp->N()[2]); fwrite(&t,sizeof(ScalarType),1,fpout);
+							}
+
                             if( HasPerFaceQuality(m) && (pi.mask & Mask::IOM_FACEQUALITY) )
                                 fwrite( &(fp->Q()),sizeof(typename FaceType::ScalarType),1,fpout);
 
@@ -694,6 +710,9 @@ namespace vcg {
                                     ,double(fp->WC(z)[2])/255
                                     );
                             }
+
+							if (HasPerFaceNormal(m) && (pi.mask & Mask::IOM_FACENORMAL))
+								fprintf(fpout,"%.*g %.*g %.*g " ,DGT, ScalarType(fp->N()[0]),DGT,ScalarType(fp->N()[1]),DGT,ScalarType(fp->N()[2]));
 
                             if( HasPerFaceQuality(m) && (pi.mask & Mask::IOM_FACEQUALITY) )
                                 fprintf(fpout,"%.*g ",DGTFQ,fp->Q());

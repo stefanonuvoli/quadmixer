@@ -106,9 +106,7 @@ namespace igl
       const std::vector<Scalar> & lx,
       const std::vector<Scalar> & ux,
       MosekData & mosek_data,
-      std::vector<Scalar> & x,
-      std::vector<Scalar> *slc=NULL,
-      std::vector<Scalar> *suc=NULL);
+      std::vector<Scalar> & x);
     // Wrapper with Eigen elements
     //
     // Inputs:
@@ -136,9 +134,7 @@ namespace igl
       const Eigen::VectorXd & lx,
       const Eigen::VectorXd & ux,
       MosekData & mosek_data,
-      Eigen::VectorXd & x,
-      std::vector<double> *slc=NULL,
-      std::vector<double> *suc=NULL);
+      Eigen::VectorXd & x);
   }
 }
 

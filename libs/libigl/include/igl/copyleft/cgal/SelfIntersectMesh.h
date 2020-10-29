@@ -80,8 +80,8 @@ namespace igl
             Box;
     
           // Input mesh
-          const Eigen::PlainObjectBase<DerivedV> & V;
-          const Eigen::PlainObjectBase<DerivedF> & F;
+          const Eigen::MatrixBase<DerivedV> & V;
+          const Eigen::MatrixBase<DerivedF> & F;
           // Number of self-intersecting triangle pairs
           typedef typename DerivedF::Index Index;
           Index count;
@@ -112,8 +112,8 @@ namespace igl
           //
           // See also: remesh_self_intersections.h
           inline SelfIntersectMesh(
-              const Eigen::PlainObjectBase<DerivedV> & V,
-              const Eigen::PlainObjectBase<DerivedF> & F,
+              const Eigen::MatrixBase<DerivedV> & V,
+              const Eigen::MatrixBase<DerivedF> & F,
               const RemeshSelfIntersectionsParam & params,
               Eigen::PlainObjectBase<DerivedVV> & VV,
               Eigen::PlainObjectBase<DerivedFF> & FF,
@@ -236,7 +236,7 @@ namespace igl
 // a 2-manifold.
 // A: But! It seems we could use CGAL::Triangulation_3. Though it won't be easy
 // to take advantage of functions like insert_in_facet because we want to
-// constrain segments. Hmmm. Actualy Triangulation_3 doesn't look right...
+// constrain segments. Hmmm. Actually Triangulation_3 doesn't look right...
 
 // CGAL's box_self_intersection_d uses C-style function callbacks without
 // userdata. This is a leapfrog method for calling a member function. It should
@@ -289,8 +289,8 @@ inline igl::copyleft::cgal::SelfIntersectMesh<
   DerivedIF,
   DerivedJ,
   DerivedIM>::SelfIntersectMesh(
-  const Eigen::PlainObjectBase<DerivedV> & V,
-  const Eigen::PlainObjectBase<DerivedF> & F,
+  const Eigen::MatrixBase<DerivedV> & V,
+  const Eigen::MatrixBase<DerivedF> & F,
   const RemeshSelfIntersectionsParam & params,
   Eigen::PlainObjectBase<DerivedVV> & VV,
   Eigen::PlainObjectBase<DerivedFF> & FF,

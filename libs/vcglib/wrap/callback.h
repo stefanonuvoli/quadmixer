@@ -26,6 +26,8 @@
 
 #include <stdarg.h>  // For va_start, etc.
 #include <memory>    // For std::unique_ptr
+#include <iostream>
+#include <string.h>
 
 namespace vcg {
 /*! \brief This function allow lenghty algorithms to report progress and status.

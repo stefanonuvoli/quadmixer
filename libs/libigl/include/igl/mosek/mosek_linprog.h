@@ -38,10 +38,7 @@ namespace igl
         const Eigen::VectorXd & uc,
         const Eigen::VectorXd & lx,
         const Eigen::VectorXd & ux,
-        Eigen::VectorXd & x,
-        Eigen::VectorXd & slc,
-        Eigen::VectorXd & suc);
-
+        Eigen::VectorXd & x);
     // Wrapper that keeps mosek environment alive (if licence checking is
     // becoming a bottleneck)
     IGL_INLINE bool mosek_linprog(
@@ -52,9 +49,7 @@ namespace igl
         const Eigen::VectorXd & lx,
         const Eigen::VectorXd & ux,
         const MSKenv_t & env,
-        Eigen::VectorXd & x,
-        Eigen::VectorXd & slc,
-        Eigen::VectorXd & suc);
+        Eigen::VectorXd & x);
   }
 }
 

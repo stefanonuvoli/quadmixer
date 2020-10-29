@@ -1,6 +1,5 @@
 #include <igl/readOFF.h>
-#include <igl/viewer/Viewer.h>
-#include <igl/jet.h>
+#include <igl/opengl/glfw/Viewer.h>
 #include "tutorial_shared_path.h"
 
 Eigen::MatrixXd V;
@@ -13,17 +12,16 @@ int main(int argc, char *argv[])
   igl::readOFF(TUTORIAL_SHARED_PATH "/screwdriver.off", V, F);
 
   // Plot the mesh
-  igl::viewer::Viewer viewer;
-  viewer.data.set_mesh(V, F);
+  igl::opengl::glfw::Viewer viewer;
+  viewer.data().set_mesh(V, F);
 
-  // Use the z coordinate as a scalar field over the surface
-  Eigen::VectorXd Z = V.col(2);
-
-  // Compute per-vertex colors
-  igl::jet(Z,true,C);
+  // Use the (normalized) vertex positions as colors
+  C = 
+    (V.rowwise()            - V.colwise().minCoeff()).array().rowwise()/
+    (V.colwise().maxCoeff() - V.colwise().minCoeff()).array();
 
   // Add per-vertex colors
-  viewer.data.set_colors(C);
+  viewer.data().set_colors(C);
 
   // Launch the viewer
   viewer.launch();

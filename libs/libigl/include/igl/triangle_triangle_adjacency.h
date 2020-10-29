@@ -16,43 +16,51 @@ namespace igl
   // Constructs the triangle-triangle adjacency matrix for a given
   // mesh (V,F).
   //
-  // Templates:
-  //   Scalar derived type of eigen matrix for V (e.g. derived from
-  //     MatrixXd)
-  //   Index  derived type of eigen matrix for F (e.g. derived from
-  //     MatrixXi)
   // Inputs:
   //   F  #F by simplex_size list of mesh faces (must be triangles)
   // Outputs:
-  //   TT   #F by #3 adjacent matrix, the element i,j is the id of the triangle adjacent to the j edge of triangle i
-  //   TTi  #F by #3 adjacent matrix, the element i,j is the id of edge of the triangle TT(i,j) that is adjacent with triangle i
-  // NOTE: the first edge of a triangle is [0,1] the second [1,2] and the third [2,3].
-  //       this convention is DIFFERENT from cotmatrix_entries.h
-  // Known bug: this should not need to take V as input.
+  //   TT   #F by #3 adjacent matrix, the element i,j is the id of the triangle
+  //        adjacent to the j edge of triangle i
+  //   TTi  #F by #3 adjacent matrix, the element i,j is the id of edge of the
+  //        triangle TT(i,j) that is adjacent with triangle i
+  //
+  // NOTE: the first edge of a triangle is [0,1] the second [1,2] and the third
+  //       [2,3].  this convention is DIFFERENT from
+  //       cotmatrix_entries.h/edge_lengths.h/etc. To fix this you could use:
+  //           // Fix mis-match convention
+  //           {
+  //             Eigen::PermutationMatrix<3,3> perm(3);
+  //             perm.indices() = Eigen::Vector3i(1,2,0);
+  //             TT = (TT*perm).eval();
+  //             TTi = (TTi*perm).eval();
+  //             for(int i=0;i<TTi.rows();i++)
+  //               for(int j=0;j<TTi.cols();j++)
+  //                 TTi(i,j)=TTi(i,j)==-1?-1:(TTi(i,j)+3-1)%3;
+  //           }
   template <typename DerivedF, typename DerivedTT, typename DerivedTTi>
   IGL_INLINE void triangle_triangle_adjacency(
-    const Eigen::PlainObjectBase<DerivedF>& F,
+    const Eigen::MatrixBase<DerivedF>& F,
     Eigen::PlainObjectBase<DerivedTT>& TT,
     Eigen::PlainObjectBase<DerivedTTi>& TTi);
   template <typename DerivedF, typename DerivedTT>
   IGL_INLINE void triangle_triangle_adjacency(
-    const Eigen::PlainObjectBase<DerivedF>& F,
+    const Eigen::MatrixBase<DerivedF>& F,
     Eigen::PlainObjectBase<DerivedTT>& TT);
   // Preprocessing
   template <typename DerivedF, typename TTT_type>
   IGL_INLINE void triangle_triangle_adjacency_preprocess(
-    const Eigen::PlainObjectBase<DerivedF>& F,
+    const Eigen::MatrixBase<DerivedF>& F,
     std::vector<std::vector<TTT_type> >& TTT);
   // Extract the face adjacencies
   template <typename DerivedF, typename TTT_type, typename DerivedTT>
   IGL_INLINE void triangle_triangle_adjacency_extractTT(
-    const Eigen::PlainObjectBase<DerivedF>& F,
+    const Eigen::MatrixBase<DerivedF>& F,
     std::vector<std::vector<TTT_type> >& TTT,
     Eigen::PlainObjectBase<DerivedTT>& TT);
   // Extract the face adjacencies indices (needed for fast traversal)
   template <typename DerivedF, typename TTT_type, typename DerivedTTi>
   IGL_INLINE void triangle_triangle_adjacency_extractTTi(
-    const Eigen::PlainObjectBase<DerivedF>& F,
+    const Eigen::MatrixBase<DerivedF>& F,
     std::vector<std::vector<TTT_type> >& TTT,
     Eigen::PlainObjectBase<DerivedTTi>& TTi);
   // Adjacency list version, which works with non-manifold meshes
@@ -71,12 +79,12 @@ namespace igl
     typename TTIndex, 
     typename TTiIndex>
     IGL_INLINE void triangle_triangle_adjacency(
-      const Eigen::PlainObjectBase<DerivedF> & F,
+      const Eigen::MatrixBase<DerivedF> & F,
       std::vector<std::vector<std::vector<TTIndex> > > & TT,
       std::vector<std::vector<std::vector<TTiIndex> > > & TTi);
   template < typename DerivedF, typename TTIndex>
     IGL_INLINE void triangle_triangle_adjacency(
-      const Eigen::PlainObjectBase<DerivedF> & F,
+      const Eigen::MatrixBase<DerivedF> & F,
       std::vector<std::vector<std::vector<TTIndex> > > & TT);
   // Wrapper with bool to choose whether to compute TTi (this prototype should
   // be "hidden").
@@ -85,16 +93,17 @@ namespace igl
     typename TTIndex, 
     typename TTiIndex>
     IGL_INLINE void triangle_triangle_adjacency(
-      const Eigen::PlainObjectBase<DerivedF> & F,
+      const Eigen::MatrixBase<DerivedF> & F,
       const bool construct_TTi,
       std::vector<std::vector<std::vector<TTIndex> > > & TT,
       std::vector<std::vector<std::vector<TTiIndex> > > & TTi);
   // Inputs:
-  //   E  #F*3 by 2 list of all of directed edges in order (see `all_edges`)
+  //   E  #F*3 by 2 list of all of directed edges in order (see
+  //     `oriented_facets`)
   //   EMAP #F*3 list of indices into uE, mapping each directed edge to unique
   //     undirected edge
   //   uE2E  #uE list of lists of indices into E of coexisting edges
-  // See also: unique_edge_map, all_edges
+  // See also: unique_edge_map, oriented_facets
   template <
     typename DerivedE, 
     typename DerivedEMAP,
@@ -102,8 +111,8 @@ namespace igl
     typename TTIndex, 
     typename TTiIndex>
     IGL_INLINE void triangle_triangle_adjacency(
-      const Eigen::PlainObjectBase<DerivedE> & E,
-      const Eigen::PlainObjectBase<DerivedEMAP> & EMAP,
+      const Eigen::MatrixBase<DerivedE> & E,
+      const Eigen::MatrixBase<DerivedEMAP> & EMAP,
       const std::vector<std::vector<uE2EType > > & uE2E,
       const bool construct_TTi,
       std::vector<std::vector<std::vector<TTIndex> > > & TT,

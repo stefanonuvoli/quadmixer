@@ -19,17 +19,17 @@ IGL_INLINE bool igl::mosek::mosek_linprog(
   const Eigen::VectorXd & uc,
   const Eigen::VectorXd & lx,
   const Eigen::VectorXd & ux,
-  Eigen::VectorXd & x,
-  Eigen::VectorXd & slc,
-  Eigen::VectorXd & suc)
+  Eigen::VectorXd & x)
 {
   // variables for mosek task, env and result code
   MSKenv_t env;
   // Create the MOSEK environment
   mosek_guarded(MSK_makeenv(&env,NULL));
   // initialize mosek environment
+#if MSK_VERSION_MAJOR <= 7
   mosek_guarded(MSK_initenv(env));
-  const bool ret = mosek_linprog(c,A,lc,uc,lx,ux,env,x,slc,suc);
+#endif
+  const bool ret = mosek_linprog(c,A,lc,uc,lx,ux,env,x);
   MSK_deleteenv(&env);
   return ret;
 }
@@ -42,9 +42,7 @@ IGL_INLINE bool igl::mosek::mosek_linprog(
   const Eigen::VectorXd & lx,
   const Eigen::VectorXd & ux,
   const MSKenv_t & env,
-  Eigen::VectorXd & x,
-  Eigen::VectorXd & slc,
-  Eigen::VectorXd & suc)
+  Eigen::VectorXd & x)
 {
   // following http://docs.mosek.com/7.1/capi/Linear_optimization.html
   using namespace std;
@@ -79,11 +77,11 @@ IGL_INLINE bool igl::mosek::mosek_linprog(
     MSKboundkeye k = MSK_BK_FR;
     if(isfinite(lxj) && isfinite(uxj))
     {
-      if(lxj < uxj)
+      if(lxj == uxj)
       {
-        k = MSK_BK_RA;
-      }else{
         k = MSK_BK_FX;
+      }else{
+        k = MSK_BK_RA;
       }
     }else if(isfinite(lxj))
     {
@@ -94,8 +92,6 @@ IGL_INLINE bool igl::mosek::mosek_linprog(
     }
     return k;
   };
-
-  //mosek_guarded(mosek.iparam.optimizer,mosek.optimizertype.dual_simplex);
 
   // loop over variables
   for(int j = 0;j<n;j++)
@@ -127,70 +123,42 @@ IGL_INLINE bool igl::mosek::mosek_linprog(
   // loop over constraints
   for(int i = 0;i<m;i++)
   {
-//    // Set constraint bounds for row i
-//    const double lci = lc.size()>0?lc[i]:-numeric_limits<double>::infinity();
-//    const double uci = uc.size()>0?uc[i]: numeric_limits<double>::infinity();
-//    //mosek_guarded(MSK_putconbound(task,i,key(lci,uci),lci,uci));
-//    mosek_guarded(MSK_putconbound(task,i,MSK_BK_RA,lci,uci));
-
-      // Set constraint bounds for row i
-      const double lci = lc.size()>0?lc[i]:-numeric_limits<double>::infinity();
-      const double uci = uc.size()>0?uc[i]: numeric_limits<double>::infinity();
-
-      mosek_guarded(MSK_putconbound(task,i,key(lci,uci),lci,uci));
-      //mosek_guarded(MSK_putconbound(task,i,MSK_BK_RA,lci,uci));
+    // Set constraint bounds for row i
+    const double lci = lc.size()>0?lc[i]:-numeric_limits<double>::infinity();
+    const double uci = uc.size()>0?uc[i]: numeric_limits<double>::infinity();
+    mosek_guarded(MSK_putconbound(task,i,key(lci,uci),lci,uci));
   }
 
   // Now the optimizer has been prepared
   MSKrescodee trmcode;
-
-  //MSK_putobjsense(task, MSK_OBJECTIVE_SENSE_MINIMIZE);
-  //MSK_putparam(task,)
-  MSK_putintparam(task, MSK_IPAR_OPTIMIZER, MSK_OPTIMIZER_FREE);
-  //MSK_putintparam(task,MSK_IPAR_INTPNT_SOLVE_FORM,MSK_SOLVE_DUAL);
   // run the optimizer
   mosek_guarded(MSK_optimizetrm(task,&trmcode));
   // Get status
   MSKsolstae solsta;
   MSK_getsolsta (task,MSK_SOL_ITR,&solsta);
   bool success = false;
-
   switch(solsta)
   {
     case MSK_SOL_STA_OPTIMAL:   
     case MSK_SOL_STA_NEAR_OPTIMAL:
       x.resize(n);
-      slc.resize(m);
-      suc.resize(m);
       /* Request the basic solution. */ 
-      //MSK_getxx(task,MSK_SOL_BAS,x.data());
-
-      MSK_getsolution(task,MSK_SOL_ITR,NULL,NULL,NULL,
-                       NULL,NULL,NULL,x.data(),NULL,
-                       slc.data(),suc.data(),NULL,NULL,NULL);
-
-//      std::cout<<"SLC "<<std::endl;
-//      std::cout<<slc<<std::endl;
-//      std::cout<<"SUC "<<std::endl;
-//      std::cout<<suc<<std::endl;
-//      }
+      MSK_getxx(task,MSK_SOL_BAS,x.data()); 
       success = true;
       break;
     case MSK_SOL_STA_DUAL_INFEAS_CER:
     case MSK_SOL_STA_PRIM_INFEAS_CER:
     case MSK_SOL_STA_NEAR_DUAL_INFEAS_CER:
     case MSK_SOL_STA_NEAR_PRIM_INFEAS_CER:  
-      printf("Primal or dual infeasibility certificate found.\n");
+      //printf("Primal or dual infeasibility certificate found.\n");
       break;
     case MSK_SOL_STA_UNKNOWN:
-      printf("The status of the solution could not be determined.\n");
+      //printf("The status of the solution could not be determined.\n");
       break;
     default:
-      printf("Other solution status.");
+      //printf("Other solution status.");
       break;
   }
-
   MSK_deletetask(&task);
-
   return success;
 }

@@ -1,3 +1,4 @@
+#include <igl/opengl/gl.h>
 #include <igl/arap.h>
 #include <igl/biharmonic_coordinates.h>
 #include <igl/cat.h>
@@ -11,7 +12,7 @@
 #include <igl/remove_unreferenced.h>
 #include <igl/slice.h>
 #include <igl/writeDMAT.h>
-#include <igl/viewer/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
 #include <Eigen/Sparse>
 #include <iostream>
 #include <queue>
@@ -32,6 +33,9 @@ int main(int argc, char * argv[])
   using namespace Eigen;
   using namespace std;
   using namespace igl;
+  
+  // read the mesh, if the code is prepared outside of tutorial, the TUTORIAL_SHARED_PATH
+  // should be the data folder
   if(!readMESH(TUTORIAL_SHARED_PATH "/octopus-low.mesh",low.V,low.T,low.F))
   {
     cout<<"failed to load mesh"<<endl;
@@ -45,25 +49,43 @@ int main(int argc, char * argv[])
   {
     Eigen::VectorXi b;
     {
+      // this will create a vector from 0 to V.rows()-1 where the gap is 1
       Eigen::VectorXi J = Eigen::VectorXi::LinSpaced(high.V.rows(),0,high.V.rows()-1);
       Eigen::VectorXd sqrD;
       Eigen::MatrixXd _2;
       cout<<"Finding closest points..."<<endl;
+      // using J which is N by 1 instead of a matrix that represents faces of N by 3
+      // so that we will find the closest vertices istead of closest point on the face
+      // so far the two meshes are not seperated. So what we are really doing here
+      // is computing handles from low resolution and use that for the high resolution one
       igl::point_mesh_squared_distance(low.V,high.V,J,sqrD,b,_2);
       assert(sqrD.minCoeff() < 1e-7 && "low.V should exist in high.V");
     }
     // force perfect positioning, rather have popping in low-res than high-res.
     // The correct/elaborate thing to do is express original low.V in terms of
     // linear interpolation (or extrapolation) via elements in (high.V,high.F)
+
+    // this is to replace the vertices on low resolution
+    // with the vertices in high resolution. b is the list of vertices
+    // corresponding to the indices in high resolution which has closest
+    // distance to the points in low resolution
     igl::slice(high.V,b,1,low.V);
+
+
     // list of points --> list of singleton lists
     std::vector<std::vector<int> > S;
+    // S will hav size of low.V.rows() and each list inside will have 1 element
     igl::matrix_to_list(b,S);
     cout<<"Computing weights for "<<b.size()<<
       " handles at "<<high.V.rows()<<" vertices..."<<endl;
     // Technically k should equal 3 for smooth interpolation in 3d, but 2 is
     // faster and looks OK
     const int k = 2;
+
+    // using all the points in low resolution as handles for the region
+    // it will be too expansive to use all the points in high reolution as handles
+    // but since low and high resembles the same thing, using points in low reesolution
+    // will give you similar performance
     igl::biharmonic_coordinates(high.V,high.T,S,k,W);
     cout<<"Reindexing..."<<endl;
     // Throw away interior tet-vertices, keep weights and indices of boundary
@@ -96,41 +118,43 @@ int main(int argc, char * argv[])
   Eigen::SparseMatrix<double> M;
   igl::massmatrix(low.V,low.T,igl::MASSMATRIX_TYPE_DEFAULT,M);
   const size_t n = low.V.rows();
+  // f = ma
   arap_data.f_ext =  M * RowVector3d(0,-9.8,0).replicate(n,1);
   // Random initial velocities to wiggle things
   arap_data.vel = MatrixXd::Random(n,3);
   
-  igl::viewer::Viewer viewer;
+  igl::opengl::glfw::Viewer viewer;
   // Create one huge mesh containing both meshes
   igl::cat(1,low.U,high.U,scene.U);
+  // need to remap the indices since we cat the V matrices
   igl::cat(1,low.F,MatrixXi(high.F.array()+low.V.rows()),scene.F);
   // Color each mesh
-  viewer.data.set_mesh(scene.U,scene.F);
+  viewer.data().set_mesh(scene.U,scene.F);
   MatrixXd C(scene.F.rows(),3);
   C<<
     RowVector3d(0.8,0.5,0.2).replicate(low.F.rows(),1),
     RowVector3d(0.3,0.4,1.0).replicate(high.F.rows(),1);
-  viewer.data.set_colors(C);
+  viewer.data().set_colors(C);
 
   viewer.callback_key_pressed = 
-    [&](igl::viewer::Viewer & viewer,unsigned int key,int mods)->bool
+    [&](igl::opengl::glfw::Viewer & viewer,unsigned int key,int mods)->bool
   {
     switch(key)
     {
       default: 
         return false;
       case ' ':
-        viewer.core.is_animating = !viewer.core.is_animating;
+        viewer.core().is_animating = !viewer.core().is_animating;
         return true;
       case 'r':
         low.U = low.V;
         return true;
     }
   };
-  viewer.callback_pre_draw = [&](igl::viewer::Viewer & viewer)->bool
+  viewer.callback_pre_draw = [&](igl::opengl::glfw::Viewer & viewer)->bool
   {
     glEnable(GL_CULL_FACE);
-    if(viewer.core.is_animating)
+    if(viewer.core().is_animating)
     {
       arap_solve(MatrixXd(0,3),arap_data,low.U);
       for(int v = 0;v<low.U.rows();v++)
@@ -150,20 +174,20 @@ int main(int argc, char * argv[])
       high.U = W * (low.U.rowwise() + RowVector3d(1,0,0));
       scene.U.block(low.U.rows(),0,high.U.rows(),high.U.cols()) = high.U;
 
-      viewer.data.set_vertices(scene.U);
-      viewer.data.compute_normals();
+      viewer.data().set_vertices(scene.U);
+      viewer.data().compute_normals();
     }
     return false;
   };
-  viewer.core.show_lines = false;
-  viewer.core.is_animating = true;
-  viewer.core.animation_max_fps = 30.;
-  viewer.data.set_face_based(true);
+  viewer.data().show_lines = false;
+  viewer.core().is_animating = true;
+  viewer.core().animation_max_fps = 30.;
+  viewer.data().set_face_based(true);
   cout<<R"(
 [space] to toggle animation
 'r'     to reset positions 
       )";
-  viewer.core.rotation_type = 
-    igl::viewer::ViewerCore::ROTATION_TYPE_TWO_AXIS_VALUATOR_FIXED_UP;
+  viewer.core().rotation_type = 
+    igl::opengl::ViewerCore::ROTATION_TYPE_TWO_AXIS_VALUATOR_FIXED_UP;
   viewer.launch();
 }

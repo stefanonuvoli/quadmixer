@@ -8,6 +8,7 @@
 #ifndef IGL_FLIP_AVOIDING_LINE_SEARCH_H
 #define IGL_FLIP_AVOIDING_LINE_SEARCH_H
 #include "igl_inline.h"
+#include "PI.h"
 
 #include <Eigen/Dense>
 
@@ -35,7 +36,7 @@ namespace igl
   IGL_INLINE double flip_avoiding_line_search(
     const Eigen::MatrixXi F,
     Eigen::MatrixXd& cur_v,
-    Eigen::MatrixXd& dst_v,
+    const Eigen::MatrixXd& dst_v,
     std::function<double(Eigen::MatrixXd&)> energy,
     double cur_energy = -1);
 

@@ -34,27 +34,27 @@ namespace tri {
 */
 
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::VertexType &v) {return &v-&*m.vert.begin();}
+size_t Index(const MeshType &m, const typename MeshType::VertexType &v) {return &v-&*m.vert.begin();}
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::FaceType &f) {return &f-&*m.face.begin();}
+size_t Index(const MeshType &m, const typename MeshType::FaceType &f) {return &f-&*m.face.begin();}
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::EdgeType &e) {return &e-&*m.edge.begin();}
+size_t Index(const MeshType &m, const typename MeshType::EdgeType &e) {return &e-&*m.edge.begin();}
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::HEdgeType &h) {return &h-&*m.hedge.begin();}
+size_t Index(const MeshType &m, const typename MeshType::HEdgeType &h) {return &h-&*m.hedge.begin();}
 template <class MeshType>
-size_t Index(MeshType &m, const typename MeshType::TetraType &t) { return &t - &*m.tetra.begin(); }
+size_t Index(const MeshType &m, const typename MeshType::TetraType &t) { return &t - &*m.tetra.begin(); }
 
 
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::VertexType *vp) {return vp-&*m.vert.begin();}
+size_t Index(const MeshType &m, const typename MeshType::VertexType *vp) {return vp-&*m.vert.begin();}
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::FaceType * fp) {return fp-&*m.face.begin();}
+size_t Index(const MeshType &m, const typename MeshType::FaceType * fp) {return fp-&*m.face.begin();}
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::EdgeType*  e) {return e-&*m.edge.begin();}
+size_t Index(const MeshType &m, const typename MeshType::EdgeType*  e) {return e-&*m.edge.begin();}
 template<class MeshType>
-size_t Index(MeshType &m, const typename MeshType::HEdgeType*  h) {return h-&*m.hedge.begin();}
+size_t Index(const MeshType &m, const typename MeshType::HEdgeType*  h) {return h-&*m.hedge.begin();}
 template <class MeshType>
-size_t Index(MeshType &m, const typename MeshType::TetraType *t) { return t - &*m.tetra.begin(); }
+size_t Index(const MeshType &m, const typename MeshType::TetraType *t) { return t - &*m.tetra.begin(); }
 
 
 template<class MeshType>
@@ -1330,7 +1330,7 @@ public:
           m.tetra[pos].ImportData(m.tetra[i]);
           //import vertex refs
           for (int j = 0; j < 4; ++j)
-            m.tetra[pos].V(j) = m.tetra[i].cV(j);
+            m.tetra[pos].V(j) = m.tetra[i].V(j);
           //import VT adj
           if (HasVTAdjacency(m))
             for (int j = 0; j < 4; ++j)
@@ -1675,7 +1675,7 @@ public:
     typename std::set<PointerToAttribute > ::iterator i;
     for( i = m.edge_attr.begin(); i !=  m.edge_attr.end(); ++i)
       if( (*i)._handle == h._handle ){
-        delete ((SimpleTempData<FaceContainer,ATTR_TYPE>*)(*i)._handle);
+        delete ((SimpleTempData<EdgeContainer,ATTR_TYPE>*)(*i)._handle);
         m.edge_attr.erase(i);
         return;}
   }

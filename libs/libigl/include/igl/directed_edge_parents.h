@@ -13,7 +13,7 @@
 
 namespace igl
 {
-  // Recover "parents" (preceeding edges) in a tree given just directed edges.
+  // Recover "parents" (preceding edges) in a tree given just directed edges.
   //
   // Inputs:
   //   E  #E by 2 list of directed edges
@@ -22,7 +22,7 @@ namespace igl
   //
   template <typename DerivedE, typename DerivedP>
   IGL_INLINE void directed_edge_parents(
-    const Eigen::PlainObjectBase<DerivedE> & E,
+    const Eigen::MatrixBase<DerivedE> & E,
     Eigen::PlainObjectBase<DerivedP> & P);
 }
 

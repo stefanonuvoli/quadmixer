@@ -13,6 +13,7 @@
 
 #include <Eigen/Core>
 #include <string>
+#include <vector>
 
 namespace igl 
 {
@@ -38,17 +39,29 @@ namespace igl
     typename DerivedFTC>
   IGL_INLINE bool writeOBJ(
     const std::string str,
-    const Eigen::PlainObjectBase<DerivedV>& V,
-    const Eigen::PlainObjectBase<DerivedF>& F,
-    const Eigen::PlainObjectBase<DerivedCN>& CN,
-    const Eigen::PlainObjectBase<DerivedFN>& FN,
-    const Eigen::PlainObjectBase<DerivedTC>& TC,
-    const Eigen::PlainObjectBase<DerivedFTC>& FTC);
+    const Eigen::MatrixBase<DerivedV>& V,
+    const Eigen::MatrixBase<DerivedF>& F,
+    const Eigen::MatrixBase<DerivedCN>& CN,
+    const Eigen::MatrixBase<DerivedFN>& FN,
+    const Eigen::MatrixBase<DerivedTC>& TC,
+    const Eigen::MatrixBase<DerivedFTC>& FTC);
   template <typename DerivedV, typename DerivedF>
   IGL_INLINE bool writeOBJ(
     const std::string str,
-    const Eigen::PlainObjectBase<DerivedV>& V,
-    const Eigen::PlainObjectBase<DerivedF>& F);
+    const Eigen::MatrixBase<DerivedV>& V,
+    const Eigen::MatrixBase<DerivedF>& F);
+
+  // Write a mesh of mixed tris and quads to an ascii obj file
+  // Inputs:
+  //   str  path to outputfile
+  //   V  #V by 3 mesh vertex positions
+  //   F  #F std::vector of std::vector<Index> of size 3 or 4 mesh indices into V
+  // Returns true on success, false on error
+  template <typename DerivedV, typename T>
+  IGL_INLINE bool writeOBJ(
+    const std::string &str,
+    const Eigen::MatrixBase<DerivedV>& V,
+    const std::vector<std::vector<T> >& F);
 
 }
 

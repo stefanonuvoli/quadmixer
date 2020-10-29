@@ -1,74 +1,31 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.1)
 project(libigl_tutorials)
-message(STATUS "CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
-message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 
-### libIGL options: choose between header only and compiled static library
+### Conditionally compile certain modules depending on libraries found on the system
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
+
+### Compile libigl in header-only mode for Python bindings
 option(LIBIGL_USE_STATIC_LIBRARY "Use LibIGL as static library" ON)
-option(LIBIGL_WITH_VIEWER      "Use OpenGL viewer"  ON)
-option(LIBIGL_WITH_NANOGUI     "Use Nanogui menu"   OFF)
 
-### libIGL options: choose your dependencies (by default everything is OFF, in this example we need the viewer) ###
-find_package(CGAL QUIET)
-option(LIBIGL_WITH_CGAL             "Use CGAL"           "${CGAL_FOUND}")
-option(LIBIGL_WITH_COMISO           "Use CoMiso"         ON)
-option(LIBIGL_WITH_CORK             "Use CORK"           OFF)
-option(LIBIGL_WITH_EMBREE           "Use Embree"         ON)
-option(LIBIGL_WITH_LIM              "Use LIM"            ON)
-find_package(MATLAB QUIET)
-option(LIBIGL_WITH_MATLAB           "Use Matlab"         "${MATLAB_FOUND}")
-option(LIBIGL_WITH_MOSEK            "Use MOSEK"          "${MOSEK_FOUND}")
-option(LIBIGL_WITH_OPENGL           "Use OpenGL"         ON)
-option(LIBIGL_WITH_OPENGL_GLFW      "Use OpenGL GLFW"    ON)
-option(LIBIGL_WITH_PNG              "Use PNG"            ON)
-option(LIBIGL_WITH_TETGEN           "Use Tetgen"         ON)
-option(LIBIGL_WITH_TRIANGLE         "Use Triangle"       ON)
-option(LIBIGL_WITH_XML              "Use XML"            ON)
-### End   to be tested ----
-
-### libIGL options: decide if you want to use the functionalities that depends on cgal
-if(LIBIGL_WITH_CGAL) # Do not remove or move this block, cgal strange build system fails without it
-  find_package(CGAL REQUIRED)
-  set(CGAL_DONT_OVERRIDE_CMAKE_FLAGS TRUE CACHE BOOL "CGAL's CMAKE Setup is super annoying ")
-  include(${CGAL_USE_FILE})
+### Adding libIGL: choose the path to your local copy libIGL
+if(NOT TARGET igl_common)
+  include(libigl)
+else()
+  include(LibiglDownloadExternal)
 endif()
 
-### Adding libIGL: choose the path to your local copy libIGL ###
-### This is going to compile everything you requested ###
-add_subdirectory("${PROJECT_SOURCE_DIR}/../shared/cmake" "libigl")
-
+### Download data
+igl_download_tutorial_data()
 
 ### Output directories
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-
-### Compilation flags: adapt to your needs ###
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /bigobj") ### Enable parallel compilation
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR} )
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR} )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w") # disable all warnings (not ideal but...)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR})
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR})
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") #### Libigl requires a modern C++ compiler that supports c++11
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w") # disable all warnings (not ideal but...)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
 
-# Enable openMP if possible
-#find_package(OpenMP)
-#if (OPENMP_FOUND AND NOT WIN32)
-#  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-#  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-#endif()
-
-
-### Prepare the build environment
-
-include_directories(${LIBIGL_INCLUDE_DIRS})
-add_definitions(${LIBIGL_DEFINITIONS})
-
-### Choose which chapters to compile ###
+### Choose which chapters to compile
 option(TUTORIALS_CHAPTER1 "Compile chapter 1" ON)
 option(TUTORIALS_CHAPTER2 "Compile chapter 2" ON)
 option(TUTORIALS_CHAPTER3 "Compile chapter 3" ON)
@@ -78,19 +35,36 @@ option(TUTORIALS_CHAPTER6 "Compile chapter 6" ON)
 option(TUTORIALS_CHAPTER7 "Compile chapter 7" ON)
 
 # Store location of tutorial/shared directory
-set(TUTORIAL_SHARED_PATH ${CMAKE_CURRENT_SOURCE_DIR}/shared CACHE PATH "location of shared tutorial resources")
-add_definitions("-DTUTORIAL_SHARED_PATH=\"${TUTORIAL_SHARED_PATH}\"")
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+set(TUTORIAL_SHARED_PATH ${LIBIGL_EXTERNAL}/../tutorial/data CACHE PATH "location of shared tutorial resources")
+add_library(tutorials INTERFACE)
+target_compile_definitions(tutorials INTERFACE "-DTUTORIAL_SHARED_PATH=\"${TUTORIAL_SHARED_PATH}\"")
+target_include_directories(tutorials INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Chapter 1
 if(TUTORIALS_CHAPTER1)
   add_subdirectory("101_FileIO")
+endif()
+
+#######################
+if(NOT (LIBIGL_WITH_OPENGL AND LIBIGL_WITH_OPENGL_GLFW) )
+  message(WARNING "Most tutorial executables depend on OpenGL and glfw. Use `cmake ../ -DLIBIGL_WITH_OPENGL=ON -DLIBIGL_WITH_OPENGL_GLFW=ON`")
+  return()
+endif()
+
+if(TUTORIALS_CHAPTER1)
   add_subdirectory("102_DrawMesh")
   add_subdirectory("103_Events")
   add_subdirectory("104_Colors")
-  add_subdirectory("105_Overlays")
-  add_subdirectory("106_ViewerMenu")
+  if(LIBIGL_WITH_OPENGL_GLFW_IMGUI)
+    add_subdirectory("105_Overlays")
+    add_subdirectory("106_ViewerMenu")
+  endif()
+  add_subdirectory("107_MultipleMeshes")
+  add_subdirectory("108_MultipleViews")
+  if(LIBIGL_WITH_OPENGL_GLFW_IMGUI)
+    add_subdirectory("109_ImGuizmo")
+  endif()
+  add_subdirectory("110_MshView")
 endif()
 
 # Chapter 2
@@ -100,6 +74,7 @@ if(TUTORIALS_CHAPTER2)
   add_subdirectory("203_CurvatureDirections")
   add_subdirectory("204_Gradient")
   add_subdirectory("205_Laplacian")
+  add_subdirectory("206_GeodesicDistance")
 endif()
 
 # Chapter 3
@@ -121,6 +96,8 @@ if(TUTORIALS_CHAPTER4)
   add_subdirectory("405_AsRigidAsPossible")
   add_subdirectory("406_FastAutomaticSkinningTransformations")
   add_subdirectory("407_BiharmonicCoordinates")
+  add_subdirectory("408_DirectDeltaMush")
+  add_subdirectory("409_Kelvinlets")
 endif()
 
 # Chapter 5
@@ -133,11 +110,7 @@ if(TUTORIALS_CHAPTER5)
     add_subdirectory("505_MIQ")
     add_subdirectory("506_FrameField")
   endif()
-  add_subdirectory("507_PolyVectorField")
-  add_subdirectory("508_ConjugateField")
-  add_subdirectory("509_Planarization")
-  add_subdirectory("510_Integrable")
-  add_subdirectory("511_PolyVectorFieldGeneral")
+  add_subdirectory("507_Planarization")
 endif()
 
 # Chapter 6
@@ -160,9 +133,6 @@ if(TUTORIALS_CHAPTER6)
   if(LIBIGL_WITH_PNG)
     add_subdirectory("607_ScreenCapture")
   endif()
-  if(LIBIGL_WITH_LIM)
-    add_subdirectory("608_LIM")
-  endif()
   if(LIBIGL_WITH_CGAL)
     add_subdirectory("609_Boolean")
     add_subdirectory("610_CSGTree")
@@ -181,9 +151,24 @@ if(TUTORIALS_CHAPTER7)
   endif()
   add_subdirectory("707_SweptVolume")
   add_subdirectory("708_Picking")
-  if(LIBIGL_WITH_COMISO)
-    add_subdirectory("709_VectorFieldVisualizer")
+  add_subdirectory("709_SLIM")
+  if(LIBIGL_WITH_TRIANGLE)
+  add_subdirectory("710_SCAF")
   endif()
-  add_subdirectory("710_SLIM")
   add_subdirectory("711_Subdivision")
+  add_subdirectory("712_DataSmoothing")
+  add_subdirectory("713_ShapeUp")
+  if(LIBIGL_WITH_TETGEN)
+    add_subdirectory("714_MarchingTets")
+  endif()
+  add_subdirectory("715_MeshImplicitFunction")
+  add_subdirectory("716_HeatGeodesics")
+  if(LIBIGL_WITH_CGAL)
+    add_subdirectory("717_FastWindingNumber")
+  endif()
+  add_subdirectory("718_IterativeClosestPoint")
+  add_subdirectory("719_ExplodedView")
+  add_subdirectory("720_BlueNoise")
+  add_subdirectory("721_VectorFieldSmoothing")
+  add_subdirectory("722_VectorParallelTransport")
 endif()

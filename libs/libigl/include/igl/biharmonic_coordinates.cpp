@@ -7,8 +7,11 @@
 // obtain one at http://mozilla.org/MPL/2.0/.
 #include "biharmonic_coordinates.h"
 #include "cotmatrix.h"
+#include "sum.h"
 #include "massmatrix.h"
 #include "min_quad_with_fixed.h"
+#include "crouzeix_raviart_massmatrix.h"
+#include "crouzeix_raviart_cotmatrix.h"
 #include "normal_derivative.h"
 #include "on_boundary.h"
 #include <Eigen/Sparse>
@@ -19,8 +22,8 @@ template <
   typename SType,
   typename DerivedW>
 IGL_INLINE bool igl::biharmonic_coordinates(
-  const Eigen::PlainObjectBase<DerivedV> & V,
-  const Eigen::PlainObjectBase<DerivedT> & T,
+  const Eigen::MatrixBase<DerivedV> & V,
+  const Eigen::MatrixBase<DerivedT> & T,
   const std::vector<std::vector<SType> > & S,
   Eigen::PlainObjectBase<DerivedW> & W)
 {
@@ -33,25 +36,36 @@ template <
   typename SType,
   typename DerivedW>
 IGL_INLINE bool igl::biharmonic_coordinates(
-  const Eigen::PlainObjectBase<DerivedV> & V,
-  const Eigen::PlainObjectBase<DerivedT> & T,
+  const Eigen::MatrixBase<DerivedV> & V,
+  const Eigen::MatrixBase<DerivedT> & T,
   const std::vector<std::vector<SType> > & S,
   const int k,
   Eigen::PlainObjectBase<DerivedW> & W)
 {
   using namespace Eigen;
   using namespace std;
+
+  typedef typename DerivedV::Scalar Scalar;
+  typedef typename DerivedT::Scalar Integer;
+
   // This is not the most efficient way to build A, but follows "Linear
   // Subspace Design for Real-Time Shape Deformation" [Wang et al. 2015].
-  SparseMatrix<double> A;
+  SparseMatrix<Scalar> A;
   {
-    SparseMatrix<double> N,Z,L,K,M;
-    normal_derivative(V,T,N);
-    Array<bool,Dynamic,1> I;
+    DiagonalMatrix<Scalar, Dynamic> Minv;
+    SparseMatrix<Scalar> L, K;
     Array<bool,Dynamic,Dynamic> C;
-    on_boundary(T,I,C);
     {
-      std::vector<Triplet<double> >ZIJV;
+      Array<bool,Dynamic,1> I;
+      on_boundary(T,I,C);
+    }
+#ifdef false
+    // Version described in paper is "wrong"
+    // http://www.cs.toronto.edu/~jacobson/images/error-in-linear-subspace-design-for-real-time-shape-deformation-2017-wang-et-al.pdf
+    SparseMatrix<Scalar> N, Z, M;
+    normal_derivative(V,T,N);
+    {
+      std::vector<Triplet<Scalar>> ZIJV;
       for(int t =0;t<T.rows();t++)
       {
         for(int f =0;f<T.cols();f++)
@@ -74,9 +88,51 @@ IGL_INLINE bool igl::biharmonic_coordinates(
     K = N+L;
     massmatrix(V,T,MASSMATRIX_TYPE_DEFAULT,M);
     // normalize
-    M /= ((VectorXd)M.diagonal()).array().abs().maxCoeff();
-    DiagonalMatrix<double,Dynamic> Minv =
-      ((VectorXd)M.diagonal().array().inverse()).asDiagonal();
+    M /= ((Matrix<Scalar, Dynamic, 1>)M.diagonal()).array().abs().maxCoeff();
+    Minv =
+      ((Matrix<Scalar, Dynamic, 1>)M.diagonal().array().inverse()).asDiagonal();
+#else
+    Eigen::SparseMatrix<Scalar> M;
+    Eigen::Matrix<Integer, Dynamic, Dynamic> E;
+    Eigen::Matrix<Integer, Dynamic, 1> EMAP;
+    crouzeix_raviart_massmatrix(V,T,M,E,EMAP);
+    crouzeix_raviart_cotmatrix(V,T,E,EMAP,L);
+    // Ad  #E by #V facet-vertex incidence matrix
+    Eigen::SparseMatrix<Scalar> Ad(E.rows(),V.rows());
+    {
+      std::vector<Eigen::Triplet<Scalar>> AIJV(E.size());
+      for(int e = 0;e<E.rows();e++)
+      {
+        for(int c = 0;c<E.cols();c++)
+        {
+          AIJV[e + c * E.rows()] = Eigen::Triplet<Scalar>(e, E(e, c), 1);
+        }
+      }
+      Ad.setFromTriplets(AIJV.begin(),AIJV.end());
+    }
+    // Degrees
+    Eigen::Matrix<Scalar, Dynamic, 1> De;
+    sum(Ad,2,De);
+    Eigen::DiagonalMatrix<Scalar,Eigen::Dynamic> De_diag =
+      De.array().inverse().matrix().asDiagonal();
+    K = L*(De_diag*Ad);
+    // normalize
+    M /= ((Matrix<Scalar, Dynamic, 1>)M.diagonal()).array().abs().maxCoeff();
+    Minv = ((Matrix<Scalar, Dynamic, 1>)M.diagonal().array().inverse()).asDiagonal();
+    // kill boundary edges
+    for(int f = 0;f<T.rows();f++)
+    {
+      for(int c = 0;c<T.cols();c++)
+      {
+        if(C(f,c))
+        {
+          const int e = EMAP(f+T.rows()*c);
+          Minv.diagonal()(e) = 0;
+        }
+      }
+    }
+
+#endif
     switch(k)
     {
       default:
@@ -107,9 +163,9 @@ IGL_INLINE bool igl::biharmonic_coordinates(
   }
   const size_t dim = T.cols()-1;
   // Might as well be dense... I think...
-  MatrixXd J = MatrixXd::Zero(mp+mr,mp+r*(dim+1));
-  VectorXi b(mp+mr);
-  MatrixXd H(mp+r*(dim+1),dim);
+  Matrix<Scalar, Dynamic, Dynamic> J = Matrix<Scalar, Dynamic, Dynamic>::Zero(mp+mr,mp+r*(dim+1));
+  Matrix<Integer, Dynamic, 1> b(mp+mr);
+  Matrix<Scalar, Dynamic, Dynamic> H(mp+r*(dim+1),dim);
   {
     int v = 0;
     int c = 0;
@@ -142,10 +198,10 @@ IGL_INLINE bool igl::biharmonic_coordinates(
   // minimize    ½ W' A W'
   // subject to  W(b,:) = J
   return min_quad_with_fixed(
-    A,VectorXd::Zero(A.rows()).eval(),b,J,SparseMatrix<double>(),VectorXd(),true,W);
+    A,Matrix<Scalar, Dynamic, 1>::Zero(A.rows()).eval(),b,J,SparseMatrix<Scalar>(),Matrix<Scalar, Dynamic, 1>(),true,W);
 }
 
 #ifdef IGL_STATIC_LIBRARY
 // Explicit template instantiation
-template bool igl::biharmonic_coordinates<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, int, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, std::vector<std::vector<int, std::allocator<int> >, std::allocator<std::vector<int, std::allocator<int> > > > const&, int, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
+template bool igl::biharmonic_coordinates<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, int, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, std::vector<std::vector<int, std::allocator<int> >, std::allocator<std::vector<int, std::allocator<int> > > > const&, int, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
 #endif

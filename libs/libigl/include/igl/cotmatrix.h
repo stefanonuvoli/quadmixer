@@ -16,7 +16,7 @@
 //  Used const references rather than copying the entire mesh 
 //    Alec 9 October 2011
 //  removed cotan (uniform weights) optional parameter it was building a buggy
-//    half of the uniform laplacian, please see adjacency_matrix istead 
+//    half of the uniform laplacian, please see adjacency_matrix instead 
 //    Alec 9 October 2011
 
 namespace igl 
@@ -32,7 +32,7 @@ namespace igl
   //   Scalar  scalar type for eigen sparse matrix (e.g. double)
   // Inputs:
   //   V  #V by dim list of mesh vertex positions
-  //   F  #F by simplex_size list of mesh faces (must be triangles)
+  //   F  #F by simplex_size list of mesh elements (triangles or tetrahedra)
   // Outputs: 
   //   L  #V by #V cotangent matrix, each row i corresponding to V(i,:)
   //

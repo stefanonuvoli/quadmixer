@@ -2,7 +2,7 @@
 #include <igl/harmonic.h>
 #include <igl/readOBJ.h>
 #include <igl/readDMAT.h>
-#include <igl/viewer/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
 #include <algorithm>
 #include <iostream>
 #include "tutorial_shared_path.h"
@@ -15,11 +15,11 @@ Eigen::VectorXd Z;
 Eigen::MatrixXi F;
 Eigen::VectorXi b;
 
-bool pre_draw(igl::viewer::Viewer & viewer)
+bool pre_draw(igl::opengl::glfw::Viewer & viewer)
 {
   using namespace Eigen;
   // Determine boundary conditions
-  if(viewer.core.is_animating)
+  if(viewer.core().is_animating)
   {
     bc_frac += bc_dir;
     bc_dir *= (bc_frac>=1.0 || bc_frac<=0.0?-1.0:1.0);
@@ -36,17 +36,17 @@ bool pre_draw(igl::viewer::Viewer & viewer)
   {
     igl::harmonic(V,F,b,U_bc_anim,2.,U);
   }
-  viewer.data.set_vertices(U);
-  viewer.data.compute_normals();
+  viewer.data().set_vertices(U);
+  viewer.data().compute_normals();
   return false;
 }
 
-bool key_down(igl::viewer::Viewer &viewer, unsigned char key, int mods)
+bool key_down(igl::opengl::glfw::Viewer &viewer, unsigned char key, int mods)
 {
   switch(key)
   {
     case ' ':
-      viewer.core.is_animating = !viewer.core.is_animating;
+      viewer.core().is_animating = !viewer.core().is_animating;
       return true;
     case 'D':
     case 'd':
@@ -109,16 +109,16 @@ int main(int argc, char *argv[])
   }
 
   // Plot the mesh with pseudocolors
-  igl::viewer::Viewer viewer;
-  viewer.data.set_mesh(U, F);
-  viewer.core.show_lines = false;
-  viewer.data.set_colors(C);
-  viewer.core.trackball_angle = Eigen::Quaternionf(sqrt(2.0),0,sqrt(2.0),0);
-  viewer.core.trackball_angle.normalize();
+  igl::opengl::glfw::Viewer viewer;
+  viewer.data().set_mesh(U, F);
+  viewer.data().show_lines = false;
+  viewer.data().set_colors(C);
+  viewer.core().trackball_angle = Eigen::Quaternionf(sqrt(2.0),0,sqrt(2.0),0);
+  viewer.core().trackball_angle.normalize();
   viewer.callback_pre_draw = &pre_draw;
   viewer.callback_key_down = &key_down;
-  //viewer.core.is_animating = true;
-  viewer.core.animation_max_fps = 30.;
+  //viewer.core().is_animating = true;
+  viewer.core().animation_max_fps = 30.;
   cout<<
     "Press [space] to toggle deformation."<<endl<<
     "Press 'd' to toggle between biharmonic surface or displacements."<<endl;

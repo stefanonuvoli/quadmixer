@@ -81,7 +81,7 @@ IGL_INLINE void igl::copyleft::cgal::point_mesh_squared_distance_precompute(
   // accelerate_distance_queries doesn't seem actually to do _all_ of the
   // precomputation. the tree (despite being const) will still do more
   // precomputation and reorganizing on the first call of `closest_point` or
-  // `closest_point_and_primitive`. Therefor, call it once here.
+  // `closest_point_and_primitive`. Therefore, call it once here.
   tree.closest_point_and_primitive(Point_3(0,0,0));
 }
 
@@ -134,4 +134,6 @@ IGL_INLINE void igl::copyleft::cgal::point_mesh_squared_distance(
 #ifdef IGL_STATIC_LIBRARY
 // Explicit template instantiation
 template void igl::copyleft::cgal::point_mesh_squared_distance<CGAL::Epeck, Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, 1, 0, -1, 1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 1, 0, -1, 1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> >&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
+template void igl::copyleft::cgal::point_mesh_squared_distance<CGAL::Epeck,   Eigen::Matrix<CGAL::Lazy_exact_nt<CGAL::Gmpq>, -1, 3, 0, -1, 3>,   Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1,   -1>, Eigen::Matrix<CGAL::Lazy_exact_nt<CGAL::Gmpq>, -1, 1, 0, -1, 1>,   Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<double, -1, -1, 0, -1, -1>   >(Eigen::PlainObjectBase<Eigen::Matrix<CGAL::Lazy_exact_nt<CGAL::Gmpq>, -1, 3,   0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0,   -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1>   > const&,   Eigen::PlainObjectBase<Eigen::Matrix<CGAL::Lazy_exact_nt<CGAL::Gmpq>, -1, 1,   0, -1, 1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> >&,   Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
+template void igl::copyleft::cgal::point_mesh_squared_distance_precompute<CGAL::Simple_cartesian<double>, Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, CGAL::AABB_tree<CGAL::AABB_traits<CGAL::Simple_cartesian<double>, CGAL::AABB_triangle_primitive<CGAL::Simple_cartesian<double>, std::vector<CGAL::Triangle_3<CGAL::Simple_cartesian<double> >, std::allocator<CGAL::Triangle_3<CGAL::Simple_cartesian<double> > > >::iterator, CGAL::Boolean_tag<false> >, CGAL::Default> >&, std::vector<CGAL::Triangle_3<CGAL::Simple_cartesian<double> >, std::allocator<CGAL::Triangle_3<CGAL::Simple_cartesian<double> > > >&);
 #endif

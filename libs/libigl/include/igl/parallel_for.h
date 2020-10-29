@@ -10,6 +10,9 @@
 #include "igl_inline.h"
 #include <functional>
 
+//#warning "Defining IGL_PARALLEL_FOR_FORCE_SERIAL"
+//#define IGL_PARALLEL_FOR_FORCE_SERIAL
+
 namespace igl
 {
   // PARALLEL_FOR Functional implementation of a basic, open-mp style, parallel
@@ -28,7 +31,7 @@ namespace igl
   //
   // Inputs:
   //   loop_size  number of iterations. I.e. for(int i = 0;i<loop_size;i++) ...
-  //   func  function handle taking iteration index as only arguement to compute
+  //   func  function handle taking iteration index as only argument to compute
   //     inner block of for loop I.e. for(int i ...){ func(i); }
   //   min_parallel  min size of loop_size such that parallel (non-serial)
   //     thread pooling should be attempted {0}
@@ -62,7 +65,7 @@ namespace igl
   //   prep_func function handle taking n >= number of threads as only
   //     argument 
   //   func  function handle taking iteration index i and thread id t as only
-  //     arguements to compute inner block of for loop I.e. 
+  //     arguments to compute inner block of for loop I.e. 
   //     for(int i ...){ func(i,t); }
   //   accum_func  function handle taking thread index as only argument, to be
   //     called after all calls of func, e.g., for serial accumulation across

@@ -13,14 +13,15 @@
 
 #include "comb_frame_field.h"
 #include "local_basis.h"
+#include "PI.h"
 
 template <typename DerivedV, typename DerivedF, typename DerivedP>
-IGL_INLINE void igl::comb_frame_field(const Eigen::PlainObjectBase<DerivedV> &V,
-                                      const Eigen::PlainObjectBase<DerivedF> &F,
-                                      const Eigen::PlainObjectBase<DerivedP> &PD1,
-                                      const Eigen::PlainObjectBase<DerivedP> &PD2,
-                                      const Eigen::PlainObjectBase<DerivedP> &BIS1_combed,
-                                      const Eigen::PlainObjectBase<DerivedP> &BIS2_combed,
+IGL_INLINE void igl::comb_frame_field(const Eigen::MatrixBase<DerivedV> &V,
+                                      const Eigen::MatrixBase<DerivedF> &F,
+                                      const Eigen::MatrixBase<DerivedP> &PD1,
+                                      const Eigen::MatrixBase<DerivedP> &PD2,
+                                      const Eigen::MatrixBase<DerivedP> &BIS1_combed,
+                                      const Eigen::MatrixBase<DerivedP> &BIS2_combed,
                                       Eigen::PlainObjectBase<DerivedP> &PD1_combed,
                                       Eigen::PlainObjectBase<DerivedP> &PD2_combed)
 {
@@ -49,9 +50,9 @@ IGL_INLINE void igl::comb_frame_field(const Eigen::PlainObjectBase<DerivedV> &V,
     {
       a[j] = atan2(B2.row(i).dot(DIRs.row(j)),B1.row(i).dot(DIRs.row(j))) - a_combed;
       //make it positive by adding some multiple of 2pi
-      a[j] += std::ceil (std::max(0., -a[j]) / (M_PI*2.)) * (M_PI*2.);
+      a[j] += std::ceil (std::max(0., -a[j]) / (igl::PI*2.)) * (igl::PI*2.);
       //take modulo 2pi
-      a[j] = fmod(a[j], (M_PI*2.));
+      a[j] = fmod(a[j], (igl::PI*2.));
     }
     // now the max is u and the min is v
 
@@ -68,14 +69,10 @@ IGL_INLINE void igl::comb_frame_field(const Eigen::PlainObjectBase<DerivedV> &V,
     PD2_combed.row(i) = DIRs.row(M);
 
   }
-
-
-  //    PD1_combed = BIS1_combed;
-  //    PD2_combed = BIS2_combed;
 }
 
 #ifdef IGL_STATIC_LIBRARY
 // Explicit template instantiation
-template void igl::comb_frame_field<Eigen::Matrix<double, -1, 3, 0, -1, 3>, Eigen::Matrix<int, -1, 3, 0, -1, 3>, Eigen::Matrix<double, -1, 3, 0, -1, 3> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> >&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> >&);
-template void igl::comb_frame_field<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
+template void igl::comb_frame_field<Eigen::Matrix<double, -1, 3, 0, -1, 3>, Eigen::Matrix<int, -1, 3, 0, -1, 3>, Eigen::Matrix<double, -1, 3, 0, -1, 3> >(Eigen::MatrixBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, 3, 0, -1, 3> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> >&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, 3, 0, -1, 3> >&);
+template void igl::comb_frame_field<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
 #endif

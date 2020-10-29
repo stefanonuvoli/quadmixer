@@ -49,10 +49,10 @@ namespace igl
         typename DerivedFC,
         typename DerivedJ>
       IGL_INLINE bool mesh_boolean(
-        const Eigen::PlainObjectBase<DerivedVA > & VA,
-        const Eigen::PlainObjectBase<DerivedFA > & FA,
-        const Eigen::PlainObjectBase<DerivedVB > & VB,
-        const Eigen::PlainObjectBase<DerivedFB > & FB,
+        const Eigen::MatrixBase<DerivedVA > & VA,
+        const Eigen::MatrixBase<DerivedFA > & FA,
+        const Eigen::MatrixBase<DerivedVB > & VB,
+        const Eigen::MatrixBase<DerivedFB > & FB,
         const MeshBooleanType & type,
         Eigen::PlainObjectBase<DerivedVC > & VC,
         Eigen::PlainObjectBase<DerivedFC > & FC,
@@ -66,10 +66,10 @@ namespace igl
         typename DerivedFC,
         typename DerivedJ>
       IGL_INLINE bool mesh_boolean(
-        const Eigen::PlainObjectBase<DerivedVA > & VA,
-        const Eigen::PlainObjectBase<DerivedFA > & FA,
-        const Eigen::PlainObjectBase<DerivedVB > & VB,
-        const Eigen::PlainObjectBase<DerivedFB > & FB,
+        const Eigen::MatrixBase<DerivedVA > & VA,
+        const Eigen::MatrixBase<DerivedFA > & FA,
+        const Eigen::MatrixBase<DerivedVB > & VB,
+        const Eigen::MatrixBase<DerivedFB > & FB,
         const std::string & type_str,
         Eigen::PlainObjectBase<DerivedVC > & VC,
         Eigen::PlainObjectBase<DerivedFC > & FC,
@@ -102,10 +102,10 @@ namespace igl
         typename DerivedFC,
         typename DerivedJ>
       IGL_INLINE bool mesh_boolean(
-          const Eigen::PlainObjectBase<DerivedVA> & VA,
-          const Eigen::PlainObjectBase<DerivedFA> & FA,
-          const Eigen::PlainObjectBase<DerivedVB> & VB,
-          const Eigen::PlainObjectBase<DerivedFB> & FB,
+          const Eigen::MatrixBase<DerivedVA> & VA,
+          const Eigen::MatrixBase<DerivedFA> & FA,
+          const Eigen::MatrixBase<DerivedVB> & VB,
+          const Eigen::MatrixBase<DerivedFB> & FB,
           const std::function<int(const Eigen::Matrix<int,1,Eigen::Dynamic>) >& wind_num_op,
           const std::function<int(const int, const int)> & keep,
           Eigen::PlainObjectBase<DerivedVC > & VC,
@@ -145,6 +145,19 @@ namespace igl
           Eigen::PlainObjectBase<DerivedVC > & VC,
           Eigen::PlainObjectBase<DerivedFC > & FC,
           Eigen::PlainObjectBase<DerivedJ > & J);
+      template <
+        typename DerivedV,
+        typename DerivedF,
+        typename DerivedVC,
+        typename DerivedFC,
+        typename DerivedJ>
+      IGL_INLINE bool mesh_boolean(
+          const std::vector<DerivedV > & Vlist,
+          const std::vector<DerivedF > & Flist,
+          const MeshBooleanType & type,
+          Eigen::PlainObjectBase<DerivedVC > & VC,
+          Eigen::PlainObjectBase<DerivedFC > & FC,
+          Eigen::PlainObjectBase<DerivedJ > & J);
       // Given a merged mesh (V,F) and list of sizes of inputs
       //
       // Inputs:
@@ -171,9 +184,9 @@ namespace igl
         typename DerivedFC,
         typename DerivedJ>
       IGL_INLINE bool mesh_boolean(
-          const Eigen::PlainObjectBase<DerivedVV > & VV,
-          const Eigen::PlainObjectBase<DerivedFF > & FF,
-          const Eigen::PlainObjectBase<Derivedsizes> & sizes,
+          const Eigen::MatrixBase<DerivedVV > & VV,
+          const Eigen::MatrixBase<DerivedFF > & FF,
+          const Eigen::MatrixBase<Derivedsizes> & sizes,
           const std::function<int(const Eigen::Matrix<int,1,Eigen::Dynamic>) >& wind_num_op,
           const std::function<int(const int, const int)> & keep,
           Eigen::PlainObjectBase<DerivedVC > & VC,
@@ -198,10 +211,10 @@ namespace igl
         typename DerivedVC,
         typename DerivedFC>
       IGL_INLINE bool mesh_boolean(
-          const Eigen::PlainObjectBase<DerivedVA > & VA,
-          const Eigen::PlainObjectBase<DerivedFA > & FA,
-          const Eigen::PlainObjectBase<DerivedVB > & VB,
-          const Eigen::PlainObjectBase<DerivedFB > & FB,
+          const Eigen::MatrixBase<DerivedVA > & VA,
+          const Eigen::MatrixBase<DerivedFA > & FA,
+          const Eigen::MatrixBase<DerivedVB > & VB,
+          const Eigen::MatrixBase<DerivedFB > & FB,
           const MeshBooleanType & type,
           Eigen::PlainObjectBase<DerivedVC > & VC,
           Eigen::PlainObjectBase<DerivedFC > & FC);

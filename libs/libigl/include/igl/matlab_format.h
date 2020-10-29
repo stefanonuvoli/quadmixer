@@ -22,9 +22,9 @@ namespace igl
   // Templates:
   //   DerivedM  e.g. derived from MatrixXd
   // Input:
-  //   input  some matrix to be formated
+  //   input  some matrix to be formatted
   //   name  name of matrix
-  // Returns  Formated matrix
+  // Returns  Formatted matrix
   //
   // Example:
   // // M := [1 2 3;4 5 6];
@@ -44,7 +44,7 @@ namespace igl
   IGL_INLINE const Eigen::WithFormat< DerivedM > matlab_format(
     const Eigen::DenseBase<DerivedM> & M,
     const std::string name = "");
-  // Same but for sparse matrices. Print IJV format into an auxillary variable
+  // Same but for sparse matrices. Print IJV format into an auxiliary variable
   // and then print a call to sparse which will construct the sparse matrix
   // Example:
   // // S := [0 2 3;4 5 0];
@@ -61,6 +61,12 @@ namespace igl
   template <typename DerivedS>
   IGL_INLINE const std::string matlab_format(
     const Eigen::SparseMatrix<DerivedS> & S,
+    const std::string name = "");
+  IGL_INLINE const std::string matlab_format(
+    const double v,
+    const std::string name = "");
+  IGL_INLINE const std::string matlab_format(
+    const float v,
     const std::string name = "");
   // Return just IOFormat 
   //

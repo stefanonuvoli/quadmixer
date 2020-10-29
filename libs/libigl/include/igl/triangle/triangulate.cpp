@@ -94,7 +94,7 @@ IGL_INLINE void igl::triangle::triangulate(
   assert(H.size() == 0 || H.cols() == 2);
 
   // Prepare the flags
-  string full_flags = flags + "pz" + (EM.size() || VM.size() ? "B" : "");
+  string full_flags = flags + "pz" + (EM.size() || VM.size() ? "" : "B");
 
   typedef Map< Matrix<double,Dynamic,Dynamic,RowMajor> > MapXdr;
   typedef Map< Matrix<int,Dynamic,Dynamic,RowMajor> > MapXir;
@@ -109,8 +109,8 @@ IGL_INLINE void igl::triangle::triangulate(
   }
 
   in.numberofpointattributes = 0;
-  in.pointmarkerlist = (int*)calloc(VM.size(),sizeof(int));
-  for(unsigned i=0;i<VM.rows();++i) in.pointmarkerlist[i] = VM.size()?VM(i):1;
+  in.pointmarkerlist = (int*)calloc(V.size(),sizeof(int)) ;
+  for(unsigned i=0;i<V.rows();++i) in.pointmarkerlist[i] = VM.size()?VM(i):1;
 
   in.trianglelist = NULL;
   in.numberoftriangles = 0;

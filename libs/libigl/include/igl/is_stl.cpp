@@ -1,4 +1,4 @@
-#include "is_stl.h"
+#include "is_stl.h" 
 #include <string>
 IGL_INLINE bool igl::is_stl(FILE * stl_file, bool & is_ascii)
 {
@@ -12,7 +12,7 @@ IGL_INLINE bool igl::is_stl(FILE * stl_file, bool & is_ascii)
   //
   const auto perfect_size = [](FILE * stl_file)->bool
   {
-    stl_file = freopen(NULL,"rb",stl_file);
+    //stl_file = freopen(NULL,"rb",stl_file);
     // Read 80 header
     char header[80];
     if(fread(header,sizeof(char),80,stl_file)!=80)
@@ -27,7 +27,8 @@ IGL_INLINE bool igl::is_stl(FILE * stl_file, bool & is_ascii)
     }
     fseek(stl_file,0,SEEK_END);
     int file_size = ftell(stl_file);
-    stl_file = freopen(NULL,"r",stl_file);
+    fseek(stl_file,0,SEEK_SET);
+    //stl_file = freopen(NULL,"r",stl_file);
     return (file_size == 80 + 4 + (4*12 + 2) * num_tri);
   };
   // Specifically 80 character header
@@ -40,6 +41,8 @@ IGL_INLINE bool igl::is_stl(FILE * stl_file, bool & is_ascii)
     f = false;
     goto finish;
   }
+  // make sure sscanf doesn't read past the end of the header, overwriting stack
+  header[sizeof(header)-1]='\0';
 
   sscanf(header,"%s",solid);
   if(std::string("solid") == solid)

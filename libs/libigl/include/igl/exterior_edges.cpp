@@ -6,9 +6,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file, You can 
 // obtain one at http://mozilla.org/MPL/2.0/.
 #include "exterior_edges.h"
-#include "all_edges.h"
+#include "oriented_facets.h"
 #include "sort.h"
-#include "unique.h"
+#include "unique_rows.h"
 
 #include <cassert>
 #include <unordered_map>
@@ -51,7 +51,7 @@ IGL_INLINE void igl::exterior_edges(
   const size_t m = F.rows();
   MatrixXi all_E,sall_E,sort_order;
   // Sort each edge by index
-  all_edges(F,all_E);
+  oriented_facets(F,all_E);
   sort(all_E,2,true,sall_E,sort_order);
   // Find unique edges
   MatrixXi uE;
@@ -67,7 +67,7 @@ IGL_INLINE void igl::exterior_edges(
   {
     int e = 0;
     const size_t nue = uE.rows();
-    // Append each unique edge with a non-zero amount of signed occurances
+    // Append each unique edge with a non-zero amount of signed occurrences
     for(size_t ue = 0; ue<nue; ue++)
     {
       const int count = counts(ue);

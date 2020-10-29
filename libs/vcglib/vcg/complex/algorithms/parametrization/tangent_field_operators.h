@@ -22,6 +22,7 @@
 ****************************************************************************/
 #include <vcg/math/histogram.h>
 #include <vcg/complex/algorithms/update/curvature.h>
+#include <wrap/io_trimesh/export.h>
 
 #ifndef VCG_TANGENT_FIELD_OPERATORS
 #define VCG_TANGENT_FIELD_OPERATORS
@@ -88,7 +89,7 @@ vcg::Point3<ScalarType> InterpolateNRosy3D(const std::vector<vcg::Point3<ScalarT
                                            const vcg::Point3<ScalarType> &TargetN)
 {
     typedef typename vcg::Point3<ScalarType> CoordType;
-    ///create a reference frame along TargetN
+    //create a reference frame along TargetN
     CoordType TargetZ=TargetN;
     TargetZ.Normalize();
     CoordType U=CoordType(1,0,0);
@@ -124,6 +125,13 @@ vcg::Point3<ScalarType> InterpolateNRosy3D(const std::vector<vcg::Point3<ScalarT
 
         ///trassform to the reference frame
         rotV=RotFrame*rotV;
+//        if (isnan(rotV.X())||isnan(rotV.Y()))
+//        {
+//            std::cout << "V[i] " << V[i].X() << " " << V[i].Y() << std::endl << std::flush;
+//            std::cout << "Norm[i] " << Norm[i].X() << " " << Norm[i].Y() << " " << Norm[i].Z()<< std::endl;
+//            std::cout << "TargetN " << TargetN.X() << " " << TargetN.Y() << " " << TargetN.Z()<< std::endl<< std::flush;
+//        }
+
         assert(!isnan(rotV.X()));
         assert(!isnan(rotV.Y()));
 
@@ -526,9 +534,9 @@ public:
     static void InitBorderField(MeshType & mesh)
     {
         typedef typename MeshType::FaceType FaceType;
-        typedef typename MeshType::VertexType VertexType;
+//        typedef typename MeshType::VertexType VertexType;
         typedef typename MeshType::CoordType CoordType;
-        typedef typename MeshType::ScalarType ScalarType;
+//        typedef typename MeshType::ScalarType ScalarType;
 
         vcg::tri::UpdateTopology<MeshType>::FaceFace(mesh);
         for (size_t i=0;i<mesh.face.size();i++)
@@ -553,7 +561,7 @@ public:
     {
 
         typedef typename MeshType::FaceType FaceType;
-        typedef typename MeshType::VertexType VertexType;
+        //typedef typename MeshType::VertexType VertexType;
         typedef typename MeshType::CoordType CoordType;
         typedef typename MeshType::ScalarType ScalarType;
 
@@ -830,6 +838,7 @@ public:
                 ret=i;
             }
         }
+
         assert(ret!=-1);
 
         return ret;
@@ -1073,13 +1082,13 @@ public:
 
             if (fabs(rotatedDir*tF0)>fabs(rotatedDir*tF1))
             {
-                mag1+=fabs(f.V(i)->K1());
-                mag2+=fabs(f.V(i)->K2());
+                mag1+=(f.V(i)->K1());
+                mag2+=(f.V(i)->K2());
             }
             else
             {
-                mag1+=fabs(f.V(i)->K2());
-                mag2+=fabs(f.V(i)->K1());
+                mag1+=(f.V(i)->K2());
+                mag2+=(f.V(i)->K1());
             }
         }
 
@@ -1386,7 +1395,13 @@ public:
         for (size_t i=0;i<mesh.vert.size();i++)
         {
             if (mesh.vert[i].IsD())continue;
-            //if (mesh.vert[i].IsB())continue;
+
+            if (mesh.vert[i].IsB())
+            {
+                Handle_Singular[i]=false;
+                Handle_SingularIndex[i]=0;
+                continue;
+            }
 
             int missmatch;
             if (IsSingularByCross(mesh.vert[i],missmatch))
