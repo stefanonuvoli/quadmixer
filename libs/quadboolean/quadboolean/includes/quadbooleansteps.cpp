@@ -622,7 +622,7 @@ void quadrangulate(
             patchSides,
             uvMapV, uvMapF, quadrangulationV, quadrangulationF);
 
-#ifndef NDEBUG
+#ifdef SAVE_MESHES_FOR_DEBUG
         Eigen::MatrixXd uvMesh(uvMapV.rows(), 3);
         for (int i = 0; i < uvMapV.rows(); i++) {
             uvMesh(i, 0) = uvMapV(i, 0);
@@ -639,7 +639,7 @@ void quadrangulate(
         PolyMeshType quadrangulatedChartMesh;
         eigenToVCG(quadrangulationV, quadrangulationF, quadrangulatedChartMesh, 4);
 
-#ifndef NDEBUG
+#ifdef SAVE_MESHES_FOR_DEBUG
         igl::writeOBJ(std::string("res/") + std::to_string(cId) + std::string("_quadrangulation.obj"), quadrangulationV, quadrangulationF);
 #endif
 

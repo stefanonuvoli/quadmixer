@@ -26,4 +26,9 @@ void patterns::determine_geometry(Patch& patch, const VectorXi& l) {
     // solve
     patch.laplaceDirect_factorize();
     patch.laplaceDirect_solve();
+
+    for (auto v : patch.vertices()) {
+        auto p = patch.data(v).laplaceDirect.value;
+        patch.set_point(v, patterns::Patch::Point(p.x(), p.y(), p.z()));
+    }
 }
