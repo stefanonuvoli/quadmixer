@@ -199,7 +199,7 @@ void smoothAlongIntersectionVertices(
         boolean.vert[vId].SetS();
     }
 
-    QuadRetopology::internal::LaplacianGeodesic(boolean, intersectionSmoothingInterations, maxDistance, 0.8, smoothedVertices);
+    QuadRetopology::internal::LaplacianGeodesicSmoothing(boolean, intersectionSmoothingInterations, maxDistance, 0.8, smoothedVertices);
 }
 
 template<class PolyMeshType, class TriangleMeshType>
