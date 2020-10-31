@@ -18,18 +18,18 @@ CONFIG(release, debug|release){
     CONFIG += FINAL_RELEASE
 }
 
-##Final release optimization flag
-#FINAL_RELEASE {
-#    unix:!macx{
-#        QMAKE_CXXFLAGS_RELEASE -= -g -O2
-#        QMAKE_CXXFLAGS += -O3 -DNDEBUG
-#    }
-#}
+#Final release optimization flag
+FINAL_RELEASE {
+    unix:!macx{
+        QMAKE_CXXFLAGS_RELEASE -= -g -O2
+        QMAKE_CXXFLAGS += -O3 -DNDEBUG
+    }
+}
 
-#macx {
-#    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.13
-#    QMAKE_MAC_SDK = macosx10.13
-#}
+macx {
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.13
+    QMAKE_MAC_SDK = macosx10.13
+}
 
 
 ############################ LIBRARIES ############################
@@ -40,29 +40,29 @@ include(configuration.pri)
 #Quad retopology
 include($$QUADRETOPOLOGY_PATH/quadretopology.pri)
 
-#libigl
+#Libigl
 INCLUDEPATH += $$LIBIGL_PATH/include/
 QMAKE_CXXFLAGS += -isystem $$LIBIGL_PATH/include/
 
-#vcglib
+#Vcglib
 INCLUDEPATH += $$VCGLIB_PATH
 DEFINES += NOCOMISO
 
-#cgal
+#Cgal
 #DEFINES += CGAL_EIGEN3_ENABLED
 #LIBS += -lCGAL -lCGAL_Core
 LIBS += -lmpfr -lgmp -frounding-math
 LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
 
-#eigen
+#Eigen
 INCLUDEPATH += $$EIGEN_PATH
 
-#boost
+#Boost
 INCLUDEPATH += $$BOOST_PATH
 
 #glew
 LIBS += -lGLEW -lglut -lGLU -lGL
-#just for Linux
+#Just for Linux
 unix:!macx {
     DEFINES += GL_GLEXT_PROTOTYPES
     LIBS    += -lGLU
@@ -70,24 +70,10 @@ unix:!macx {
 DEFINES += GLEW_STATIC
 INCLUDEPATH += $$GL_PATH
 
-#gurobi
+#Gurobi
 INCLUDEPATH += $$GUROBI_PATH/include
 LIBS += -L$$GUROBI_PATH/lib -lgurobi_g++5.2 -lgurobi90
 DEFINES += GUROBI_DEFINED
-
-#Parallel computation
-unix:!mac {
-    QMAKE_CXXFLAGS += -fopenmp
-    LIBS += -fopenmp
-}
-macx{
-    QMAKE_CXXFLAGS += -Xpreprocessor -fopenmp -lomp -I/usr/local/include
-    QMAKE_LFLAGS += -lomp
-    LIBS += -L /usr/local/lib /usr/local/lib/libomp.dylib
-}
-
-
-############################ STANDARD LIBRARIES ############################
 
 LIBS += -lblosc -ltbb -lHalf -lboost_thread -lboost_system -lboost_iostreams
 
