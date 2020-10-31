@@ -1,6 +1,6 @@
 #include "quadboolean.h"
 
-#include <quadretopology/quad_retopology.h>
+#include <quadretopology/quadretopology.h>
 
 namespace QuadBoolean {
 
