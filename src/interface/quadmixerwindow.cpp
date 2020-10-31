@@ -7,7 +7,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
-#include <quadboolean/includes/envelope_generator.h>
+#include "../quadmixer/includes/envelope_generator.h"
 
 #include <vcg/complex/complex.h>
 #include <wrap/io_trimesh/import.h>
@@ -88,7 +88,7 @@ void QuadMixerWindow::detachOperation()
 
     PolyMesh targetCopy;
     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(targetCopy, *target1);
-    QuadBoolean::internal::splitFacesInTriangles(targetCopy);
+    QuadRetopology::internal::splitFacesInTriangles(targetCopy);
 
     TriangleMesh targetTriangulated;
     vcg::tri::Append<TriangleMesh, PolyMesh>::Mesh(targetTriangulated, targetCopy);
@@ -260,21 +260,21 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     bool polychordSolver = ui.polychordSolverCheckBox->isChecked();
     bool splitSolver = ui.splitSolverCheckBox->isChecked();
 
-    QuadBoolean::ILPMethod ilpMethod;
+    QuadRetopology::ILPMethod ilpMethod;
     if (ui.ilpMethodLSRadio->isChecked()) {
-        ilpMethod = QuadBoolean::ILPMethod::LEASTSQUARES;
+        ilpMethod = QuadRetopology::ILPMethod::LEASTSQUARES;
     }
     else if (ui.ilpMethodABSRadio->isChecked()) {
-        ilpMethod = QuadBoolean::ILPMethod::ABS;
+        ilpMethod = QuadRetopology::ILPMethod::ABS;
     }
     else {
-        ilpMethod = QuadBoolean::ILPMethod::LEASTSQUARES;
+        ilpMethod = QuadRetopology::ILPMethod::LEASTSQUARES;
     }
     double alpha = ui.alphaSpinBox->value();
-    double beta = ui.betaSpinBox->value();
 
     int chartSmoothingIterations = ui.chartSmoothingSpinBox->value();
-    int quadrangulationSmoothingIterations = ui.quadrangulationSmoothingSpinBox->value();
+    int quadrangulationFixedSmoothingIterations = ui.quadrangulationFixedSmoothingSpinBox->value();
+    int quadrangulationNonFixedSmoothingIterations = ui.quadrangulationNonFixedSmoothingSpinBox->value();
 
     int resultSmoothingIterations = ui.resultSmoothingSpinBox->value();
     double resultSmoothingNRing = ui.resultSmoothingNRingSpinBox->value();
@@ -305,9 +305,9 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     parameters.splitSolver = splitSolver;
     parameters.ilpMethod = ilpMethod;
     parameters.alpha = alpha;
-    parameters.beta = beta;
     parameters.chartSmoothingIterations = chartSmoothingIterations;
-    parameters.quadrangulationSmoothingIterations = quadrangulationSmoothingIterations;
+    parameters.quadrangulationFixedSmoothingIterations = quadrangulationFixedSmoothingIterations;
+    parameters.quadrangulationNonFixedSmoothingIterations = quadrangulationFixedSmoothingIterations;
     parameters.resultSmoothingIterations = resultSmoothingIterations;
     parameters.resultSmoothingNRing = resultSmoothingNRing;
     parameters.resultSmoothingLaplacianIterations = resultSmoothingLaplacianIterations;
@@ -761,8 +761,8 @@ void QuadMixerWindow::doGetSurfaces() {
     meshLabel1.clear();
     meshLabel2.clear();
 
-    preservedVerticesMap.clear();
-    preservedFacesMap.clear();
+    preservedBirthVertexInfo.clear();
+    preservedBirthVertexInfo.clear();
 
     isNewSurface.clear();
     newSurface.Clear();
@@ -811,8 +811,8 @@ void QuadMixerWindow::doGetSurfaces() {
             isPreserved2,
             isNewSurface,
             preservedSurfaceLabel,
-            preservedFacesMap,
-            preservedVerticesMap,
+            preservedBirthVertexInfo,
+            preservedBirthVertexInfo,
             preservedSurface,
             newSurface);
 
@@ -894,7 +894,7 @@ void QuadMixerWindow::doPatchDecomposition() {
     std::cout << std::endl;
     start = chrono::steady_clock::now();
 
-    newSurfaceLabel = QuadBoolean::internal::getPatchDecomposition(newSurface, preservedSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, initialRemeshingEdgeFactor, reproject, splitConcaves, finalSmoothing);
+    newSurfaceLabel = QuadRetopology::patchDecomposition(newSurface, preservedSurface, newSurfacePartitions, newSurfaceCorners, initialRemeshing, initialRemeshingEdgeFactor, reproject, splitConcaves, finalSmoothing);
 
     //-----------
 
@@ -914,7 +914,7 @@ void QuadMixerWindow::doPatchDecomposition() {
     start = chrono::steady_clock::now();
 
 
-    chartData = QuadBoolean::internal::getPatchDecompositionChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
+    chartData = chartData = QuadRetopology::computeChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
     std::cout << " >> "
               << "Get patches and sides: "
@@ -930,26 +930,51 @@ void QuadMixerWindow::doSolveILP() {
 
     //Solve ILP
     double alpha = ui.alphaSpinBox->value();
-    double beta = ui.betaSpinBox->value();
 
-    QuadBoolean::ILPMethod ilpMethod;
+    QuadRetopology::ILPMethod ilpMethod;
     if (ui.ilpMethodLSRadio->isChecked()) {
-        ilpMethod = QuadBoolean::ILPMethod::LEASTSQUARES;
+        ilpMethod = QuadRetopology::ILPMethod::LEASTSQUARES;
     }
     else if (ui.ilpMethodABSRadio->isChecked()) {
-        ilpMethod = QuadBoolean::ILPMethod::ABS;
+        ilpMethod = QuadRetopology::ILPMethod::ABS;
     }
 
 
     std::cout << std::endl;
     start = chrono::steady_clock::now();
 
-    ilpResult = QuadBoolean::internal::findSubdivisions(
-                newSurface,
-                chartData,
-                alpha,
-                beta,
-                ilpMethod);
+    //Select the subsides to fix
+    fixedSubsides.clear();
+    for (size_t subsideId = 0; subsideId < chartData.subsides.size(); ++subsideId) {
+        QuadRetopology::ChartSubside& subside = chartData.subsides[subsideId];
+        if (subside.isOnBorder) {
+            fixedSubsides.push_back(subsideId);
+        }
+    }
+
+    //Get chart length
+    std::vector<double> chartEdgeLength = QuadRetopology::computeChartEdgeLength(chartData, fixedSubsides, 5, 0.7);
+
+    //Solve ILP to find best side size
+    double gap;
+
+    //Solve ILP to find best side size
+    ilpResult = QuadRetopology::findSubdivisions(
+            chartData,
+            fixedSubsides,
+            chartEdgeLength,
+            ilpMethod,                   //method
+            alpha,                       //alpha
+            true,                                   //isometry
+            true,                                   //regularityForQuadrilaterals
+            false,                                  //regularityForNonQuadrilaterals
+            0.0,                                    //regularityNonQuadrilateralWeight
+            false,                                  //feasibilityFix
+            true,                                   //hardParityConstraint
+            60,                                     //timeLimit
+            0.0,                                    //gapLimit
+            0.3,                                    //minimumGap
+            gap);
 
     std::cout << " >> "
               << "ILP: "
@@ -967,19 +992,26 @@ void QuadMixerWindow::doQuadrangulate()
     quadrangulationLabel.clear();
 
     int chartSmoothingIterations = ui.chartSmoothingSpinBox->value();
-    int quadrangulationSmoothingIterations = ui.quadrangulationSmoothingSpinBox->value();
+    int quadrangulationFixedSmoothingIterations = ui.quadrangulationFixedSmoothingSpinBox->value();
+    int quadrangulationNonFixedSmoothingIterations = ui.quadrangulationNonFixedSmoothingSpinBox->value();
 
     std::cout << std::endl;
     start = chrono::steady_clock::now();
 
-    QuadBoolean::internal::quadrangulate(
+    //Quadrangulate,
+    QuadRetopology::quadrangulate(
                 newSurface,
                 chartData,
+                fixedSubsides,
                 ilpResult,
                 chartSmoothingIterations,
-                quadrangulationSmoothingIterations,
+                quadrangulationFixedSmoothingIterations,
+                quadrangulationNonFixedSmoothingIterations,
+                true,
                 quadrangulation,
-                quadrangulationLabel);
+                quadrangulationLabel,
+                quadrangulationPartitions,
+                quadrangulationCorners);
 
     std::cout << " >> "
               << "Quadrangulate new surface: "
@@ -1012,10 +1044,16 @@ void QuadMixerWindow::doGetResult()
     std::cout << std::endl;
     start = chrono::steady_clock::now();
 
-    //Get results
-    QuadBoolean::internal::getResult(mesh1, mesh2, preservedSurface, quadrangulation, result, booleanSmoothed,
-                                     resultSmoothingIterations, resultSmoothingNRing, resultSmoothingLaplacianIterations, resultSmoothingLaplacianNRing,
-                                     preservedFacesMap, preservedVerticesMap, sourceInfo);
+    //Get the result
+    QuadRetopology::computeResult(
+                preservedSurface, quadrangulation,
+                result, boolean,
+                false,
+                resultSmoothingIterations,
+                resultSmoothingNRing,
+                resultSmoothingLaplacianIterations,
+                resultSmoothingLaplacianNRing,
+                resultPreservedVertexMap, resultPreservedFaceMap);
 
     std::cout << " >> "
               << "Get result: "

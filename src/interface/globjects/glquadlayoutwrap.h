@@ -1,7 +1,7 @@
 #ifndef GLQUADLAYOUTWRAP_H
 #define GLQUADLAYOUTWRAP_H
 
-#include <quadboolean/includes/quadlayoutdata.h>
+#include <quadmixer/includes/quadlayoutdata.h>
 
 template<class MeshType>
 class GLQuadLayoutWrap

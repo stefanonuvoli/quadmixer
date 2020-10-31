@@ -10,7 +10,7 @@
 
 #include <wrap/gl/picking.h>
 
-#include <quadboolean/includes/envelope_generator.h>
+#include <quadmixer/includes/envelope_generator.h>
 
 GLArea::GLArea(QWidget* parent) : QGLWidget (parent)
 {
@@ -164,7 +164,7 @@ void GLArea::manageDoubleClick(const int &x, const int &y)
 
                     PolyMesh targetCopy;
                     vcg::tri::Append<PolyMesh, PolyMesh>::Mesh(targetCopy, *targetMesh1->mesh);
-                    QuadBoolean::internal::splitFacesInTriangles(targetCopy);
+                    QuadRetopology::internal::splitFacesInTriangles(targetCopy);
 
                     TriangleMesh targetTriangulated;
                     vcg::tri::Append<TriangleMesh, PolyMesh>::Mesh(targetTriangulated, targetCopy);

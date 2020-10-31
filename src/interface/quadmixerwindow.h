@@ -5,7 +5,8 @@
 
 #include <Eigen/Core>
 
-#include <quadboolean/quadboolean.h>
+#include <quadmixer/quadboolean.h>
+#include <quadretopology/includes/qr_charts.h>
 
 class QuadMixerWindow : public QMainWindow
 {
@@ -16,7 +17,7 @@ private:
     typedef QuadBoolean::PolyMesh PolyMesh;
     typedef QuadBoolean::TriangleMesh TriangleMesh;
     typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
-    typedef QuadBoolean::internal::ChartData TriangleChartData;
+    typedef QuadRetopology::ChartData ChartData;
 
 
 public:
@@ -188,23 +189,30 @@ private:
 
     PolyMesh preservedSurface;
     std::vector<int> preservedSurfaceLabel;
-    std::unordered_map<size_t, size_t> preservedFacesMap;
-    std::unordered_map<size_t, size_t> preservedVerticesMap;
+    std::vector<std::pair<int, int>> preservedBirthVertexInfo;
+    std::vector<std::pair<int, int>> preservedBirthFaceInfo;
 
     TriangleMesh newSurface;
     std::vector<int> newSurfaceLabel;
 
     std::vector<std::vector<size_t>> newSurfacePartitions;
     std::vector<std::vector<size_t>> newSurfaceCorners;
-    TriangleChartData newSurfaceChartData;
+    ChartData newSurfaceChartData;
 
-    QuadBoolean::internal::ChartData chartData;
+    QuadRetopology::ChartData chartData;
+    std::vector<size_t> fixedSubsides;
 
     std::vector<int> ilpResult;
 
     PolyMesh quadrangulation;
     std::vector<int> quadrangulationLabel;
+    std::vector<std::vector<size_t>> quadrangulationPartitions;
+    std::vector<std::vector<size_t>> quadrangulationCorners;
+
     QuadLayoutData quadLayoutDataQuadrangulatedSurface;
+
+    std::vector<int> resultPreservedVertexMap;
+    std::vector<int> resultPreservedFaceMap;
 
     PolyMesh result;
     QuadBoolean::SourceInfo sourceInfo;

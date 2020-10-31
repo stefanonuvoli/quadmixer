@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1848</width>
-    <height>940</height>
+    <width>1849</width>
+    <height>969</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1148,29 +1148,6 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="betaLabel">
-                  <property name="text">
-                   <string>Beta</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QDoubleSpinBox" name="betaSpinBox">
-                  <property name="minimum">
-                   <double>0.000000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>1.000000000000000</double>
-                  </property>
-                  <property name="singleStep">
-                   <double>0.100000000000000</double>
-                  </property>
-                  <property name="value">
-                   <double>1.000000000000000</double>
-                  </property>
-                 </widget>
-                </item>
-                <item>
                  <widget class="QCheckBox" name="initialRemeshingCheckBox">
                   <property name="text">
                    <string>Remeshing</string>
@@ -1230,7 +1207,7 @@
                 <item>
                  <widget class="QLabel" name="chartSmoothingLabel">
                   <property name="text">
-                   <string>Chart sm</string>
+                   <string>C sm</string>
                   </property>
                  </widget>
                 </item>
@@ -1245,14 +1222,14 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="quadrangulationSmoothingLabel">
+                 <widget class="QLabel" name="quadrangulationFixedSmoothingLabel">
                   <property name="text">
-                   <string>Quad sm</string>
+                   <string>F Q sm</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QSpinBox" name="quadrangulationSmoothingSpinBox">
+                 <widget class="QSpinBox" name="quadrangulationFixedSmoothingSpinBox">
                   <property name="maximum">
                    <number>200</number>
                   </property>
@@ -1260,6 +1237,16 @@
                    <number>5</number>
                   </property>
                  </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="quadrangulationNonFixedSmoothingLabel">
+                  <property name="text">
+                   <string>NF Q sm</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QSpinBox" name="quadrangulationNonFixedSmoothingSpinBox"/>
                 </item>
                 <item>
                  <widget class="QLabel" name="resultSmoothingLabel">
@@ -1385,7 +1372,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1848</width>
+     <width>1849</width>
      <height>22</height>
     </rect>
    </property>

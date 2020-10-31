@@ -19,7 +19,7 @@
 #include "globjects/glverticeswrap.h"
 #include "globjects/glsegmentswrap.h"
 
-#include <quadboolean/quadboolean.h>
+#include <quadmixer/quadboolean.h>
 
 #define ROTATION_TIME 5000
 #define ROTATION_ITERATIONS 500
@@ -31,7 +31,7 @@ class GLArea : public QGLWidget
     typedef QuadBoolean::PolyMesh PolyMesh;
     typedef QuadBoolean::TriangleMesh TriangleMesh;
     typedef QuadBoolean::internal::QuadLayoutData<PolyMesh> QuadLayoutData;
-    typedef QuadBoolean::internal::ChartData ChartData;
+    typedef QuadRetopology::ChartData ChartData;
 
 public:
 

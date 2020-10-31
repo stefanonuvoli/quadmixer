@@ -26,30 +26,30 @@ void GLChartSidesWrap<MeshType>::GLDraw()
         glDepthRange(0.0,0.99999);
         glDisable(GL_LIGHTING);
 
-        for (int sId = 0; sId < chartData->subSides.size(); sId++) {
-            const QuadBoolean::internal::ChartSubSide& subSide = chartData->subSides[sId];
+        for (int sId = 0; sId < chartData->subsides.size(); sId++) {
+            const QuadRetopology::ChartSubside& subside = chartData->subsides[sId];
 
-            for (int i = 0; i < subSide.vertices.size()-1; i++) {
+            for (int i = 0; i < subside.vertices.size()-1; i++) {
                 glLineWidth(6);
                 vcg::glColor(vcg::Color4b(50,50,50,255));
                 glBegin(GL_LINES);
-                vcg::glVertex(mesh->vert[subSide.vertices[i]].P());
-                vcg::glVertex(mesh->vert[subSide.vertices[i+1]].P());
+                vcg::glVertex(mesh->vert[subside.vertices[i]].P());
+                vcg::glVertex(mesh->vert[subside.vertices[i+1]].P());
                 glEnd();
             }
 
             glPointSize(4);
             vcg::glColor(vcg::Color4b(80,160,80,255));
             glBegin(GL_POINTS);
-            vcg::glVertex(mesh->vert[subSide.vertices[0]].P());
-            vcg::glVertex(mesh->vert[subSide.vertices[subSide.vertices.size()-1]].P());
+            vcg::glVertex(mesh->vert[subside.vertices[0]].P());
+            vcg::glVertex(mesh->vert[subside.vertices[subside.vertices.size()-1]].P());
             glEnd();
 
 
-            assert(subSide.vertices.size()>1);
+            assert(subside.vertices.size()>1);
 
-            typename MeshType::VertexType& firstV = mesh->vert[subSide.vertices.at((subSide.vertices.size()-1)/2+1)];
-            typename MeshType::VertexType& endV = mesh->vert[subSide.vertices.at((subSide.vertices.size()-1)/2)];
+            typename MeshType::VertexType& firstV = mesh->vert[subside.vertices.at((subside.vertices.size()-1)/2+1)];
+            typename MeshType::VertexType& endV = mesh->vert[subside.vertices.at((subside.vertices.size()-1)/2)];
             typename MeshType::CoordType centerV = (endV.P() + firstV.P())/2;
 
             if (this->ilpResult != nullptr && this->ilpVisible) {

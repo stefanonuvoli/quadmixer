@@ -1,7 +1,7 @@
 #ifndef GLCHARTSIDESWRAP_H
 #define GLCHARTSIDESWRAP_H
 
-#include <quadboolean/includes/quadcharts.h>
+#include <quadretopology/includes/qr_charts.h>
 
 template<class MeshType>
 class GLChartSidesWrap
@@ -12,7 +12,7 @@ public:
     void GLDraw();
 
     MeshType* mesh;
-    QuadBoolean::internal::ChartData* chartData;
+    QuadRetopology::ChartData* chartData;
     std::vector<int>* ilpResult;
 
     bool visible;
