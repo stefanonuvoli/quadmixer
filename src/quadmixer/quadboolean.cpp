@@ -167,6 +167,9 @@ void quadBoolean(
      //Get chart length
      std::vector<double> chartEdgeLength = QuadRetopology::computeChartEdgeLength(chartData, fixedSubsides, 5, 0.7);
 
+     std::vector<float> callbackTimeLimit = { 3.00, 5.000, 10.0, 20.0, 30.0, 60.0, 90.0, 120.0 };
+     std::vector<float> callbackGapLimit = { 0.001, 0.005, 0.01, 0.05, 0.10, 0.15, 0.20, 0.300 };
+
      //Solve ILP to find best side size
      ilpResult = QuadRetopology::findSubdivisions(
              chartData,
@@ -177,11 +180,19 @@ void quadBoolean(
              true,                                   //isometry
              true,                                   //regularityForQuadrilaterals
              false,                                  //regularityForNonQuadrilaterals
-             0.0,                                    //regularityNonQuadrilateralWeight
+             0.9,                                    //regularityNonQuadrilateralWeight
+             false,                                  //alignSingularities
+             0.1,                                    //alignSingularitiesWeight
+             0,                                      //repeatLosingConstraintsIterations
+             false,                                  //repeatLosingConstraintsQuads
+             false,                                  //repeatLosingConstraintsNonQuads
+             false,                                  //repeatLosingConstraintsAlign
              false,                                  //feasibilityFix
              true,                                   //hardParityConstraint
-             60,                                     //timeLimit
+             200,                                    //timeLimit
              0.0,                                    //gapLimit
+             callbackTimeLimit,                      //callbackTimeLimit
+             callbackTimeLimit,                      //callbackGapLimit
              0.3,                                    //minimumGap
              gap);
 
