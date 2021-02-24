@@ -203,7 +203,7 @@ void quadBoolean(
                  newSurface,
                  chartData,
                  fixedPositionSubsides,
-                 ilpResult,
+                 ilpResults,
                  parameters.chartSmoothingIterations,
                  parameters.quadrangulationFixedSmoothingIterations,
                  parameters.quadrangulationNonFixedSmoothingIterations,
