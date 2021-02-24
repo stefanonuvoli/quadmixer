@@ -202,7 +202,7 @@ private:
     QuadRetopology::ChartData chartData;
     std::vector<size_t> fixedPositionSubsides;
 
-    std::vector<int> ilpResult;
+    std::vector<int> ilpResults;
 
     PolyMesh quadrangulation;
     std::vector<int> quadrangulationLabel;

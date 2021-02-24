@@ -69,7 +69,7 @@ void quadBoolean(
 
      QuadRetopology::ChartData chartData;
 
-     std::vector<int> ilpResult;
+     std::vector<int> ilpResults;
      double gap;
 
      PolyMeshType quadrangulation;
@@ -156,7 +156,7 @@ void quadBoolean(
      chartData = QuadRetopology::computeChartData(newSurface, newSurfaceLabel, newSurfaceCorners);
 
      //Select the subsides to fix
-     std::vector<int> ilpResults(chartData.subsides.size(), ILP_FIND_SUBDIVISION);
+     ilpResults.resize(chartData.subsides.size(), ILP_FIND_SUBDIVISION);
      std::vector<size_t> fixedPositionSubsides;
      for (size_t subsideId = 0; subsideId < chartData.subsides.size(); ++subsideId) {
          QuadRetopology::ChartSubside& subside = chartData.subsides[subsideId];
@@ -169,7 +169,7 @@ void quadBoolean(
      //Get chart length
      std::vector<double> chartEdgeLength = QuadRetopology::computeChartEdgeLength(chartData, 5, ilpResults, 0.7);
 
-     std::vector<float> callbackTimeLimit = { 3.00, 5.000, 10.0, 20.0, 30.0, 60.0, 90.0, 120.0 };
+     std::vector<float> callbackTimeLimit = { 2.00, 3.000, 5.0, 7.0, 8.0, 10.0, 15.0, 20.0 };
      std::vector<float> callbackGapLimit = { 0.001, 0.005, 0.01, 0.05, 0.10, 0.15, 0.20, 0.300 };
 
      //Solve ILP to find best side size
@@ -190,7 +190,7 @@ void quadBoolean(
              false,                                  //repeatLosingConstraintsAlign
              false,                                  //feasibilityFix
              true,                                   //hardParityConstraint
-             200,                                    //timeLimit
+             21,                                     //timeLimit
              0.0,                                    //gapLimit
              callbackTimeLimit,                      //callbackTimeLimit
              callbackGapLimit,                       //callbackGapLimit
