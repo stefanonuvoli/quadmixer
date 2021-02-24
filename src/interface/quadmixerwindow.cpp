@@ -944,16 +944,17 @@ void QuadMixerWindow::doSolveILP() {
     start = chrono::steady_clock::now();
 
     //Select the subsides to fix
-    fixedSubsides.clear();
+    std::vector<int> ilpResults(chartData.subsides.size(), ILP_FIND_SUBDIVISION);
     for (size_t subsideId = 0; subsideId < chartData.subsides.size(); ++subsideId) {
         QuadRetopology::ChartSubside& subside = chartData.subsides[subsideId];
         if (subside.isOnBorder) {
-            fixedSubsides.push_back(subsideId);
+            fixedPositionSubsides.push_back(subsideId);
+            ilpResults[subsideId] = subside.size;
         }
     }
 
     //Get chart length
-    std::vector<double> chartEdgeLength = QuadRetopology::computeChartEdgeLength(chartData, fixedSubsides, 5, 0.7);
+    std::vector<double> chartEdgeLength = QuadRetopology::computeChartEdgeLength(chartData, 5, ilpResults, 0.7);
 
     //Solve ILP to find best side size
     double gap;
@@ -962,9 +963,8 @@ void QuadMixerWindow::doSolveILP() {
     std::vector<float> callbackGapLimit = { 0.001, 0.005, 0.01, 0.05, 0.10, 0.15, 0.20, 0.300 };
 
     //Solve ILP to find best side size
-    ilpResult = QuadRetopology::findSubdivisions(
+    QuadRetopology::findSubdivisions(
             chartData,
-            fixedSubsides,
             chartEdgeLength,
             ilpMethod,                              //method
             alpha,                                  //alpha
@@ -985,7 +985,8 @@ void QuadMixerWindow::doSolveILP() {
             callbackTimeLimit,                      //callbackTimeLimit
             callbackTimeLimit,                      //callbackGapLimit
             0.3,                                    //minimumGap
-            gap);
+            gap,
+            ilpResults);
 
     std::cout << " >> "
               << "ILP: "
@@ -1013,7 +1014,7 @@ void QuadMixerWindow::doQuadrangulate()
     QuadRetopology::quadrangulate(
                 newSurface,
                 chartData,
-                fixedSubsides,
+                fixedPositionSubsides,
                 ilpResult,
                 chartSmoothingIterations,
                 quadrangulationFixedSmoothingIterations,

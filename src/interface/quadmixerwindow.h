@@ -200,7 +200,7 @@ private:
     ChartData newSurfaceChartData;
 
     QuadRetopology::ChartData chartData;
-    std::vector<size_t> fixedSubsides;
+    std::vector<size_t> fixedPositionSubsides;
 
     std::vector<int> ilpResult;
 
