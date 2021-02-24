@@ -983,7 +983,7 @@ void QuadMixerWindow::doSolveILP() {
             200,                                    //timeLimit
             0.0,                                    //gapLimit
             callbackTimeLimit,                      //callbackTimeLimit
-            callbackTimeLimit,                      //callbackGapLimit
+            callbackGapLimit,                       //callbackGapLimit
             0.3,                                    //minimumGap
             gap,
             ilpResults);
