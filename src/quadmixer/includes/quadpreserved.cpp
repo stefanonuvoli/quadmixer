@@ -205,6 +205,9 @@ void getPreservedSurfaceMesh(
                 QuadRetopology::internal::OrientFaces<PolyMeshType>::InvertFace(tmpMesh1.face[i]);
             }
             tmpMesh1.face[i].SetS();
+            for (int j = 0; j < tmpMesh1.face[i].VN(); ++j) {
+                tmpMesh1.face[i].V(j)->SetS();
+            }
             tmpMesh1.face[i].Q() = i;
         }
     }
@@ -214,6 +217,9 @@ void getPreservedSurfaceMesh(
                 QuadRetopology::internal::OrientFaces<PolyMeshType>::InvertFace(tmpMesh2.face[i]);
             }
             tmpMesh2.face[i].SetS();
+            for (int j = 0; j < tmpMesh2.face[i].VN(); ++j) {
+                tmpMesh2.face[i].V(j)->SetS();
+            }
             tmpMesh2.face[i].Q() = tmpMesh1.face.size() + i;
         }
     }

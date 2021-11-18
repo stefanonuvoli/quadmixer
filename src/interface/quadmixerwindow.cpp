@@ -47,8 +47,8 @@ void QuadMixerWindow::booleanOperation()
     QuadBoolean::Operation operation = getOperationFromUI();
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target1, "res/booleanoperation1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target2, "res/booleanoperation2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target1, "results/booleanoperation1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target2, "results/booleanoperation2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
 
@@ -104,9 +104,9 @@ void QuadMixerWindow::detachOperation()
         vcg::tri::Append<PolyMesh, TriangleMesh>::Mesh(detachedPolyMesh2, detachedTriangleMesh2);
 
     #ifdef SAVEMESHES
-        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target1, "res/detachedinput.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(detachedPolyMesh1, "res/detached1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(detachedPolyMesh2, "res/detached2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(*target1, "results/detachedinput.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(detachedPolyMesh1, "results/detached1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+        vcg::tri::io::ExporterOBJ<PolyMesh>::Save(detachedPolyMesh2, "results/detached2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
     #endif
 
         QuadBoolean::Parameters parameters = getParametersFromUI();
@@ -307,7 +307,7 @@ QuadBoolean::Parameters QuadMixerWindow::getParametersFromUI()
     parameters.alpha = alpha;
     parameters.chartSmoothingIterations = chartSmoothingIterations;
     parameters.quadrangulationFixedSmoothingIterations = quadrangulationFixedSmoothingIterations;
-    parameters.quadrangulationNonFixedSmoothingIterations = quadrangulationFixedSmoothingIterations;
+    parameters.quadrangulationNonFixedSmoothingIterations = quadrangulationNonFixedSmoothingIterations;
     parameters.resultSmoothingIterations = resultSmoothingIterations;
     parameters.resultSmoothingNRing = resultSmoothingNRing;
     parameters.resultSmoothingLaplacianIterations = resultSmoothingLaplacianIterations;
@@ -363,7 +363,7 @@ int QuadMixerWindow::loadMesh(PolyMesh& mesh, const std::string& filename, const
     if (scale) {
         PolyMesh::ScalarType bbDiag = mesh.bbox.Diag();
         PolyMesh::ScalarType scaleFactor = 1.0 / bbDiag;
-        for (int i = 0; i < mesh.vert.size(); i++) {
+        for (size_t i = 0; i < mesh.vert.size(); i++) {
             mesh.vert[i].P().X() *= scaleFactor;
             mesh.vert[i].P().Y() *= scaleFactor;
             mesh.vert[i].P().Z() *= scaleFactor;
@@ -612,8 +612,8 @@ void QuadMixerWindow::on_debugModeButton_clicked()
 void QuadMixerWindow::doComputeBooleans() {
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh1, "res/mesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, "res/mesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh1, "results/mesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(mesh2, "results/mesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
     //Clear meshes
@@ -690,9 +690,9 @@ void QuadMixerWindow::doComputeBooleans() {
 
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/trimesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/trimesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "res/boolean.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "results/trimesh1.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "results/trimesh2.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(boolean, "results/boolean.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 }
 
@@ -736,7 +736,7 @@ void QuadMixerWindow::doSmooth()
     ui.glArea->setBoolean(&booleanSmoothed);
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(booleanSmoothed, "res/booleanSmoothed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(booleanSmoothed, "results/booleanSmoothed.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 }
 
@@ -847,8 +847,8 @@ void QuadMixerWindow::doGetSurfaces() {
     colorizeMesh(preservedSurface, preservedSurfaceLabel);
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "results/newSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "results/preservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
 }
@@ -887,8 +887,8 @@ void QuadMixerWindow::doPatchDecomposition() {
 
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/feasibilityNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "res/feasibilityPreservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "results/feasibilityNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(preservedSurface, "results/feasibilityPreservedSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
     std::cout << std::endl;
@@ -906,7 +906,7 @@ void QuadMixerWindow::doPatchDecomposition() {
     colorizeMesh(newSurface, newSurfaceLabel);
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "res/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<TriangleMesh>::Save(newSurface, "results/decomposedNewSurface.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 
 
@@ -1035,7 +1035,7 @@ void QuadMixerWindow::doQuadrangulate()
     ui.glArea->setQuadrangulation(&quadrangulation);
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(quadrangulation, "res/quadrangulation.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(quadrangulation, "results/quadrangulation.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
 }
 
@@ -1073,7 +1073,7 @@ void QuadMixerWindow::doGetResult()
               << " ms" << std::endl;
 
 #ifdef SAVEMESHES
-    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "res/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
+    vcg::tri::io::ExporterOBJ<PolyMesh>::Save(result, "results/result.obj", vcg::tri::io::Mask::IOM_FACECOLOR);
 #endif
     for (size_t i = 0; i < result.face.size(); i++) {
         result.face[i].C() = vcg::Color4b(255,255,255,255);
