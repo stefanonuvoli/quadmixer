@@ -180,11 +180,10 @@ void getPreservedSurfaceMesh(
         std::vector<std::pair<int, int>>& preservedBirthVertexInfo,
         std::vector<std::pair<int, int>>& preservedBirthFaceInfo)
 {
-
-
     PolyMeshType tmpMesh1, tmpMesh2;
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh1, mesh1, true);
-    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh2, mesh2, true);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh1, mesh1);
+    vcg::tri::Append<PolyMeshType, PolyMeshType>::Mesh(tmpMesh2, mesh2);
+
     vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(tmpMesh1);
     vcg::tri::UpdateFlags<PolyMeshType>::FaceClearS(tmpMesh2);
     vcg::tri::UpdateFlags<PolyMeshType>::VertexClearS(tmpMesh1);
@@ -306,11 +305,16 @@ void getNewSurfaceMesh(
     }
 
     vcg::tri::UpdateFlags<TriangleMeshType>::FaceClearS(boolean);
+    vcg::tri::UpdateFlags<TriangleMeshType>::VertexClearS(boolean);
     for (size_t i = 0; i < boolean.face.size(); i++) {
         if (isNewSurface[i]) {
             boolean.face[i].SetS();
+            for (int j = 0; j < boolean.face[i].VN(); ++j) {
+                boolean.face[i].V(j)->SetS();
+            }
         }
     }
+
     vcg::tri::Append<TriangleMeshType, TriangleMeshType>::Mesh(newSurface, boolean, true);
     vcg::tri::Clean<TriangleMeshType>::RemoveDuplicateVertex(newSurface);
     vcg::tri::Clean<TriangleMeshType>::RemoveUnreferencedVertex(newSurface);
