@@ -104,8 +104,7 @@ class TriangleFace : public vcg::Face<
         vcg::face::FFAdj,
         vcg::face::VFAdj,
         vcg::face::CurvatureDird,
-        vcg::face::Mark,
-        vcg::face::WedgeTexCoord2d> {};
+        vcg::face::Mark> {};
 
 class TriangleMesh : public vcg::tri::TriMesh<
         std::vector<TriangleVertex>,
