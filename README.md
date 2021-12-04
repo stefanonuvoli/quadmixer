@@ -61,6 +61,8 @@ In case you have technical issues or building problems, please write to [stefano
 
 ## Note
 The code has slightly changed and the results could be different from the ones showed in the paper.
+<br/>
+Even if it is a very robust method, this software is a prototype, and you could face some issues in the interface and in the final tessellation.
 
 ## License
 [GPL3](LICENSE) licensed
