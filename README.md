@@ -43,7 +43,7 @@ Install the libraries eigen, boost and gurobi.
 In Ubuntu you can install boost and eigen easily with the following terminal commands:
 ```
 sudo apt-get install libeigen3-dev
-sudo apt-get install libboost-dev
+sudo apt-get install libboost-all-dev
 ```
 Open the file configuration.pri and set the paths of the requested libraries and the gurobi parameters:
 ```
