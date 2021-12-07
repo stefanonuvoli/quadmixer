@@ -55,7 +55,7 @@ GUROBI_PATH         = /opt/gurobi903/linux64
 GUROBI_COMPILER     = gurobi_g++5.2
 GUROBI_LIB          = gurobi90
 ```
-You can now compile the project quadmixer.pro with qmake or QtCreator.<br/>
+You can now compile the project quadmixer.pro with qmake or QtCreator. You could need to rebuild it twice, after lp_solve has been built.<br/>
 <br /><br/>
 In case you have technical issues or building problems, please write to [stefano.nuvoli@gmail.com](mailto:stefano.nuvoli@gmail.com) or [nico.pietroni@uts.edu.au](mailto:nico.pietroni@uts.edu.au).
 
