@@ -51,6 +51,7 @@ DEFINES += NOCOMISO
 #Cgal
 #DEFINES += CGAL_EIGEN3_ENABLED
 #LIBS += -lCGAL -lCGAL_Core
+INCLUDEPATH += $$CGAL_PATH
 LIBS += -lmpfr -lgmp -frounding-math
 LIBS += -lboost_system -DBOOST_LOG_DYN_LINK -lboost_log -lboost_thread -lpthread
 

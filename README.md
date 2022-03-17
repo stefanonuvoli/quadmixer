@@ -40,10 +40,9 @@ git clone --recursive https://github.com/stefanonuvoli/quadmixer
 
 ### Build
 Install the libraries eigen, boost and gurobi. 
-In Ubuntu you can install boost and eigen easily with the following terminal commands:
+In Ubuntu you can install boost, eigen and CGAL easily with the following terminal command:
 ```
-sudo apt-get install libeigen3-dev
-sudo apt-get install libboost-all-dev
+sudo apt-get install libeigen3-dev libboost-all-dev libcgal-dev
 ```
 Open the file configuration.pri and set the paths of the requested libraries and the gurobi parameters:
 ```
